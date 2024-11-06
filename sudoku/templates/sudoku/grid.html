@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grille de Sudoku</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+
+<body>
+    <header>
+        <h1>Grille de Sudoku</h1>
+    </header>
+    <table class="sudoku-grid">
+        {% for row in board %}
+        <tr>
+            {% for cell in row %}
+            <td class="{% if cell == 0 %}empty{% endif %}">
+                {% if cell == 0 %}
+                    &nbsp;
+                {% else %}
+                    {% with image=images|slice:cell %}
+                    {% with imageurl=image|slice:"-1:" %}
+                    <img src="{{ imageurl.0 }}" alt="Icone {{ cell }}">
+                    {{ image.0.url }}
+                    {% endwith %}{% endwith %}{% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

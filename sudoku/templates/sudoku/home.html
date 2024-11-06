@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choisir la taille du Sudoku</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        .grid-container {
+            display: grid;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .grid-container img {
+            max-width: 100%;
+            max-height: 100px;
+            display: block;
+            margin: auto;
+        }
+        .tile img {
+            max-width: 100%;
+            max-height: 100px;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Choisir la taille du Sudoku</h1>
+    </header>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.size }}
+        <div id="difficulty-level" class="">
+            <input type="radio" id="difficulty-easy" name="difficulty" value="facile" checked />
+            <label for="difficulty-easy">Facile</label>
+            <input type="radio" id="difficulty-medium" name="difficulty" value="medium" checked />
+            <label for="difficulty-medium">Moyen</label>
+            <input type="radio" id="difficulty-hard" name="difficulty" value="hard" checked />
+            <label for="difficulty-difficult">Difficile</label>
+        </div>
+        <div id="image-fields" class="grid-container">
+            <!-- Les champs de téléchargement d'images seront ajoutés ici -->
+        </div>
+        <button type="submit">Générer</button>
+    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sizeField = document.querySelector('select[name="size"]');
+            const imageFieldsContainer = document.getElementById('image-fields');
+
+            function createImageFields(size) {
+                imageFieldsContainer.innerHTML = '';
+                imageFieldsContainer.style.gridTemplateColumns = `repeat(${Math.sqrt(size)}, 1fr)`;
+                for (let i = 1; i <= size; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'grid-item';
+
+                    const label = document.createElement('label');
+                    label.textContent = `Image ${i}`;
+                    label.htmlFor = `image${i}`;
+
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.name = `image${i}`;
+                    input.id = `image${i}`;
+
+                    const img = document.createElement('img');
+                    img.id = `preview${i}`;
+                    const imgName = `icone${i}.png`;
+                    img.src = `{% static 'sudoku/images/' %}${imgName}`;
+
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `default_image${i}`;
+                    hiddenInput.value = img.src;
+
+                    input.addEventListener('change', function(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                img.src = e.target.result;
+                                img.style.display = 'block';
+                                hiddenInput.value = ''; // Clear the hidden input value when a new file is selected
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+
+                    tile.appendChild(label);
+                    tile.appendChild(input);
+                    tile.appendChild(img);
+                    tile.appendChild(hiddenInput);
+                    imageFieldsContainer.appendChild(tile);
+                }
+            }
+
+            // Initialiser avec 4 champs d'image
+            createImageFields(4);
+
+            sizeField.addEventListener('change', function() {
+                const size = parseInt(this.value);
+                createImageFields(size);
+            });
+        });
+    </script>
+</body>
+</html>
