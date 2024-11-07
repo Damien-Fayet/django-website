@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choisir la taille du Sudoku</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style></style>
+</head>
+<body>
+    <header>
+        <h1>Home from Avent 2024</h1>
+    </header>
+    {% if user.is_authenticated %}
+    <p>Salut {{ user.username }}!</p>
+    {% else %}
+    <p>Connecte toi !</p>
+    <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Nouveau compte</a>
+    {% endif %}
+</body>
+</html>

@@ -24,27 +24,68 @@
             display: block;
             margin: auto;
         }
+        #difficulty-level {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        #difficulty-level input[type="radio"] {
+            display: none;
+        }
+        #difficulty-level label {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #difficulty-level input[type="radio"]:checked + label {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .generate-button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .generate-button:hover {
+            background-color: #218838;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Choisir la taille du Sudoku</h1>
+        <h1>Choisir la difficulté du Sudoku</h1>
     </header>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.size }}
-        <div id="difficulty-level" class="">
+        <div id="difficulty-level">
             <input type="radio" id="difficulty-easy" name="difficulty" value="facile" checked />
             <label for="difficulty-easy">Facile</label>
-            <input type="radio" id="difficulty-medium" name="difficulty" value="medium" checked />
+            <input type="radio" id="difficulty-medium" name="difficulty" value="medium" />
             <label for="difficulty-medium">Moyen</label>
-            <input type="radio" id="difficulty-hard" name="difficulty" value="hard" checked />
-            <label for="difficulty-difficult">Difficile</label>
+            <input type="radio" id="difficulty-hard" name="difficulty" value="hard" />
+            <label for="difficulty-hard">Difficile</label>
         </div>
         <div id="image-fields" class="grid-container">
             <!-- Les champs de téléchargement d'images seront ajoutés ici -->
         </div>
-        <button type="submit">Générer</button>
+        <div class="button-container">
+            <button type="submit" class="generate-button">Générer</button>
+        </div>
     </form>
     <script>
         document.addEventListener('DOMContentLoaded', function() {

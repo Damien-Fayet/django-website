@@ -7,11 +7,10 @@ import os
 
 def home(request):
     if request.method == 'POST':
-        size = request.POST.get('size')
+        size = 4
         difficulty = request.POST.get('difficulty')
-        form = SudokuSizeForm(request.POST, request.FILES, size=size)
+        form = SudokuSizeForm(request.POST, request.FILES)
         if form.is_valid():
-            size = form.cleaned_data['size']
             images = []
             fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             for i in range(1, int(size) + 1):
@@ -34,6 +33,7 @@ def home(request):
             return render(request, 'sudoku/grid.html', {'board': board, 'images': images})
         else:
             print("Form is not valid")
+            print(form)
     else:
         form = SudokuSizeForm()
     return render(request, 'sudoku/home.html', {'form': form})
