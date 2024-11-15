@@ -4,10 +4,12 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<h2>Sign up</h2>
+<div class="login-form-container">
+<h2>Créer un compte pour pouvoir jouer :</h2>
 <form class="login-form-container" method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Sign up</button>
+  <button type="submit" class="btn-signup">S'enregistrer</button>
 </form>
+</div>
 {% endblock %}

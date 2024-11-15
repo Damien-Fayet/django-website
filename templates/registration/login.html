@@ -4,25 +4,19 @@
 
 {% block content %}
 <div class="login-form-container">
-  <h2>Se connecter</h2>
+  <h2>Tu es déjà un joueur ?</h2>
+  <p> Connecte-toi avec ton nom et mot de passe</p>
   <br/>
   <form method="post">
     {% csrf_token %}
     {{ form }}
-    <button type="submit">Se connecter</button>
+    <button type="submit" class="btn-signup">Se connecter</button>
   </form>
   <br>
   <br>
   <br>
   <h2>Nouveau dans l'aventure ?</h2>
-  <p>Rentre ton nom et choisi un mot de passe de ton choix</p>
-  <form method="POST" action="../signup/">
-    {% csrf_token %}
-    <p>Nom:
-    <input type="text" name="username" /></p>
-    <p>Mot de passe:
-    <input type="password" name="password" /></p>
-    <input type="submit" />
-  </form>
+  <p> Aucun problème, pour jouer clique sur le bouton ci-dessous pour créer un compte très rapidement.</p>
+  <a href="{% url 'signup' %}" class="btn-signup">Créer un nouveau compte</a>
 </div>
 {% endblock %}
