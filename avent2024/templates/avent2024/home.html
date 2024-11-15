@@ -1,22 +1,70 @@
 <!DOCTYPE html>
+{% extends "avent2024/base_avent.html" %}
+
+{% load static %}
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choisir la taille du Sudoku</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <title>Accueil 2024</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@200..800&display=swap" rel="stylesheet">
     <style></style>
 </head>
 <body>
     <header>
-        <h1>Home from Avent 2024</h1>
+        <h1>Bienvenue dans votre aventure 2024</h1>
     </header>
-    {% if user.is_authenticated %}
-    <p>Salut {{ user.username }}!</p>
-    {% else %}
-    <p>Connecte toi !</p>
-    <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Nouveau compte</a>
-    {% endif %}
+    {% block navbar %}
+    {% with current_enigma=user.current_enigma %}
+            {{ block.super }}
+        {% endwith%}
+    {% endblock %}
+    {% block content %}
+        {% if user.is_authenticated %}
+        <div class="story-container">
+            <p>&emsp;&emsp;&emsp;&emsp;Un jour, alors qu’ils exploraient une vieille bibliothèque poussiéreuse, deux jeunes frères, Gabin et Louis, tombèrent sur un livre ancien et mystérieux.
+                
+                En feuilletant les pages, ils découvrirent une illustration intrigante d’un artefact égyptien.<br/> En dessous, une note manuscrite indiquait : <br/>
+            </p>
+            <p style="text-align:center;"><i>“Pour ceux qui osent, le <b>secret</b> du temps se révèle.”</i><br /></p>
+
+            <p>Intrigués, Gabin et Louis décidèrent de recréer le symbole montré dans l’illustration : ils alignèrent soigneusement sur la table les stylos trouvés dans leur trousse. 
+                Une fois l'illustration parfaitement imitée, amusés par tout ça, ils essayèrent en gloussant de lire à voix haute, l'incantation écrite dans le livre.
+                <br/><br/>
+                &emsp;&emsp;&emsp;&emsp;Soudain, une lumière de plus en plus éblouissante jaillit du livre et les enveloppa, en un instant, les deux garçons eurent disparus et furent transportés dans un autre monde.
+                <br/>
+                &emsp;&emsp;&emsp;&emsp;En ouvrant les yeux, ils se retrouvèrent devant l’entrée d’une immense structure qui semblait égyptienne 
+                mais qui se trouvait étrangement au milieu d'une jungle épaisse. Devant eux, une grande tablette en pierre se dressait, couverte de hiéroglyphes mystérieux. 
+                <br/><br/>
+                &emsp;&emsp;&emsp;&emsp;Sans savoir où ils étaient ni comment revenir chez eux, Gabin et Louis s’avancèrent prudemment pour examiner la tablette de plus près.
+                
+                Chaque pas donnait l'impression de déranger le silence complet qui régnait dans ce lieu mystérieux. 
+                Les hiéroglyphes semblaient raconter une histoire ancienne, mais leur signification restait obscure. 
+                
+                <br/>
+                &emsp;&emsp;&emsp;&emsp;Les jeunes savaient intuitivement qu’ils devraient déchiffrer ces symboles pour comprendre ce qui leur était arrivé et comment rentrer chez eux. 
+                Mais ils ne purent s'empêcher de penser qu'ils ne savaient pas ce qui les attendait dans la suite de l'aventure.
+                Avec un frisson dans le dos, ils commencèrent à étudier les inscriptions de la tablette qui ne sera certainement que la première étape de leur périple.
+                <br/><br/>
+                Es-tu prêt à les aider dans cette quête incroyable ? Prépare-toi à plonger dans l’histoire, à affronter des pièges mortels et à découvrir les secrets de l’Égypte ancienne !
+            </p>
+            <div class="center-content">
+                <img src="/static/avent2024/images/home.jpg" /> <br/>
+                {% if not current_enigma or current_enigma == 0%}  
+                    <a href="{% url 'avent2024:start_adventure' %}" class="btn">Commencer l'aventure</a>
+                {% else %}
+                    <a href="{% url 'avent2024:display_enigme' %}" class="btn">Continuer l'aventure à l'énigme {{current_enigma}}</a>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+            <p>Connecte toi !</p>
+            <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Créer un nouveau compte</a>
+        {% endif %}
+    
+    
+    {% endblock %}
 </body>
 </html>

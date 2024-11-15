@@ -6,9 +6,53 @@
   <meta charset="utf-8">
   <title>{% block title %}Les ressources de Damien{% endblock %}</title>
 </head>
-
+<style>
+  body {
+    background: url("/static/avent2024/images/wallpaper.png") no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+  }
+  .login-title {
+    width: 50%;
+    margin: 0 auto; /* Centrer le conteneur */
+    padding: 5px; /* Ajouter du padding pour un meilleur rendu */
+    border-radius: 5px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre pour un effet de profondeur */
+    background-color: rgba(128, 128, 128, 0.6); /* Fond gris légèrement transparent */
+    display: flex;
+    text-align: center;
+    align-items: center;
+  }
+  .login-title h1{
+    margin: 0 auto; 
+  }
+  .login-form-container {
+    width : 100%;
+    margin: 0 auto; /* Centrer le conteneur */
+    padding: 5px; /* Ajouter du padding pour un meilleur rendu */
+    padding-top: 20px;
+    text-align: center;
+    align-items: center;
+    text-shadow:
+      1px 1px 2px black,
+      0 0 1em blue,
+      0 0 0.2em blue;
+    color: aliceblue;
+  }
+  .login-form-container h2{
+    margin: 0 auto; 
+    color: aliceblue;
+    text-shadow:
+      1px 1px 2px black,
+      0 0 1em blue,
+      0 0 0.2em blue;
+  }
+</style>
 <body>
   <main>
+    <div class="login-title">
+      <h1> Bienvenue sur le calendrier de l'avent !</h1>
+    </div>
     {% block content %}
     {% endblock %}
   </main>
