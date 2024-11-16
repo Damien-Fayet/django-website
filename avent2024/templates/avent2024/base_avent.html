@@ -21,7 +21,7 @@
           <a href="/avent2024">Enigme {{ current_enigma }}</a> 
           {% endif %}
         </div>  
-        <div class="nav-bar-right"> Bienvenue {{ user.username }}!
+        <div class="nav-bar-right"> <h3 id="user_info">Bienvenue {{ user.username }}!</h3>
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit">Déconnecter</button>

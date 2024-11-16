@@ -21,21 +21,22 @@
             
             {% if user_reponse == 'OK' %}
             <h2>Enigme {{old_enigme_id}} validée !</h2>
-                Bien joué !<br/>
+                <p>Bien joué !<br/></p>
                 <img src="/static/avent2024/images/gagne/{{image_reponse}}" width="60%" height="60%"/>
-                <a href="{% url 'avent2024:display_enigme' %}" class="btn">Passer à l'énigme {{enigme.id}}</a>
+                <br><br/>
+                <a href="{% url 'avent2024:display_enigme' %}" class="btn-submit">Passer à l'énigme {{enigme.id}}</a>
                 <br/>
             {% elif user_reponse == 'KO' %}
-                Raté ! Ce n'est pas la bonne réponse <br/>
+                <p>Raté ! Ce n'est pas la bonne réponse <br/></p>
                 <img src="/static/avent2024/images/perdu/{{image_reponse}}" width="60%" height="60%"/>
-                <br/>
-                <a href="{% url 'avent2024:display_enigme' %}"> Réessayer </a>
+                <br/><br/>
+                <a href="{% url 'avent2024:display_enigme' %}" class="btn-submit">Réessayer </a>
             {% else %}
                 <h2>Enigme n° {{ enigme.id }}</h2>
                 {% if enigme.is_dispo %}
                     <p>{{ enigme.texte|safe }}</p>
                     <a href="/media/{{ enigme.image_name }}" target="_blank">
-                        <img src="/media/{{ enigme.image_name }}" width = "80%" class="image-apercu"/>
+                        <img src="/media/{{ enigme.image_name }}" width = "80%" />
                     </a>
                     <form method="post" action="{% url 'avent2024:validate_enigme' %}" class="enigme-form">
                         {% csrf_token %}

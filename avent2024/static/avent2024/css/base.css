@@ -39,8 +39,17 @@ body {
 }
 .nav-bar-right{
     text-align: right;
+    color: aliceblue;
+    text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
 }
-
+.nav-bar-right h3{
+    color: aliceblue;
+    text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
+}
+.nav-bar-right #user_info{
+    color: aliceblue;
+    text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
+}
 .story-container {
     width: 70vw;
     margin: 0 auto; /* Centrer le conteneur */
@@ -143,13 +152,6 @@ header {
 
 
 .image-apercu {
-    display: block;
     border-radius: 10px; /* Optionnel : ajouter des coins arrondis à l'image */
     cursor: pointer; /* Changer le curseur pour indiquer que l'image est cliquable */
-    transition: transform 0.3s ease; /* Ajouter une transition pour l'effet de survol */
-   
-}
-
-.image-apercu:hover {
-    transform: scale(1.05); /* Agrandir légèrement l'image au survol */
 }
