@@ -140,3 +140,16 @@ header {
 .btn-submit:hover {
     background-color: #218838;
 }
+
+
+.image-apercu {
+    display: block;
+    border-radius: 10px; /* Optionnel : ajouter des coins arrondis à l'image */
+    cursor: pointer; /* Changer le curseur pour indiquer que l'image est cliquable */
+    transition: transform 0.3s ease; /* Ajouter une transition pour l'effet de survol */
+   
+}
+
+.image-apercu:hover {
+    transform: scale(1.05); /* Agrandir légèrement l'image au survol */
+}

@@ -1,3 +1,4 @@
+import random
 from django.shortcuts import render, redirect
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
@@ -83,17 +84,21 @@ def validate_enigme(request):
             user_profile.currentEnigma += 1
             current_enigma = get_object_or_404(Enigme, id=user_profile.currentEnigma)
             user_profile.save()
+            image_id = random.randint(1, 6)
             return render(request, 'avent2024/enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
                 'user_reponse' : 'OK',
-                'old_enigme_id' : current_enigma.id -1
+                'old_enigme_id' : current_enigma.id -1,
+                'image_reponse' : f"bravo{image_id}.gif"
             })
         else:
+            image_id = random.randint(1, 24)
             return render(request, 'avent2024/enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
-                'user_reponse' : 'KO'
+                'user_reponse' : 'KO',
+                'image_reponse' : f"perdu{image_id}.gif"
             })
 
     return redirect('avent2024:display_enigme')

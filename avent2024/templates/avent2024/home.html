@@ -24,6 +24,11 @@
     {% block content %}
         {% if user.is_authenticated %}
         <div class="story-container">
+            <div class="center-content">
+            {% if current_enigma > 1%}  
+                <a href="{% url 'avent2024:display_enigme' %}" class="btn">Continuer l'aventure à l'énigme {{current_enigma}}</a>
+            {% endif %}
+            </div>
             <p>&emsp;&emsp;&emsp;&emsp;Un jour, alors qu’ils exploraient une vieille bibliothèque poussiéreuse, deux jeunes frères, Gabin et Louis, tombèrent sur un livre ancien et mystérieux.
                 
                 En feuilletant les pages, ils découvrirent une illustration intrigante d’un artefact égyptien.<br/> En dessous, une note manuscrite indiquait : <br/>
@@ -52,7 +57,7 @@
             </p>
             <div class="center-content">
                 <img src="/static/avent2024/images/home.jpg" /> <br/>
-                {% if not current_enigma or current_enigma == 0%}  
+                {% if not current_enigma or current_enigma < 2%}  
                     <a href="{% url 'avent2024:start_adventure' %}" class="btn">Commencer l'aventure</a>
                 {% else %}
                     <a href="{% url 'avent2024:display_enigme' %}" class="btn">Continuer l'aventure à l'énigme {{current_enigma}}</a>

@@ -16,8 +16,7 @@
       <nav class="nav-bar">                
         {% if user.is_authenticated %}
         <div class="nav-bar-left"> 
-          <a href="/avent2024">Accueil</a>
-          / 
+          <a href="{% url 'home' %}">Accueil</a>
           {% if current_enigma > 0 %}
           <a href="/avent2024">Enigme {{ current_enigma }}</a> 
           {% endif %}
