@@ -11,12 +11,12 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre pour un effet de profondeur */
 }
 .nav-bar {
-    background-color: rgba(128, 128, 128, 0.4); /* Fond gris légèrement transparent */
+    background-color: rgba(128, 128, 128, 0.6); /* Fond gris légèrement transparent */
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    border-radius: 5px; /* Coins arrondis */
+    border-radius: 15px; /* Coins arrondis */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Ombre pour un effet de profondeur */
     padding: 10px;
     margin : 10px;
@@ -39,10 +39,6 @@ body {
 }
 .nav-bar-right{
     text-align: right;
-    color: aliceblue;
-    text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
-}
-.nav-bar-right h3{
     color: aliceblue;
     text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
 }

@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from .models import Enigme, UserProfile
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+import unidecode
 
 from avent2024.models import UserProfile
 
@@ -78,8 +79,9 @@ def validate_enigme(request):
         current_enigma_number = user_profile.currentEnigma
         current_enigma = get_object_or_404(Enigme, id=current_enigma_number)
         reponse = request.POST.get("reponse")
-
-        if reponse == current_enigma.reponse:
+        clean_reponse = ''.join(reponse.split()).lower()
+        clean_reponse = unidecode.unidecode(clean_reponse )
+        if clean_reponse == current_enigma.reponse:
             messages.success(request, "Bonne reponse")
             user_profile.currentEnigma += 1
             current_enigma = get_object_or_404(Enigme, id=user_profile.currentEnigma)
@@ -90,7 +92,7 @@ def validate_enigme(request):
                 'enigme' : current_enigma,
                 'user_reponse' : 'OK',
                 'old_enigme_id' : current_enigma.id -1,
-                'image_reponse' : f"bravo{image_id}.gif"
+                'image_reponse' : f"gagne{image_id}.gif"
             })
         else:
             image_id = random.randint(1, 24)
