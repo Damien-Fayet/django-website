@@ -20,7 +20,7 @@ class Enigme(models.Model):
     id = models.IntegerField(primary_key=True)
     titre = models.CharField(max_length=100)
     texte = models.TextField()
-    image_name = models.ImageField(default="",null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
+    image_name = models.ImageField(default="",blank=True,null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     reponse = models.CharField(max_length=100)
     date_dispo = models.DateField(default="2024-11-02")
     def __str__(self):
@@ -35,8 +35,8 @@ class Indice(models.Model):
         on_delete=models.CASCADE,
     )
     numero = models.IntegerField(default=1)
-    image = models.ImageField(default="", null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
-    texte = models.TextField()
+    image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
+    texte = models.TextField(blank=True)
     def __str__(self):
         return f"Indice {self.id} : Enigme {self.enigme}, numero : {self.numero}"
 class Devinette(models.Model):
@@ -50,8 +50,8 @@ class Devinette(models.Model):
     ]
     id = models.IntegerField(primary_key=True)
     titre = models.CharField(max_length=100)
-    texte = models.TextField()
-    image_name = models.ImageField(default="", null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
+    texte = models.TextField(blank=True)
+    image_name = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     reponse = models.CharField(max_length=100)
     date_dispo = models.DateField(default="2024-11-02")
     genre = models.CharField(max_length=100,
