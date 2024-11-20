@@ -126,13 +126,12 @@ header {
     border: 1px solid #ccc;
     border-radius: 5px;
 }
-
 .btn-submit {
     width:40%;
     padding: 10px 20px;
     font-size: 16px;
     color: white;
-    background-color: #28a745;
+    background-color: #2881a7;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -142,8 +141,9 @@ header {
     margin: 0 auto; /* Centrer le conteneur */
 }
 
+
 .btn-submit:hover {
-    background-color: #218838;
+    background-color: #213b88;
 }
 
 

@@ -1,3 +1,4 @@
 /django
 mysite/settings.py
 db.sqlite3
+avent2024/__pycache__/*

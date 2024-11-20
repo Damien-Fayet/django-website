@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from avent2024.models import UserProfile, Enigme
+from avent2024.models import UserProfile, Enigme, Devinette, Indice, IndiceDevinette
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 
@@ -22,3 +22,6 @@ admin.site.unregister(User)
 admin.site.register(User, AccountsUserAdmin)
 
 admin.site.register(Enigme)
+admin.site.register(Devinette)
+admin.site.register(Indice)
+admin.site.register(IndiceDevinette)

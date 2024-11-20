@@ -1,0 +1,20 @@
+.btn-reveal{
+    width:40%;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #2881a7;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    margin: 10px auto; /* Centrer le conteneur */
+
+}
+
+
+.btn-reveal:hover {
+    background-color: #213b88;
+}
