@@ -156,7 +156,7 @@ def reveler_indice(request):
         tmp_list = user_profile.indices_enigme_reveles.split(",")
     else: 
         tmp_list=[]
-    tmp_list.append(str(indice.numero))
+    tmp_list.append(str(indice.id))
     print(f"new list indices reveles : {tmp_list}")
     user_profile.indices_enigme_reveles = ",".join(tmp_list)
         
