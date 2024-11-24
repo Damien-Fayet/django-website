@@ -26,7 +26,12 @@
         <div class="story-container">
             <div class="center-content">
             {% if current_enigma > 1%}  
-                <a href="{% url 'avent2024:display_enigme' %}" class="btn">Continuer l'aventure à l'énigme {{current_enigma}}</a>
+                <div class="egypte-bouton">
+                    <a href="{% url 'avent2024:display_enigme' %}" class="tile">
+                        <img src="/static/avent2024/images/bouton_egypte.png" height="100%" width="18%"/>
+                        <div class="centered">Continuer à l'énigme {{current_enigma}}</div>
+                    </a>
+                </div>
             {% endif %}
             </div>
             <p>&emsp;&emsp;&emsp;&emsp;Un jour, alors qu’ils exploraient une vieille bibliothèque poussiéreuse, deux jeunes frères, Gabin et Louis, tombèrent sur un livre ancien et mystérieux.
@@ -66,7 +71,12 @@
                     </div>
                     <!--<a href="{% url 'avent2024:start_adventure' %}" class="btn">Commencer l'aventure</a>-->
                 {% else %}
-                    <a href="{% url 'avent2024:display_enigme' %}" class="btn">Continuer l'aventure à l'énigme {{current_enigma}}</a>
+                    <div class="egypte-bouton">
+                        <a href="{% url 'avent2024:display_enigme' %}" class="tile">
+                            <img src="/static/avent2024/images/bouton_egypte.png" height="100%" width="18%"/>
+                            <div class="centered">Continuer à l'énigme {{current_enigma}}</div>
+                        </a>
+                    </div>
                 {% endif %}
             </div>
         </div>

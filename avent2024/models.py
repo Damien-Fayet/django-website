@@ -73,7 +73,7 @@ class IndiceDevinette(models.Model):
         on_delete=models.CASCADE,
     )
     numero = models.IntegerField(default=1)
-    image = models.ImageField(default="", null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
+    image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     texte = models.TextField()    
     
 @receiver(post_save, sender=User)

@@ -37,7 +37,7 @@
             {% else %}
             {% comment %} Normal displaying of devinette {% endcomment %}
                 <h2>devinette n° {{ devinette.id }}</h2>
-                {% if devinette.is_dispo %}
+                {% if devinette.is_dispo  or user.is_superuser%}
                     <p>{{ devinette.texte|safe }}</p>
                     <a href="/media/{{ devinette.image_name }}" target="_blank">
                         <img src="/media/{{ devinette.image_name }}" width = "80%" />

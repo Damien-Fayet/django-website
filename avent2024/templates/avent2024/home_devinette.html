@@ -26,7 +26,12 @@
         <div class="story-container">
             <div class="center-content">
             {% if current_devinette > 1%}  
-                <a href="{% url 'avent2024:display_devinette' %}" class="btn">Continuer l'aventure à la devinette {{current_devinette}}</a>
+                <div class="egypte-bouton">
+                    <a href=href="{% url 'avent2024:display_devinette' %}" class="tile">
+                        <img src="/static/avent2024/images/bouton_devi.png" height="100%" width="18%"/>
+                        <div class="centered">Continuer à la devinette {{current_devinette}}</div>
+                    </a>
+                </div>
             {% endif %}
             </div>
             <p>Bienvenue sur la partie devinettes du calendrier de l'avent 2024 ! 
@@ -44,13 +49,18 @@
                 {% if not current_devinette or current_devinette < 2%}  
                     <!--<a href="{% url 'avent2024:start_devinette' %}" class="btn">Commencer l'aventure</a>-->
                     <div class="egypte-bouton">
-                        <a href=href="{% url 'avent2024:start_devinette' %}" class="tile">
+                        <a href="{% url 'avent2024:start_devinette' %}" class="tile">
                             <img src="/static/avent2024/images/bouton_devi.png" height="100%" width="18%"/>
                             <div class="centered">Commencer les devinettes</div>
                         </a>
                     </div>
                 {% else %}
-                    <a href="{% url 'avent2024:display_devinette' %}" class="btn">Continuer l'aventure à la devinette {{current_devinette}}</a>
+                    <div class="egypte-bouton">
+                        <a href=href="{% url 'avent2024:display_devinette' %}" class="tile">
+                            <img src="/static/avent2024/images/bouton_devi.png" height="100%" width="18%"/>
+                            <div class="centered">Continuer à la devinette {{current_devinette}}</div>
+                        </a>
+                    </div>
                 {% endif %}
             </div>
         </div>
