@@ -7,14 +7,26 @@
 
 <style>
     .tiles-container {
-        display: flex;
+        display: block;
         justify-content: space-around;
+        margin: 0 auto;
         margin-top: 20px;
+        text-align: center;
+        width: 80%;
+        background-color: rgba(255, 255, 255, 0.4); /* Optionnel : ajouter un fond blanc légèrement transparent */
+        padding: 20px; /* Ajouter du padding pour un meilleur rendu */
+        border-radius: 10px; /* Coins arrondis */
+        align-items: center;
     }
+    .tiles-container {
+        font-size: 1.2em;
+    }
+
     .tile {
-        width: 200px;
-        height: 200px;
+        width: 230px;
+        height: 180px;
         display: flex;
+        margin: 0 auto;
         align-items: center;
         justify-content: center;
         background-color: #007bff;
@@ -27,11 +39,37 @@
     .tile:hover {
         background-color: #0056b3;
     }
+    .tile p{
+        color: aliceblue;
+        text-shadow: 1px 1px 2px black, 0 0 0.5em black, 0 0 0.8em black;
+        vertical-align: bottom;
+        
+    }
+    .tiles-container img{
+        border-radius: 10px; 
+    }
 </style>
 
 <div class="tiles-container">
-    <a href="{% url 'avent2024:avent2024' %}" class="tile">Avent 2024 Enigmes</a>
-    <a href="{% url 'avent2024:avent2024' %}" class="tile">Avent 2024 Devinettes</a>
+    
+    <p>Cette année, vous avez le choix entre deux types de calendriers (Bien sur vous pouvez faire les deux !)</p>
+    <p>Le premier calendrier est pour les aventuriers avides d'aventure et d'énigmes en tout genre, 2 énigmes par semaine à résoudre.</p>
+    <!--<a href="{% url 'avent2024:avent2024' %}" class="tile">Avent 2024 Enigmes<br>(Niveau intermédiaire)</a>-->
+    <div>
+        <a style="position:relative;" href="{% url 'avent2024:avent2024' %}" class="tile">
+            <img src="/static/avent2024/images/bouton_enigme.png" height="100%" width="100%">
+            <p style="position:absolute;">Enigmes<br>(Niveau intermédiaire)</p>
+        </a>
+    </div>    
+    <br>
+    <div>
+        <p>Le deuxième calendrier est une suite de devinettes imagées où il faudra retrouver un artiste, une chanson, un film, etc... Une énigme chaque jour ! </p>
+        <a style="position:relative;" href="{% url 'avent2024:avent2024_devinette' %}" class="tile">
+            <img src="/static/avent2024/images/bouton_devinette.png" height="100%" width="100%">
+            <p style="position:absolute;">Devinettes <br> (Niveau facile)</p>
+        </a>
+
+    </div>
 </div>
 
 {% endblock %}

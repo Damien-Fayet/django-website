@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enigme {{ current_enigma }} - Avent 2024</title>
+    <title>Devinette {{ current_enigma }} - Avent 2024</title>
     {% comment %} <link rel="stylesheet" href="{% static 'css/styles.css' %}"> {% endcomment %}
     <link rel="stylesheet" href="/static/avent2024/css/enigme.css">
     <style>
@@ -18,31 +18,31 @@
     
     <div class="story-container">
         <header>
-            <h1>{{ enigme.titre }}</h1>
+            <h1>{{ devinette.titre }}</h1>
         </header>
         <div class="detail-enigme">
             
             {% if user_reponse == 'OK' %}
-            <h2>Enigme {{old_enigme_id}} validée !</h2>
+            <h2>Devinette {{old_devinette_id}} validée !</h2>
                 <p>Bien joué !<br/></p>
                 <img src="/static/avent2024/images/gagne/{{image_reponse}}" width="60%" height="60%"/>
                 <br><br/>
-                <a href="{% url 'avent2024:display_enigme' %}" class="btn-submit">Passer à l'énigme {{enigme.id}}</a>
+                <a href="{% url 'avent2024:display_devinette' %}" class="btn-submit">Passer à la devinette {{devinette.id}}</a>
                 <br/>
             {% elif user_reponse == 'KO' %}
                 <p>Raté ! Ce n'est pas la bonne réponse <br/></p>
                 <img src="/static/avent2024/images/perdu/{{image_reponse}}" width="60%" height="60%"/>
                 <br/><br/>
-                <a href="{% url 'avent2024:display_enigme' %}" class="btn-submit">Réessayer </a>
+                <a href="{% url 'avent2024:display_devinette' %}" class="btn-submit">Réessayer </a>
             {% else %}
-            {% comment %} Normal displaying of enigme {% endcomment %}
-                <h2>Enigme n° {{ enigme.id }}</h2>
-                {% if enigme.is_dispo or user.is_superuser %}
-                    <p>{{ enigme.texte|safe }}</p>
-                    <a href="/media/{{ enigme.image_name }}" target="_blank">
-                        <img src="/media/{{ enigme.image_name }}" width = "80%" />
+            {% comment %} Normal displaying of devinette {% endcomment %}
+                <h2>devinette n° {{ devinette.id }}</h2>
+                {% if devinette.is_dispo %}
+                    <p>{{ devinette.texte|safe }}</p>
+                    <a href="/media/{{ devinette.image_name }}" target="_blank">
+                        <img src="/media/{{ devinette.image_name }}" width = "80%" />
                     </a>
-                    <form method="post" action="{% url 'avent2024:validate_enigme' %}" class="enigme-form">
+                    <form method="post" action="{% url 'avent2024:validate_devinette' %}" class="enigme-form">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="reponse"> <p>Votre réponse : </p></label>
@@ -66,7 +66,7 @@
                     {% for indice  in indices_hidden  %}
                         {% if indice %}
                             
-                            <form method="post" action="{% url 'avent2024:reveler_indice' %}" class="enigme-form">
+                            <form method="post" action="{% url 'avent2024:reveler_indice_devinette' %}" class="enigme-form">
                                 {% csrf_token %}
                                 <div class="form-group2">
                                 <button type="submit" class="btn-reveal">Révéler l'indice {{indice.numero}}</button>
@@ -76,7 +76,7 @@
                         {% endif %}
                     {% endfor %}
                 {% else %}
-                    <p> L'énigme sera disponible le {{enigme.date_dispo|date:"d/m/Y"}} </p>
+                    <p> La devinette sera disponible le {{devinette.date_dispo|date:"d/m/Y"}} </p>
                 {% endif %}
             {% endif %}
             

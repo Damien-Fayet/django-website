@@ -7,6 +7,7 @@
   <meta charset="utf-8">
   <title>{% block title %}Les ressources de Damien{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'avent2024/css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'avent2024/css/classement.css' %}">
 </head>
 
 <body>
@@ -17,6 +18,8 @@
         {% if user.is_authenticated %}
         <div class="nav-bar-left"> 
           <a href="{% url 'home' %}">Accueil</a>
+          <a href="{% url 'avent2024:classement' %}">Classement</a>
+          <a href="{% url 'home' %}">Anciennes énigmes</a>
           {% if current_enigma > 0 %}
           <a href="/avent2024">Enigme {{ current_enigma }}</a> 
           {% endif %}
@@ -26,6 +29,7 @@
             {% csrf_token %}
             <button type="submit">Déconnecter</button>
         </form> 
+        
         {% else %}
           <p>Connecte toi !</p>
           <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Créer un nouveau compte</a>

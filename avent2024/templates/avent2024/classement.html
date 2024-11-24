@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% extends "avent2024/base_avent.html" %}
+
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil 2024</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@200..800&display=swap" rel="stylesheet">
+    <style>
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Classement 2024</h1>
+    </header>
+    {% block navbar %}
+    {% with current_enigma=user.current_enigma %}
+            {{ block.super }}
+        {% endwith%}
+    {% endblock %}
+    {% block content %}
+    <div class="story-container">
+        <div class="classement">
+            <table id="classement-table">
+                <caption>
+                    Classement 2024
+                </caption>
+                <tr>
+                    <th>Joueur</th>
+                    <th>Enigme</th>
+                    <th>Devinette</th>
+                    <th>Erreurs Enigmes</th>
+                    <th>Erreurs Devinettes</th>
+                </tr>
+            
+            {% for user in users %}
+                <tr>
+                    <td>{{user.username}}</td>
+                    <td>{{user.userprofile.currentEnigma}}</td>
+                    <td>{{user.userprofile.currentDevinette}}</td>
+                    <td>{{user.userprofile.erreurEnigma}}</td>
+                    <td>{{user.userprofile.erreurDevinette}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>

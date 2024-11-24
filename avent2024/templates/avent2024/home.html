@@ -56,9 +56,15 @@
                 Es-tu prêt à les aider dans cette quête incroyable ? Prépare-toi à plonger dans l’histoire, à affronter des pièges mortels et à découvrir les secrets de l’Égypte ancienne !
             </p>
             <div class="center-content">
-                <img src="/static/avent2024/images/home.jpg" /> <br/>
+                <img src="/static/avent2024/images/home.png" /> <br/>
                 {% if not current_enigma or current_enigma < 2%}  
-                    <a href="{% url 'avent2024:start_adventure' %}" class="btn">Commencer l'aventure</a>
+                    <div class="egypte-bouton">
+                        <a href="{% url 'avent2024:start_adventure' %}" class="tile">
+                            <img src="/static/avent2024/images/bouton_egypte.png" height="100%" width="18%"/>
+                            <div class="centered">Commencer l'aventure</div>
+                        </a>
+                    </div>
+                    <!--<a href="{% url 'avent2024:start_adventure' %}" class="btn">Commencer l'aventure</a>-->
                 {% else %}
                     <a href="{% url 'avent2024:display_enigme' %}" class="btn">Continuer l'aventure à l'énigme {{current_enigma}}</a>
                 {% endif %}

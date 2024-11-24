@@ -10,11 +10,15 @@ from django.core.validators import int_list_validator
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     currentEnigma = models.IntegerField(default=0)
+    erreurEnigma = models.IntegerField(default=0)
+    currentDevinette = models.IntegerField(default=0)
+    erreurDevinette = models.IntegerField(default=0)
+    score = models.IntegerField(default=0)
     indices_enigme_reveles = models.CharField(validators=[int_list_validator()], default="", max_length=200, blank=True)
     indices_devinette_reveles = models.CharField(validators=[int_list_validator()],default="", max_length=200, blank=True)
     
     def __str__(self):
-        return f"{self.user} Enigme {self.currentEnigma}"
+        return f"{self.user} Enigme {self.currentEnigma}, Devinette {self.currentDevinette}"
     
 class Enigme(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -59,6 +63,9 @@ class Devinette(models.Model):
         default=FILM,)
     def __str__(self):
         return f"Devinette {self.id} : {self.titre}"
+    @property
+    def is_dispo(self):
+        return date.today() > self.date_dispo
     
 class IndiceDevinette(models.Model):    
     enigme = models.ForeignKey(

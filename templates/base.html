@@ -67,11 +67,22 @@
   .btn-signup:hover {
     background-color: #0056b3;
   }
+  .login-title p{
+    font-size : 1.9em;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
+    margin : 10px;
+  }
+  #title{
+    width:80%;
+  }
 </style>
 <body>
   <main>
     <div class="login-title">
-      <h1> Bienvenue sur le calendrier de l'avent !</h1>
+      <img src="/static/avent2024/images/banner.png" width="120px"/>
+      <div id="title"><p> Bienvenue sur le calendrier de l'avent 2024 !</p></div>
+
+      <img style="float:right;text-align: right;" src="/static/avent2024/images/banner.png" width="120px"/>
     </div>
     {% block content %}
     {% endblock %}

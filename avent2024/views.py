@@ -5,22 +5,14 @@ from django.conf import settings
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .models import Enigme, Indice, UserProfile
+from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 import unidecode
 
+
 from avent2024.models import UserProfile
-
-# class UserForm(forms.ModelForm):
-#     class Meta:
-#         model = User
-#         fields = ("first_name", "last_name")
-
-# class UserProfileForm(forms.ModelForm):
-#     class Meta:
-#         model = UserProfile
-#         fields = ("currentEnigma",)
         
 @login_required
 def home(request):
@@ -30,7 +22,15 @@ def home(request):
     current_enigma = request.user.userprofile.currentEnigma
     #if current_enigma == 0:
     return render(request, 'avent2024/home.html', {"current_enigma": current_enigma})
-    return render(request, 'avent2024/enigme.html', {"current_enigma": current_enigma})
+
+@login_required
+def home_devinette(request):
+    if not hasattr(request.user, 'userprofile'):
+        UserProfile.objects.create(user=request.user)
+    
+    current_devinette = request.user.userprofile.currentDevinette
+    #if current_enigma == 0:
+    return render(request, 'avent2024/home_devinette.html', {"current_devinette": current_devinette})
 
 @login_required
 def start_adventure(request):
@@ -40,11 +40,15 @@ def start_adventure(request):
     user_profile.save()
     current_enigma = get_object_or_404(Enigme, id=request.user.userprofile.currentEnigma)
     return redirect('avent2024:display_enigme')
-    # return render(request, 'avent2024/enigme.html',  {
-    #         'reponse_enigme' : current_enigma.reponse,
-    #         'enigme' : current_enigma,
-    #         'user_reponse' : ''
-    #     })
+
+@login_required
+def start_devinette(request):
+    # Mettre à jour la valeur de currentEnigma à 1
+    user_profile = request.user.userprofile
+    user_profile.currentDevinette = 1
+    user_profile.save()
+    current_devinette = get_object_or_404(Devinette, id=request.user.userprofile.currentDevinette)
+    return redirect('avent2024:display_devinette')
 
 @login_required
 def display_enigme(request,reponse=None):
@@ -79,7 +83,41 @@ def display_enigme(request,reponse=None):
         'indices_reveles': indices_reveles,
         'indices_hidden': indices_hidden,
     })
+  
+@login_required
+def display_devinette(request,reponse=None):
+    if request.user.userprofile.currentDevinette==0:
+        return render(request, 'avent2024/enigme.html',  {
+            'reponse_enigme' : current_devinette.reponse,
+            'enigme' : current_devinette,
+            'user_reponse' : reponse
+        })
     
+    current_devinette = get_object_or_404(Devinette, id=request.user.userprofile.currentDevinette)
+    # Récupérer tous les indices de cette enigme
+    indices = IndiceDevinette.objects.filter(
+        enigme=current_devinette
+    )
+    
+    for i in indices:
+        print(i)
+    # Lister les indice revelés
+    indice_reveles_list = []
+    if request.user.userprofile.indices_devinette_reveles:
+        indice_reveles_list = [int(x) for x in request.user.userprofile.indices_devinette_reveles.split(",")]
+    
+    print(f"liste numeros : {indice_reveles_list}")
+    indices_reveles = indices.filter(id__in= indice_reveles_list)
+    indices_hidden = indices.exclude(id__in=indice_reveles_list)
+    return render(request, 'avent2024/devinette.html',  {
+        'reponse_devinette' : current_devinette.reponse,
+        'devinette' : current_devinette,
+        'user_reponse' : reponse,
+        'indices' : indices,
+        'indices_reveles': indices_reveles,
+        'indices_hidden': indices_hidden,
+    })
+      
 @login_required
 def error_enigme(request):
     current_enigma = get_object_or_404(Enigme, id=request.user.userprofile.currentEnigma)
@@ -123,6 +161,39 @@ def validate_enigme(request):
 
     return redirect('avent2024:display_enigme')
 
+@login_required
+def validate_devinette(request):
+    if request.method == "POST":
+        user_profile = request.user.userprofile
+        current_devinette_number = user_profile.currentDevinette
+        current_devinette = get_object_or_404(Devinette, id=current_devinette_number)
+        reponse = request.POST.get("reponse")
+        clean_reponse = ''.join(reponse.split()).lower()
+        clean_reponse = unidecode.unidecode(clean_reponse )
+        if clean_reponse in current_devinette.reponse.split(","):
+            messages.success(request, "Bonne reponse")
+            user_profile.currentDevinette += 1
+            current_devinette = get_object_or_404(Devinette, id=user_profile.currentDevinette)
+            user_profile.save()
+            image_id = random.randint(1, 13)
+            return render(request, 'avent2024/devinette.html',  {
+                'reponse_devinette' : current_devinette.reponse,
+                'devinette' : current_devinette,
+                'user_reponse' : 'OK',
+                'old_devinette_id' : current_devinette.id -1,
+                'image_reponse' : f"gagne{image_id}.gif"
+            })
+        else:
+            image_id = random.randint(1, 24)
+            return render(request, 'avent2024/devinette.html',  {
+                'reponse_devinette' : current_devinette.reponse,
+                'devinette' : current_devinette,
+                'user_reponse' : 'KO',
+                'image_reponse' : f"perdu{image_id}.gif"
+            })
+
+    return redirect('avent2024:display_devinette')
+
 def register(request):
     if request.method == 'POST':
         username1 = request.POST['username']
@@ -163,3 +234,30 @@ def reveler_indice(request):
     user_profile.save()
     
     return redirect('avent2024:display_enigme')
+
+
+@login_required
+def reveler_indice_devinette(request):
+    indice_id = int(request.POST.get("indice_id"))
+    indice = get_object_or_404(IndiceDevinette, id=indice_id)
+    user_profile = request.user.userprofile
+    print(f"Current list indices reveles : {user_profile.indices_devinette_reveles}")
+    if len(user_profile.indices_devinette_reveles)>0:
+        tmp_list = user_profile.indices_enigme_reveles.split(",")
+    else: 
+        tmp_list=[]
+    tmp_list.append(str(indice.id))
+    print(f"new list indices reveles : {tmp_list}")
+    user_profile.indices_devinette_reveles = ",".join(tmp_list)
+        
+    user_profile.save()
+    
+    return redirect('avent2024:display_devinette')
+
+
+def classement(request):
+    User = get_user_model()
+    users = User.objects.all()
+    return render(request, 'avent2024/classement.html',  {
+        'users' : users,
+    })

@@ -40,11 +40,12 @@ body {
 .nav-bar-right{
     text-align: right;
     color: aliceblue;
-    text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
+    font-size : 1.2em;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
 }
 .nav-bar-right #user_info{
     color: aliceblue;
-    text-shadow: 1px 1px 2px black, 0 0 1em blue, 0 0 0.2em blue;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
 }
 .story-container {
     width: 70vw;
@@ -72,13 +73,45 @@ body {
     border-radius: 10px; /* Optionnel : ajouter des coins arrondis à l'image */
 }
 
-.center-content .btn {
+.egypte-bouton{
+    position: relative;
+    text-align: center;
+}
+.egypte-bouton .centered{
+    position: absolute;
+    white-space: wrap;
+    max-width: 100px;
+    font-size: 1.2em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
+}
+.egypte-bouton img{
+    box-shadow: 5px 8px 2px 1px rgb(97, 97, 97);
+}
+.egypte-bouton .btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-image: url("/static/avent2024/images/bouton_egypte.png");
+    
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+.center-content-old .btn {
     display: inline-block;
     margin-top: 20px;
     padding: 10px 20px;
     font-size: 16px;
     color: white;
     background-color: #28a745;
+    opacity: 0.6;
     border: none;
     border-radius: 5px;
     cursor: pointer;
