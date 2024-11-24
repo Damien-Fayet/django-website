@@ -18,3 +18,14 @@
 .btn-reveal:hover {
     background-color: #213b88;
 }
+
+
+.indices-display{
+    margin : 30px auto;
+    border: 1px solid black;
+    border-radius: 20px;
+    width: 80%;
+}
+.indices-display h2{
+    text-decoration: underline;
+}

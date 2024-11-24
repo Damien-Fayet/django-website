@@ -36,6 +36,7 @@
                 <a href="{% url 'avent2024:display_enigme' %}" class="btn-submit">Réessayer </a>
             {% else %}
             {% comment %} Normal displaying of enigme {% endcomment %}
+
                 <h2>Enigme n° {{ enigme.id }}</h2>
                 {% if enigme.is_dispo or user.is_superuser %}
                     <p>{{ enigme.texte|safe }}</p>
@@ -52,29 +53,32 @@
                     </form>
 
                     {% comment %} Affichage des indices {% endcomment %}
-                    {% for indice  in indices_reveles  %}
-                        {% if indice %}
-                            <h3>Indice {{indice.numero}}</h3>
-                            {% if indice.texte %}
-                                <p> {{indice.texte|safe}}</p>
+                    <div class="indices-display">
+                        <h2> Indices :</h2>
+                        {% for indice  in indices_reveles  %}
+                            {% if indice %}
+                                <h3>Indice n°{{indice.numero}}</h3>
+                                {% if indice.texte %}
+                                    <p> {{indice.texte|safe}}</p>
+                                {% endif %}
+                                {% if indice.image %}
+                                    <img src="/media/{{indice.image}}" width = "40%" alt="image de Indice {{indice.numero}}" />
+                                {% endif %}
                             {% endif %}
-                            {% if indice.image %}
-                                <img src="/media/{{indice.image}}" width = "40%" alt="image de Indice {{indice.numero}}" />
+                        {% endfor %}
+                        {% for indice  in indices_hidden  %}
+                            {% if indice %}
+                                
+                                <form method="post" action="{% url 'avent2024:reveler_indice' %}" class="enigme-form">
+                                    {% csrf_token %}
+                                    <div class="form-group2">
+                                    <button type="submit" class="btn-reveal">Révéler l'indice {{indice.numero}}</button>
+                                    <input type="hidden" id="indice" name="indice_id" value="{{indice.id}}" />
+                                    </div>
+                                </form>
                             {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                    {% for indice  in indices_hidden  %}
-                        {% if indice %}
-                            
-                            <form method="post" action="{% url 'avent2024:reveler_indice' %}" class="enigme-form">
-                                {% csrf_token %}
-                                <div class="form-group2">
-                                <button type="submit" class="btn-reveal">Révéler l'indice {{indice.numero}}</button>
-                                <input type="hidden" id="indice" name="indice_id" value="{{indice.id}}" />
-                                </div>
-                            </form>
-                        {% endif %}
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 {% else %}
                     <p> L'énigme sera disponible le {{enigme.date_dispo|date:"d/m/Y"}} </p>
                 {% endif %}

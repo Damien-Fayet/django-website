@@ -243,7 +243,7 @@ def reveler_indice_devinette(request):
     user_profile = request.user.userprofile
     print(f"Current list indices reveles : {user_profile.indices_devinette_reveles}")
     if len(user_profile.indices_devinette_reveles)>0:
-        tmp_list = user_profile.indices_enigme_reveles.split(",")
+        tmp_list = user_profile.indices_devinette_reveles.split(",")
     else: 
         tmp_list=[]
     tmp_list.append(str(indice.id))

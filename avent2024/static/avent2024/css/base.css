@@ -62,6 +62,7 @@ body {
     font-style: normal;
     font-size: large;
 }
+
 .center-content {
     text-align: center;
     margin-top: 20px;
@@ -134,7 +135,7 @@ header {
     border-radius: 8px; /* Coins arrondis */
     color: white;
     text-align: center;
-    width: 90%;
+    width: 60%;
     margin: 0 auto; /* Centrer le conteneur */
 }
 
