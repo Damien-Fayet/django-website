@@ -19,6 +19,7 @@ urlpatterns = [
     path('reveler_indice/', views.reveler_indice, name='reveler_indice'),
     path('reveler_indice_devinette/', views.reveler_indice_devinette, name='reveler_indice_devinette'),
     path('classement/', views.classement, name='classement'),
+    path('all_enigmes/', views.all_enigmes, name='all_enigmes'),
     
     
     
