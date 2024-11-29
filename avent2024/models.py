@@ -42,7 +42,7 @@ class Indice(models.Model):
     image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     texte = models.TextField(blank=True)
     def __str__(self):
-        return f"Indice {self.id} : Enigme {self.enigme}, numero : {self.numero}"
+        return f"Indice #{self.numero} : Enigme {self.enigme}"
 class Devinette(models.Model):
     FILM = 'FI'
     CHANSON = 'CH'
@@ -75,6 +75,8 @@ class IndiceDevinette(models.Model):
     numero = models.IntegerField(default=1)
     image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     texte = models.TextField()    
+    def __str__(self):
+        return f"Indice# {self.numero} (Enigme {self.enigme})"
     
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
