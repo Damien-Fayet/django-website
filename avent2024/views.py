@@ -5,6 +5,7 @@ from django.conf import settings
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.urls import reverse
 from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -226,7 +227,7 @@ def reveler_indice(request):
         
     user_profile.save()
     
-    return redirect('avent2024:display_enigme')
+    return redirect(reverse('avent2024:display_enigme') + "#indices")
 
 
 @login_required
