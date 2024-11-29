@@ -243,8 +243,7 @@ def reveler_indice_devinette(request):
     user_profile.indices_devinette_reveles = ",".join(tmp_list)
         
     user_profile.save()
-    
-    return redirect('avent2024:display_devinette')
+    return redirect(reverse('avent2024:display_devinette') + "#indices")
 
 
 def classement(request):
