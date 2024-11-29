@@ -17,6 +17,10 @@
     {% if user.is_authenticated %}
     
     <div class="story-container">
+        <div style="text-align:center;"> 
+            <h2><a href="./#Enigmes"> Aller aux Enigmes </a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="./#Devinettes"> Aller aux Devinettes </a></h2>
+            <h2></h2>
+        </div>
         <div class="detail-enigme">
         <h1 id="Enigmes">Enigmes </h1>
         {% for enigme  in enigmes  %}
@@ -29,18 +33,11 @@
                 <a href="/media/{{ enigme.image_name }}" target="_blank">
                     <img src="/media/{{ enigme.image_name }}" width = "40%" />
                 </a>
-                <form method="post" action="{% url 'avent2024:validate_enigme' %}" class="enigme-form">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="reponse"> <p>Votre réponse : </p></label>
-                        <input type="text" id="reponse" name="reponse" class="form-control">
-                    </div>
-                    <button type="submit" class="btn-submit">Valider la réponse</button>
-                </form>
+                
                 <div class="indices-display">
                     <h2> Indices :</h2>
                     {% for indice  in indices_reveles  %}
-                        {% if indice %}
+                        {% if indice.enigme.id == enigme.id %}
                             <h3>Indice n°{{indice.numero}}</h3>
                             {% if indice.texte %}
                                 <p> {{indice.texte|safe}}</p>
@@ -66,18 +63,10 @@
                 <a href="/media/{{ devinette.image_name }}" target="_blank">
                     <img src="/media/{{ devinette.image_name }}" width = "40%" />
                 </a>
-                <form method="post" action="{% url 'avent2024:validate_enigme' %}" class="enigme-form">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="reponse"> <p>Votre réponse : </p></label>
-                        <input type="text" id="reponse" name="reponse" class="form-control">
-                    </div>
-                    <button type="submit" class="btn-submit">Valider la réponse</button>
-                </form>
                 <div class="indices-display">
                     <h2> Indices :</h2>
                     {% for indice  in indices_reveles_devi  %}
-                        {% if indice %}
+                        {% if indice.enigme.id == devinette.id %}
                             <h3>Indice n°{{indice.numero}}</h3>
                             {% if indice.texte %}
                                 <p> {{indice.texte|safe}}</p>

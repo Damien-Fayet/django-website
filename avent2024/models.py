@@ -42,7 +42,7 @@ class Indice(models.Model):
     image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     texte = models.TextField(blank=True)
     def __str__(self):
-        return f"Indice #{self.numero} : Enigme {self.enigme}"
+        return f"Indice #{self.numero} : {self.enigme}"
 class Devinette(models.Model):
     FILM = 'FI'
     CHANSON = 'CH'

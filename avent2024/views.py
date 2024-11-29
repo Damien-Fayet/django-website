@@ -64,14 +64,11 @@ def display_enigme(request,reponse=None):
         enigme=current_enigma
     )
     
-    for i in indices:
-        print(i)
     # Lister les indice revelés
     indice_reveles_list = []
     if request.user.userprofile.indices_enigme_reveles:
         indice_reveles_list = [int(x) for x in request.user.userprofile.indices_enigme_reveles.split(",")]
     
-    print(f"liste numeros : {indice_reveles_list}")
     indices_reveles = indices.filter(id__in= indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
     return render(request, 'avent2024/enigme.html',  {
@@ -98,14 +95,13 @@ def display_devinette(request,reponse=None):
         enigme=current_devinette
     )
     
-    for i in indices:
-        print(i)
+    
     # Lister les indice revelés
     indice_reveles_list = []
     if request.user.userprofile.indices_devinette_reveles:
         indice_reveles_list = [int(x) for x in request.user.userprofile.indices_devinette_reveles.split(",")]
     
-    print(f"liste numeros : {indice_reveles_list}")
+    
     indices_reveles = indices.filter(id__in= indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
     return render(request, 'avent2024/devinette.html',  {
@@ -221,13 +217,11 @@ def reveler_indice(request):
     indice_id = int(request.POST.get("indice_id"))
     indice = get_object_or_404(Indice, id=indice_id)
     user_profile = request.user.userprofile
-    print(f"Current list indices reveles : {user_profile.indices_enigme_reveles}")
     if len(user_profile.indices_enigme_reveles)>0:
         tmp_list = user_profile.indices_enigme_reveles.split(",")
     else: 
         tmp_list=[]
     tmp_list.append(str(indice.id))
-    print(f"new list indices reveles : {tmp_list}")
     user_profile.indices_enigme_reveles = ",".join(tmp_list)
         
     user_profile.save()
@@ -240,13 +234,11 @@ def reveler_indice_devinette(request):
     indice_id = int(request.POST.get("indice_id"))
     indice = get_object_or_404(IndiceDevinette, id=indice_id)
     user_profile = request.user.userprofile
-    print(f"Current list indices reveles : {user_profile.indices_devinette_reveles}")
     if len(user_profile.indices_devinette_reveles)>0:
         tmp_list = user_profile.indices_devinette_reveles.split(",")
     else: 
         tmp_list=[]
     tmp_list.append(str(indice.id))
-    print(f"new list indices reveles : {tmp_list}")
     user_profile.indices_devinette_reveles = ",".join(tmp_list)
         
     user_profile.save()
@@ -264,8 +256,8 @@ def classement(request):
     for u in users:
         nb_indice_enigme = len(u.userprofile.indices_enigme_reveles.split(','))
         nb_indice_devinette = len(u.userprofile.indices_devinette_reveles.split(','))
-        enigme_score[u.id] = (max(1,u.userprofile.currentEnigma) -1)*100 - u.userprofile.erreurEnigma*5 - nb_indice_enigme
-        devinette_score[u.id] = (max(1,u.userprofile.currentDevinette) -1)*50 - u.userprofile.erreurDevinette*5 - nb_indice_devinette
+        enigme_score[u.id] = max(0,(max(1,u.userprofile.currentEnigma) -1)*100 - u.userprofile.erreurEnigma*5 - nb_indice_enigme)
+        devinette_score[u.id] = max(0,(max(1,u.userprofile.currentDevinette) -1)*50 - u.userprofile.erreurDevinette*5 - nb_indice_devinette)
         total[u.id] = enigme_score[u.id] + devinette_score[u.id]
         
     sorted_users = sorted(users, key=lambda item: total[item.id],reverse=True)
@@ -283,18 +275,17 @@ def all_enigmes(request):
     current_devinette_id = request.user.userprofile.currentDevinette if request.user.userprofile.currentDevinette>0 else 1
     current_devinette = get_object_or_404(Devinette, id=current_devinette_id)
     
+    print(f"enigme : {current_enigma.id} Devi : {current_devinette_id}")
     
     all_enigmes = Enigme.objects.filter(
         id__lte=current_enigma.id
     )
-    print(f"Enigme dispos : {[e.id for e in all_enigmes]}")
     all_devinettes = Devinette.objects.filter(
         id__lte=current_devinette.id
     )
-    print(f"Devi dispos : {[d.id for d in all_devinettes]}")
     # Lister les indice revelés
     indices = Indice.objects.filter(
-        enigme__lt=current_enigma
+        enigme__lte=current_enigma
     )
     indice_reveles_list = []
     if request.user.userprofile.indices_enigme_reveles:
@@ -304,7 +295,7 @@ def all_enigmes(request):
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
     # Lister les indice revelés pour les devinettes
     indices = IndiceDevinette.objects.filter(
-        enigme__lt=current_devinette
+        enigme__lte=current_devinette
     )
     indice_reveles_list_devi = []
     if request.user.userprofile.indices_devinette_reveles:

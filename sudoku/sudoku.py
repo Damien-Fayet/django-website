@@ -79,7 +79,6 @@ def fill_subgrid(board):
                 board[i][j]=nums.pop()
         return True
     except IndexError:
-        print("Not solvable !")
         return False
 
 def remove_numbers(board, num_holes):
