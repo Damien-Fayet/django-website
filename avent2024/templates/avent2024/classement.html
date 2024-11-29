@@ -2,6 +2,8 @@
 {% extends "avent2024/base_avent.html" %}
 
 {% load static %}
+{% load customfilters %}
+
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -27,7 +29,7 @@
         <div class="classement">
             <table id="classement-table">
                 <caption>
-                    Classement 2024
+                    <h1>Classement 2024</h1>
                 </caption>
                 <tr>
                     <th>Joueur</th>
@@ -35,6 +37,9 @@
                     <th>Devinette</th>
                     <th>Erreurs Enigmes</th>
                     <th>Erreurs Devinettes</th>
+                    <th>Score Enigmes</th>
+                    <th>Score Devinettes</th>
+                    <th>Total</th>
                 </tr>
             
             {% for user in users %}
@@ -44,6 +49,9 @@
                     <td>{{user.userprofile.currentDevinette}}</td>
                     <td>{{user.userprofile.erreurEnigma}}</td>
                     <td>{{user.userprofile.erreurDevinette}}</td>
+                    <td>{{enigme_score|get_by_index:user.id}}</td>
+                    <td>{{devinette_score|get_by_index:user.id}}</td>
+                    <td>{{total|get_by_index:user.id}}</td>
             </tr>
             {% endfor %}
         </table>

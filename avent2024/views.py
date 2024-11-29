@@ -10,9 +10,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 import unidecode
-
-
 from avent2024.models import UserProfile
+
         
 @login_required
 def home(request):
@@ -256,8 +255,69 @@ def reveler_indice_devinette(request):
 
 
 def classement(request):
+    
     User = get_user_model()
     users = User.objects.all()
+    enigme_score = {}
+    devinette_score = {}
+    total = {}
+    for u in users:
+        nb_indice_enigme = len(u.userprofile.indices_enigme_reveles.split(','))
+        nb_indice_devinette = len(u.userprofile.indices_devinette_reveles.split(','))
+        enigme_score[u.id] = (max(1,u.userprofile.currentEnigma) -1)*100 - u.userprofile.erreurEnigma*5 - nb_indice_enigme
+        devinette_score[u.id] = (max(1,u.userprofile.currentDevinette) -1)*50 - u.userprofile.erreurDevinette*5 - nb_indice_devinette
+        total[u.id] = enigme_score[u.id] + devinette_score[u.id]
+        
+    sorted_users = sorted(users, key=lambda item: total[item.id],reverse=True)
     return render(request, 'avent2024/classement.html',  {
-        'users' : users,
+        'users' : sorted_users,
+        'enigme_score' : enigme_score,
+        'devinette_score': devinette_score,
+        'total': total,
+    })
+    
+@login_required
+def all_enigmes(request):
+    current_enigma_id = request.user.userprofile.currentEnigma if request.user.userprofile.currentEnigma>0 else 1
+    current_enigma = get_object_or_404(Enigme, id=current_enigma_id)
+    current_devinette_id = request.user.userprofile.currentDevinette if request.user.userprofile.currentDevinette>0 else 1
+    current_devinette = get_object_or_404(Devinette, id=current_devinette_id)
+    
+    
+    all_enigmes = Enigme.objects.filter(
+        id__lte=current_enigma.id
+    )
+    print(f"Enigme dispos : {[e.id for e in all_enigmes]}")
+    all_devinettes = Devinette.objects.filter(
+        id__lte=current_devinette.id
+    )
+    print(f"Devi dispos : {[d.id for d in all_devinettes]}")
+    # Lister les indice revelés
+    indices = Indice.objects.filter(
+        enigme__lt=current_enigma
+    )
+    indice_reveles_list = []
+    if request.user.userprofile.indices_enigme_reveles:
+        indice_reveles_list = [int(x) for x in request.user.userprofile.indices_enigme_reveles.split(",")]
+    
+    indices_reveles = indices.filter(id__in= indice_reveles_list)
+    indices_hidden = indices.exclude(id__in=indice_reveles_list)
+    # Lister les indice revelés pour les devinettes
+    indices = IndiceDevinette.objects.filter(
+        enigme__lt=current_devinette
+    )
+    indice_reveles_list_devi = []
+    if request.user.userprofile.indices_devinette_reveles:
+        indice_reveles_list_devi = [int(x) for x in request.user.userprofile.indices_devinette_reveles.split(",")]
+    
+    indices_reveles_devi = indices.filter(id__in= indice_reveles_list_devi)
+    indices_hidden_devi = indices.exclude(id__in=indice_reveles_list_devi)
+    return render(request, 'avent2024/all_enigme.html',  {
+        'enigmes' : all_enigmes,
+        'devinettes' : all_devinettes,
+        'indices' : indices,
+        'indices_reveles': indices_reveles,
+        'indices_hidden': indices_hidden,
+        'indices_reveles_devi': indices_reveles_devi,
+        'indices_hidden_devi': indices_hidden_devi,
     })

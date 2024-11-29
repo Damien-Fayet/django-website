@@ -19,7 +19,7 @@
         <div class="nav-bar-left"> 
           <a href="{% url 'home' %}">Accueil</a>
           <a href="{% url 'avent2024:classement' %}">Classement</a>
-          <a href="{% url 'home' %}">Anciennes énigmes</a>
+          <a href="{% url 'avent2024:all_enigmes' %}">Anciennes énigmes</a>
           {% if current_enigma > 0 %}
           <a href="/avent2024">Enigme {{ current_enigma }}</a> 
           {% endif %}

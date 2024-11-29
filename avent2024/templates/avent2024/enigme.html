@@ -68,7 +68,6 @@
                         {% endfor %}
                         {% for indice  in indices_hidden  %}
                             {% if indice %}
-                                
                                 <form method="post" action="{% url 'avent2024:reveler_indice' %}" class="enigme-form">
                                     {% csrf_token %}
                                     <div class="form-group2">

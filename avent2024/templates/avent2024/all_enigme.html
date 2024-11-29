@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+{% extends "avent2024/base_avent.html" %}
+{% block content %}
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toutes les énigmes - Avent 2024</title>
+    {% comment %} <link rel="stylesheet" href="{% static 'css/styles.css' %}"> {% endcomment %}
+    <link rel="stylesheet" href="/static/avent2024/css/enigme.css">
+    <style>
+        
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+    
+    <div class="story-container">
+        <div class="detail-enigme">
+        <h1 id="Enigmes">Enigmes </h1>
+        {% for enigme  in enigmes  %}
+
+            <header>
+                <h2>Enigme n° {{ enigme.id }} : {{ enigme.titre }}</h2>
+            </header>
+            {% if enigme.is_dispo or user.is_superuser %}
+                <p>{{ enigme.texte|safe }}</p>
+                <a href="/media/{{ enigme.image_name }}" target="_blank">
+                    <img src="/media/{{ enigme.image_name }}" width = "40%" />
+                </a>
+                <form method="post" action="{% url 'avent2024:validate_enigme' %}" class="enigme-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="reponse"> <p>Votre réponse : </p></label>
+                        <input type="text" id="reponse" name="reponse" class="form-control">
+                    </div>
+                    <button type="submit" class="btn-submit">Valider la réponse</button>
+                </form>
+                <div class="indices-display">
+                    <h2> Indices :</h2>
+                    {% for indice  in indices_reveles  %}
+                        {% if indice %}
+                            <h3>Indice n°{{indice.numero}}</h3>
+                            {% if indice.texte %}
+                                <p> {{indice.texte|safe}}</p>
+                            {% endif %}
+                            {% if indice.image %}
+                                <img src="/media/{{indice.image}}" width = "20%" alt="image de Indice {{indice.numero}}" />
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+            
+
+        <h1 id="Devinettes"> Devinettes </h1>
+        {% for devinette  in devinettes  %}
+
+            <header>
+                <h2>Devinette n° {{ devinette.id }} : {{ devinette.titre }}</h2>
+            </header>
+            {% if devinette.is_dispo or user.is_superuser %}
+                <p>{{ devinette.texte|safe }}</p>
+                <a href="/media/{{ devinette.image_name }}" target="_blank">
+                    <img src="/media/{{ devinette.image_name }}" width = "40%" />
+                </a>
+                <form method="post" action="{% url 'avent2024:validate_enigme' %}" class="enigme-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="reponse"> <p>Votre réponse : </p></label>
+                        <input type="text" id="reponse" name="reponse" class="form-control">
+                    </div>
+                    <button type="submit" class="btn-submit">Valider la réponse</button>
+                </form>
+                <div class="indices-display">
+                    <h2> Indices :</h2>
+                    {% for indice  in indices_reveles_devi  %}
+                        {% if indice %}
+                            <h3>Indice n°{{indice.numero}}</h3>
+                            {% if indice.texte %}
+                                <p> {{indice.texte|safe}}</p>
+                            {% endif %}
+                            {% if indice.image %}
+                                <img src="/media/{{indice.image}}" width = "20%" alt="image de Indice {{indice.numero}}" />
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        </div>
+    {% else %}
+        <p>Connecte toi !</p>
+        <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Créer un nouveau compte</a>
+    {% endif %}
+    </div>
+</body>
+</html>
+{% endblock %}
