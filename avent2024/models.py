@@ -31,7 +31,7 @@ class Enigme(models.Model):
         return f"Enigme {self.id} : {self.titre}"
     @property
     def is_dispo(self):
-        return date.today() > self.date_dispo
+        return date.today() >= self.date_dispo
 
 class Indice(models.Model):
     enigme = models.ForeignKey(
@@ -65,7 +65,7 @@ class Devinette(models.Model):
         return f"Devinette {self.id} : {self.titre}"
     @property
     def is_dispo(self):
-        return date.today() > self.date_dispo
+        return date.today() >= self.date_dispo
     
 class IndiceDevinette(models.Model):    
     enigme = models.ForeignKey(
