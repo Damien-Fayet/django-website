@@ -148,6 +148,8 @@ def validate_enigme(request):
             })
         else:
             image_id = random.randint(1, 24)
+            user_profile.erreurEnigma += 1
+            user_profile.save()
             return render(request, 'avent2024/enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
@@ -181,6 +183,8 @@ def validate_devinette(request):
             })
         else:
             image_id = random.randint(1, 24)
+            user_profile.erreurDevinette += 1
+            user_profile.save()
             return render(request, 'avent2024/devinette.html',  {
                 'reponse_devinette' : current_devinette.reponse,
                 'devinette' : current_devinette,
@@ -254,8 +258,8 @@ def classement(request):
     devinette_score = {}
     total = {}
     for u in users:
-        nb_indice_enigme = len(u.userprofile.indices_enigme_reveles.split(','))
-        nb_indice_devinette = len(u.userprofile.indices_devinette_reveles.split(','))
+        nb_indice_enigme = 0 if u.userprofile.indices_enigme_reveles=='' else len(u.userprofile.indices_enigme_reveles.split(','))
+        nb_indice_devinette = 0 if u.userprofile.indices_devinette_reveles=='' else len(u.userprofile.indices_devinette_reveles.split(','))
         enigme_score[u.id] = max(0,(max(1,u.userprofile.currentEnigma) -1)*100 - u.userprofile.erreurEnigma*5 - nb_indice_enigme)
         devinette_score[u.id] = max(0,(max(1,u.userprofile.currentDevinette) -1)*50 - u.userprofile.erreurDevinette*5 - nb_indice_devinette)
         total[u.id] = enigme_score[u.id] + devinette_score[u.id]
