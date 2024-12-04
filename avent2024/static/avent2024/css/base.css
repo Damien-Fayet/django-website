@@ -4,7 +4,7 @@ body {
     position: relative;
 }
 .nav-bar-container {
-    width: 50%;
+    width: 75%;
     margin: 0 auto; /* Centrer le conteneur */
     padding: 5px; /* Ajouter du padding pour un meilleur rendu */
     border-radius: 5px; /* Coins arrondis */
@@ -28,6 +28,7 @@ body {
     padding: 10px 20px;
     border-radius: 5px;
     transition: background-color 0.3s ease;
+    font-size: 1.3em;
 }
 
 .nav-bar a:hover {
@@ -36,11 +37,12 @@ body {
 
 .nav-bar-left{
     text-align: left;
+    font-size: 1.0em;
 }
 .nav-bar-right{
     text-align: right;
     color: aliceblue;
-    font-size : 1.2em;
+    font-size : 1.0em;
     text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
 }
 .nav-bar-right #user_info{
@@ -48,7 +50,7 @@ body {
     text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
 }
 .story-container {
-    width: 70vw;
+    width: 90%;
     margin: 0 auto; /* Centrer le conteneur */
     background-color: rgba(255, 255, 255, 0.4); /* Optionnel : ajouter un fond blanc légèrement transparent */
     padding: 20px; /* Ajouter du padding pour un meilleur rendu */
@@ -60,7 +62,7 @@ body {
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
-    font-size: large;
+    font-size: normal;
 }
 
 .center-content {
@@ -81,8 +83,8 @@ body {
 .egypte-bouton .centered{
     position: absolute;
     white-space: wrap;
-    max-width: 100px;
-    font-size: 1.2em;
+    max-width: 150px;
+    font-size: 1.4em;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
