@@ -1,7 +1,13 @@
-.classement-table {
+.classement {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
     width: 100%;
+}
+.classement-table {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 90%;
+    margin: auto auto;
   }
   
   .classement-table td, .classement-table th {
