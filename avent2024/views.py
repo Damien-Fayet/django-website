@@ -253,7 +253,7 @@ def reveler_indice_devinette(request):
 def classement(request):
     
     User = get_user_model()
-    users = User.objects.all()
+    users = User.objects.all().exclude(is_superuser=True)
     enigme_score = {}
     devinette_score = {}
     total = {}
@@ -265,8 +265,12 @@ def classement(request):
         total[u.id] = enigme_score[u.id] + devinette_score[u.id]
         
     sorted_users = sorted(users, key=lambda item: total[item.id],reverse=True)
+    sorted_users_enigme = sorted(users, key=lambda item: enigme_score[item.id],reverse=True)
+    sorted_users_devinette = sorted(users, key=lambda item: devinette_score[item.id],reverse=True)
     return render(request, 'avent2024/classement.html',  {
         'users' : sorted_users,
+        'users_enigme' : sorted_users_enigme,
+        'users_devinette' : sorted_users_devinette,
         'enigme_score' : enigme_score,
         'devinette_score': devinette_score,
         'total': total,

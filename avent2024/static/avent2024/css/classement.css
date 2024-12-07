@@ -1,22 +1,35 @@
-#classement-table {
+.classement-table {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
     width: 100%;
   }
   
-  #classement-table td, #classement-table th {
+  .classement-table td, .classement-table th {
     border: 1px solid #ddd;
     padding: 8px;
   }
   
-  #classement-table tr:nth-child(even){background-color: #f2f2f2;}
+  .classement-table tr:nth-child(even){background-color: #f2f2f2;}
   
-  #classement-table tr:hover {background-color: #ddd;}
+  .classement-table tr:hover {background-color: #ddd;}
   
-  #classement-table th {
+  .classement-table th {
     padding-top: 12px;
     padding-bottom: 12px;
     text-align: left;
     background-color: #04AA6D;
     color: white;
   }
+  .story-container a{
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 1.3em;
+}
+.links{
+  margin: 0 auto;
+  text-align:center;
+}
