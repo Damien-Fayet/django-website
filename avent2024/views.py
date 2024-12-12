@@ -281,7 +281,7 @@ def classement(request):
         'nb_indice_enigme' : nb_indice_enigme,
         'nb_indice_devinette': nb_indice_devinette,
         'moy_indices_enigme' : moy_indices_enigme,
-        'moy_indices_devinette' : nb_indice_devinette,
+        'moy_indices_devinette' : moy_indices_devinette,
         'enigme_score' : enigme_score,
         'devinette_score': devinette_score,
         'total': total,
