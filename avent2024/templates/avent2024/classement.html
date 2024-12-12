@@ -80,6 +80,7 @@
                     <th>#</th>
                     <th>Joueur</th>
                     <th>Enigme</th>
+                    <th>Indices</th>
                     <th>Erreurs Enigmes</th>
                     <th>Total Enigmes</th>
                 </tr>
@@ -101,6 +102,7 @@
                             {{user.username}}
                         </td>
                         <td>{{user.userprofile.currentEnigma}}</td>
+                        <td>{{nb_indice_enigme|get_by_index:user.id}} (moy: {{moy_indices_enigme|get_by_index:user.id}})</td>
                         <td>{{user.userprofile.erreurEnigma}}</td>
                         <td>{{enigme_score|get_by_index:user.id}}</td>
                     </tr>
@@ -115,6 +117,7 @@
                     <th> # </th>
                     <th>Joueur</th>
                     <th>Devinette</th>
+                    <th>Indices</th>
                     <th>Erreurs</th>
                     <th>Total Devinette</th>
                 </tr>
@@ -136,6 +139,7 @@
                             {{user.username}}
                         </td>
                         <td>{{user.userprofile.currentDevinette}}</td>
+                        <td>{{nb_indice_devinette|get_by_index:user.id}} (moy: {{moy_indices_devinette|get_by_index:user.id}})</td>
                         <td>{{user.userprofile.erreurDevinette}}</td>
                         <td>{{devinette_score|get_by_index:user.id}}</td>
                     </tr>
