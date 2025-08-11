@@ -148,6 +148,8 @@ def validate_enigme(request):
             })
         else:
             image_id = random.randint(1, 24)
+            user_profile.erreurEnigma += 1
+            user_profile.save()
             return render(request, 'avent2024/enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
@@ -181,6 +183,8 @@ def validate_devinette(request):
             })
         else:
             image_id = random.randint(1, 24)
+            user_profile.erreurDevinette += 1
+            user_profile.save()
             return render(request, 'avent2024/devinette.html',  {
                 'reponse_devinette' : current_devinette.reponse,
                 'devinette' : current_devinette,
@@ -249,20 +253,35 @@ def reveler_indice_devinette(request):
 def classement(request):
     
     User = get_user_model()
-    users = User.objects.all()
+    users = User.objects.all().exclude(is_superuser=True)
     enigme_score = {}
     devinette_score = {}
+    nb_indice_enigme = {}
+    nb_indice_devinette = {}
+    moy_indices_enigme ={}
+    moy_indices_devinette = {}
     total = {}
     for u in users:
-        nb_indice_enigme = len(u.userprofile.indices_enigme_reveles.split(','))
-        nb_indice_devinette = len(u.userprofile.indices_devinette_reveles.split(','))
-        enigme_score[u.id] = max(0,(max(1,u.userprofile.currentEnigma) -1)*100 - u.userprofile.erreurEnigma*5 - nb_indice_enigme)
-        devinette_score[u.id] = max(0,(max(1,u.userprofile.currentDevinette) -1)*50 - u.userprofile.erreurDevinette*5 - nb_indice_devinette)
+        nb_indice_enigme[u.id] = 0 if u.userprofile.indices_enigme_reveles=='' else len(u.userprofile.indices_enigme_reveles.split(','))
+        nb_indice_devinette[u.id] = 0 if u.userprofile.indices_devinette_reveles=='' else len(u.userprofile.indices_devinette_reveles.split(','))
+        enigme_score[u.id] = max(0,(max(1,u.userprofile.currentEnigma) -1)*100 - u.userprofile.erreurEnigma*5 - nb_indice_enigme[u.id])
+        devinette_score[u.id] = max(0,(max(1,u.userprofile.currentDevinette) -1)*50 - u.userprofile.erreurDevinette*5 - nb_indice_devinette[u.id])
+        moy_indices_enigme[u.id] = 0 if max(1,u.userprofile.currentEnigma) -1 <= 0 else round(nb_indice_enigme[u.id] / (max(1,u.userprofile.currentEnigma) -1),1)
+        moy_indices_devinette[u.id] = 0 if max(1,u.userprofile.currentDevinette) -1 <= 0 else round(nb_indice_devinette[u.id] / (max(1,u.userprofile.currentDevinette) -1),1)
         total[u.id] = enigme_score[u.id] + devinette_score[u.id]
         
+        
     sorted_users = sorted(users, key=lambda item: total[item.id],reverse=True)
+    sorted_users_enigme = sorted(users, key=lambda item: enigme_score[item.id],reverse=True)
+    sorted_users_devinette = sorted(users, key=lambda item: devinette_score[item.id],reverse=True)
     return render(request, 'avent2024/classement.html',  {
         'users' : sorted_users,
+        'users_enigme' : sorted_users_enigme,
+        'users_devinette' : sorted_users_devinette,
+        'nb_indice_enigme' : nb_indice_enigme,
+        'nb_indice_devinette': nb_indice_devinette,
+        'moy_indices_enigme' : moy_indices_enigme,
+        'moy_indices_devinette' : moy_indices_devinette,
         'enigme_score' : enigme_score,
         'devinette_score': devinette_score,
         'total': total,
