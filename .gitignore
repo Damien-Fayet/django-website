@@ -1,6 +1,9 @@
+.venv
 /django
 mysite/settings.py
 db.sqlite3
 **/avent2024/__pycache__
 *.pyc
 media/uploads
+__pycache__
+.github

@@ -1,0 +1,313 @@
+{% extends 'biblio/base.html' %}
+
+{% block title %}Scanner un code-barres{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-camera"></i> Scanner un code-barres</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Comment utiliser le scanner :</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>macOS :</strong> Autorisez l'accès à la caméra dans les paramètres système</li>
+                        <li>Si la caméra ne s'affiche pas, essayez de rafraîchir la page</li>
+                        <li>Positionnez le code-barres face à la caméra</li>
+                        <li>Le code sera automatiquement détecté et lu</li>
+                    </ul>
+                </div>
+                
+                <!-- Message d'erreur pour les problèmes de caméra -->
+                <div id="camera-error" class="alert alert-warning" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Problème d'accès à la caméra :</strong>
+                    <p class="mb-2">Si la caméra ne fonctionne pas :</p>
+                    <ol class="mb-2">
+                        <li>Vérifiez les permissions de caméra dans <strong>Préférences Système > Sécurité et confidentialité > Caméra</strong></li>
+                        <li>Autorisez votre navigateur à accéder à la caméra</li>
+                        <li>Fermez les autres applications utilisant la caméra</li>
+                        <li>Rafraîchissez la page et réessayez</li>
+                    </ol>
+                </div>
+                
+                <!-- Zone de la caméra -->
+                <div class="text-center mb-4">
+                    <div id="scanner-container" style="position: relative; display: inline-block;">
+                        <video id="video" width="100%" height="300" style="border: 2px solid #ddd; border-radius: 8px; max-width: 500px;"></video>
+                        <div id="scan-line" style="position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: red; display: none;"></div>
+                    </div>
+                </div>
+                
+                <!-- Statut du scanner -->
+                <div class="text-center mb-3">
+                    <div id="scanner-status" class="badge bg-secondary">Initialisation...</div>
+                </div>
+                
+                <!-- Résultat -->
+                <div id="result-container" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6><i class="bi bi-check-circle"></i> Code-barres détecté !</h6>
+                        <p class="mb-2">ISBN trouvé : <strong><span id="detected-isbn"></span></strong></p>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button id="search-btn" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Rechercher ce livre
+                            </button>
+                            <button id="scan-again-btn" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Scanner à nouveau
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contrôles -->
+                <div class="text-center">
+                    <button id="test-camera-btn" class="btn btn-info me-2">
+                        <i class="bi bi-camera"></i> Tester la caméra
+                    </button>
+                    <button id="start-scan-btn" class="btn btn-success me-2">
+                        <i class="bi bi-play"></i> Démarrer le scanner
+                    </button>
+                    <button id="stop-scan-btn" class="btn btn-danger me-2" style="display: none;">
+                        <i class="bi bi-stop"></i> Arrêter
+                    </button>
+                    <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil"></i> Saisie manuelle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inclusion de la librairie ZXing-js pour la lecture de code-barres (plus fiable) -->
+<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+
+<script>
+let scannerActive = false;
+let codeReader = null;
+let currentStream = null;
+
+document.getElementById('test-camera-btn').addEventListener('click', testCamera);
+document.getElementById('start-scan-btn').addEventListener('click', startScanner);
+document.getElementById('stop-scan-btn').addEventListener('click', stopScanner);
+document.getElementById('scan-again-btn').addEventListener('click', restartScanner);
+document.getElementById('search-btn').addEventListener('click', searchBook);
+
+function testCamera() {
+    const video = document.getElementById('video');
+    const status = document.getElementById('scanner-status');
+    const errorDiv = document.getElementById('camera-error');
+    
+    status.textContent = 'Test de la caméra...';
+    status.className = 'badge bg-info';
+    errorDiv.style.display = 'none';
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        status.textContent = 'getUserMedia non supporté';
+        status.className = 'badge bg-danger';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            width: { ideal: 500 },
+            height: { ideal: 300 }
+        } 
+    })
+    .then(function(stream) {
+        video.srcObject = stream;
+        video.play();
+        status.textContent = 'Caméra fonctionne ! Vous pouvez démarrer le scanner.';
+        status.className = 'badge bg-success';
+        
+        // Arrêter le stream après 5 secondes
+        setTimeout(() => {
+            stream.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+            status.textContent = 'Test terminé';
+            status.className = 'badge bg-secondary';
+        }, 5000);
+    })
+    .catch(function(err) {
+        console.error('Erreur test caméra:', err);
+        let errorMessage = 'Test caméra échoué: ';
+        
+        if (err.name === 'NotAllowedError') {
+            errorMessage += 'Permission refusée';
+        } else if (err.name === 'NotFoundError') {
+            errorMessage += 'Aucune caméra trouvée';
+        } else if (err.name === 'NotReadableError') {
+            errorMessage += 'Caméra utilisée par une autre app';
+        } else {
+            errorMessage += err.message;
+        }
+        
+        status.textContent = errorMessage;
+        status.className = 'badge bg-danger';
+        errorDiv.style.display = 'block';
+    });
+}
+
+function startScanner() {
+    const video = document.getElementById('video');
+    const startBtn = document.getElementById('start-scan-btn');
+    const stopBtn = document.getElementById('stop-scan-btn');
+    const status = document.getElementById('scanner-status');
+    const errorDiv = document.getElementById('camera-error');
+    
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-block';
+    status.textContent = 'Initialisation du scanner...';
+    status.className = 'badge bg-warning';
+    errorDiv.style.display = 'none';
+    
+    try {
+        // Initialiser ZXing
+        codeReader = new ZXing.BrowserMultiFormatReader();
+        console.log('ZXing initialisé');
+        
+        status.textContent = 'Demande d\'accès à la caméra...';
+        
+        // Démarrer le scanner
+        codeReader.decodeFromVideoDevice(undefined, video, (result, err) => {
+            if (result && scannerActive) {
+                const code = result.getText();
+                console.log('Code détecté:', code);
+                
+                // Vérifier si c'est un ISBN valide
+                if (isValidISBN(code)) {
+                    document.getElementById('detected-isbn').textContent = code;
+                    document.getElementById('result-container').style.display = 'block';
+                    status.textContent = 'Code-barres détecté !';
+                    status.className = 'badge bg-success';
+                    
+                    // Arrêter le scanner automatiquement
+                    stopScanner();
+                    return;
+                }
+            }
+            
+            if (err && !(err instanceof ZXing.NotFoundException)) {
+                console.error('Erreur scanner:', err);
+            }
+        })
+        .then(() => {
+            console.log('Scanner démarré avec succès');
+            status.textContent = 'Scanner actif - Positionnez le code-barres';
+            status.className = 'badge bg-success';
+            scannerActive = true;
+        })
+        .catch(err => {
+            console.error('Erreur démarrage scanner:', err);
+            status.textContent = 'Erreur: ' + err.message;
+            status.className = 'badge bg-danger';
+            errorDiv.style.display = 'block';
+            stopScanner();
+        });
+        
+    } catch (err) {
+        console.error('Erreur initialisation:', err);
+        status.textContent = 'Erreur initialisation: ' + err.message;
+        status.className = 'badge bg-danger';
+        errorDiv.style.display = 'block';
+        stopScanner();
+    }
+}
+
+function stopScanner() {
+    console.log('Arrêt du scanner...');
+    
+    scannerActive = false;
+    
+    if (codeReader) {
+        try {
+            codeReader.reset();
+            console.log('Scanner arrêté');
+        } catch (err) {
+            console.error('Erreur arrêt scanner:', err);
+        }
+        codeReader = null;
+    }
+    
+    const video = document.getElementById('video');
+    if (video.srcObject) {
+        video.srcObject = null;
+    }
+    
+    const startBtn = document.getElementById('start-scan-btn');
+    const stopBtn = document.getElementById('stop-scan-btn');
+    const status = document.getElementById('scanner-status');
+    
+    startBtn.style.display = 'inline-block';
+    stopBtn.style.display = 'none';
+    status.textContent = 'Scanner arrêté';
+    status.className = 'badge bg-secondary';
+}
+
+function restartScanner() {
+    document.getElementById('result-container').style.display = 'none';
+    startScanner();
+}
+
+function searchBook() {
+    const isbn = document.getElementById('detected-isbn').textContent;
+    // Rediriger vers la recherche ISBN avec le code détecté
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "biblio:add_book_isbn" %}';
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = '{{ csrf_token }}';
+    
+    const isbnInput = document.createElement('input');
+    isbnInput.type = 'hidden';
+    isbnInput.name = 'isbn';
+    isbnInput.value = isbn;
+    
+    form.appendChild(csrfInput);
+    form.appendChild(isbnInput);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function isValidISBN(code) {
+    // Supprimer les tirets et espaces
+    const cleanCode = code.replace(/[-\s]/g, '');
+    
+    // Vérifier si c'est un ISBN-10 ou ISBN-13
+    return /^\d{10}$/.test(cleanCode) || /^\d{13}$/.test(cleanCode);
+}
+
+// Nettoyer quand on quitte la page
+window.addEventListener('beforeunload', function() {
+    if (scannerActive) {
+        stopScanner();
+    }
+});
+</script>
+
+<style>
+#scan-line {
+    animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+    0% { top: 10%; }
+    50% { top: 90%; }
+    100% { top: 10%; }
+}
+
+#scanner-container {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

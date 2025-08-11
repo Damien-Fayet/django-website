@@ -1,0 +1,190 @@
+{% extends 'biblio/base.html' %}
+
+{% block title %}Modifier {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pencil"></i> Modifier "{{ book.title }}"
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.isbn.label_tag }}
+                                {{ form.isbn }}
+                                {% if form.isbn.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.isbn.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.title.label_tag }}
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.title.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.authors.label_tag }}
+                                {{ form.authors }}
+                                {% if form.authors.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.authors.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.publisher.label_tag }}
+                                {{ form.publisher }}
+                                {% if form.publisher.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.publisher.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.published_date.label_tag }}
+                                {{ form.published_date }}
+                                {% if form.published_date.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.published_date.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.page_count.label_tag }}
+                                {{ form.page_count }}
+                                {% if form.page_count.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.page_count.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.description.label_tag }}
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.description.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.age_range.label_tag }}
+                                {{ form.age_range }}
+                                {% if form.age_range.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.age_range.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.reading_level.label_tag }}
+                                {{ form.reading_level }}
+                                {% if form.reading_level.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.reading_level.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.themes.label_tag }}
+                                {{ form.themes }}
+                                {% if form.themes.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.themes.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.comments.label_tag }}
+                                {{ form.comments }}
+                                {% if form.comments.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.comments.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.rating.label_tag }}
+                                {{ form.rating }}
+                                {% if form.rating.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.rating.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.cover_image_url.label_tag }}
+                                {{ form.cover_image_url }}
+                                {% if form.cover_image_url.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.cover_image_url.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

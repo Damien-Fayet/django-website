@@ -1,0 +1,96 @@
+{% extends 'biblio/base.html' %}
+
+{% block title %}Accueil - Bibliothèque{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="bi bi-house-door"></i> Bienvenue dans votre bibliothèque !
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title">Total des livres</h5>
+                        <h2 class="mb-0">{{ total_books }}</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-books"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title">Ma bibliothèque</h5>
+                        <p class="mb-0">Gérez facilement vos livres</p>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-heart"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Actions rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'biblio:scan_barcode' %}" class="btn btn-success">
+                        <i class="bi bi-camera"></i> Scanner un code-barres
+                    </a>
+                    <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+                        <i class="bi bi-upc-scan"></i> Ajouter un livre avec ISBN
+                    </a>
+                    <a href="{% url 'biblio:add_book_manual' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Ajouter un livre manuellement
+                    </a>
+                    <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list"></i> Voir tous les livres
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Derniers ajouts</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_books %}
+                    <ul class="list-unstyled">
+                        {% for book in recent_books %}
+                            <li class="mb-2">
+                                <a href="{% url 'biblio:book_detail' book.pk %}" class="text-decoration-none">
+                                    <strong>{{ book.title }}</strong>
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ book.authors }}</small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Aucun livre ajouté récemment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
