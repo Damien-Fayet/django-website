@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organiser une nouvelle fête - Max Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(45deg, #ff6ec7, #ffb6de, #c796ff, #9bf8ff);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            color: #333;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="%23ff69b4" opacity="0.8"><animate attributeName="opacity" values="0.8;0.2;0.8" dur="3s" repeatCount="indefinite"/></circle><circle cx="80" cy="30" r="1.5" fill="%23ffa500" opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="4s" repeatCount="indefinite"/></circle><circle cx="40" cy="60" r="2.5" fill="%23ff1493" opacity="0.7"><animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.5s" repeatCount="indefinite"/></circle><circle cx="70" cy="80" r="1.8" fill="%2300ced1" opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="3.5s" repeatCount="indefinite"/></circle><circle cx="90" cy="60" r="2.2" fill="%23ff6347" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="4.2s" repeatCount="indefinite"/></circle></svg>') repeat;
+            animation: confetti 10s linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes confetti {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .create-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-align: center;
+            margin-bottom: 30px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .game-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 3px solid rgba(255, 182, 193, 0.3);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        input[type="text"], 
+        input[type="number"], 
+        textarea, 
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ff69b4;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, 
+        textarea:focus, 
+        select:focus {
+            outline: none;
+            border-color: #ff1493;
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+            transform: scale(1.02);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-festive {
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(255, 20, 147, 0.3);
+        }
+
+        .btn-festive:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4);
+            background: linear-gradient(45deg, #ff1493, #dc143c);
+        }
+
+        .btn-festive:active {
+            transform: translateY(-1px);
+        }
+
+        .form-buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #ff1493;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #dc143c;
+            text-decoration: underline;
+        }
+
+        .section-divider {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, #ff69b4, #ff1493, #ff69b4);
+            margin: 30px 0;
+            border-radius: 1px;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .create-container {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .game-form {
+                padding: 25px;
+                margin: 0 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="create-container">
+        <h1>🎊 Organiser une nouvelle fête 🎉</h1>
+        
+        <form method="post" class="game-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_name">Nom de la fête :</label>
+                <input type="text" name="name" maxlength="200" required id="id_name" placeholder="Ex: Anniversaire de Marie">
+                <div class="help-text">Choisissez un nom amusant pour votre fête !</div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_description">Description :</label>
+                <textarea name="description" id="id_description" placeholder="Décrivez votre fête et les règles spéciales..."></textarea>
+                <div class="help-text">Optionnel : ajoutez des détails sur votre événement</div>
+            </div>
+
+            <hr class="section-divider">
+
+            <div class="form-group">
+                <label for="id_max_teams">Nombre maximum d'équipes :</label>
+                <input type="number" name="max_teams" value="4" min="2" max="10" required id="id_max_teams">
+                <div class="help-text">Entre 2 et 10 équipes peuvent participer</div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_points_per_correct">Points par bonne réponse :</label>
+                <input type="number" name="points_per_correct" value="10" min="1" max="100" required id="id_points_per_correct">
+                <div class="help-text">Combien de points une équipe gagne-t-elle par bonne réponse ?</div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_ascii_reveal_speed">Vitesse de révélation ASCII :</label>
+                <select name="ascii_reveal_speed" required id="id_ascii_reveal_speed">
+                    <option value="slow">Lente (toutes les 3 secondes)</option>
+                    <option value="medium" selected>Moyenne (toutes les 2 secondes)</option>
+                    <option value="fast">Rapide (toutes les 1 seconde)</option>
+                </select>
+                <div class="help-text">À quelle vitesse les images ASCII se révèlent-elles ?</div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_definition_reveal_speed">Vitesse de révélation des définitions :</label>
+                <select name="definition_reveal_speed" required id="id_definition_reveal_speed">
+                    <option value="slow">Lente (1 mot toutes les 4 secondes)</option>
+                    <option value="medium" selected>Moyenne (1 mot toutes les 3 secondes)</option>
+                    <option value="fast">Rapide (1 mot toutes les 2 secondes)</option>
+                </select>
+                <div class="help-text">À quelle vitesse les mots des définitions apparaissent-ils ?</div>
+            </div>
+
+            <div class="form-buttons">
+                <button type="submit" class="btn-festive">🎉 Créer la fête ! 🎊</button>
+                <br>
+                <a href="/max_challenge/" class="back-link">← Retour à l'accueil</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Animation des éléments au scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.form-group').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Animation festive du bouton
+        const button = document.querySelector('.btn-festive');
+        button.addEventListener('mouseenter', function() {
+            this.style.animation = 'bounce 0.6s ease';
+        });
+        
+        button.addEventListener('animationend', function() {
+            this.style.animation = '';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ game.name }} - Max Challenge</title>
+    
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+    }
+    
+    .game-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+    }
+    
+    /* Confettis en arrière-plan */
+    .game-container::before {
+        content: '🎉 🎊 ✨ 🎈 🎁 🎂 🌟 🎵 🎭 🎨';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 1.2em;
+        opacity: 0.03;
+        pointer-events: none;
+        white-space: pre-wrap;
+        line-height: 4;
+        z-index: -1;
+        animation: float 25s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(2deg); }
+    }
+    
+    h1 {
+        text-align: center;
+        color: #2c3e50;
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        font-weight: bold;
+    }
+    
+    .auto-refresh {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        color: white;
+        padding: 12px 15px;
+        border-radius: 25px;
+        font-size: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+    
+    .global-image {
+        text-align: center;
+        margin-bottom: 30px;
+        border: 4px solid #ff6b6b;
+        padding: 25px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .global-image h3 {
+        color: #ff6b6b;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .global-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .global-photo {
+        width: 150px;
+        height: 150px;
+        border: 3px solid rgba(255,107,107,0.3);
+        background: rgba(240,240,240,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #666;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    .global-photo.revealed {
+        background: rgba(232,245,232,0.9);
+        border-color: #4ecdc4;
+        box-shadow: 0 5px 15px rgba(78,205,196,0.3);
+        transform: scale(1.05);
+    }
+    
+    .global-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    
+    .teams-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .team-section {
+        border: 4px solid;
+        padding: 25px;
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .team-section:hover {
+        transform: translateY(-5px);
+    }
+    
+    .team-a {
+        border-color: #ff6b6b;
+        background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(255,255,255,0.9));
+    }
+    
+    .team-b {
+        border-color: #a55eea;
+        background: linear-gradient(135deg, rgba(165,94,234,0.1), rgba(255,255,255,0.9));
+    }
+    
+    .team-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .team-header h2 {
+        color: #2c3e50;
+        font-size: 1.8em;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    .team-score {
+        font-size: 3em;
+        font-weight: bold;
+        margin: 15px 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .team-a .team-score {
+        color: #ff6b6b;
+    }
+    
+    .team-b .team-score {
+        color: #a55eea;
+    }
+    
+    .ascii-display {
+        font-family: 'Courier New', monospace;
+        font-size: 8px;
+        line-height: 1;
+        background: rgba(248,249,250,0.9);
+        padding: 20px;
+        border-radius: 15px;
+        overflow: auto;
+        max-height: 400px;
+        white-space: pre;
+        border: 2px solid rgba(0,0,0,0.1);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .definition-section {
+        border: 4px solid #4ecdc4;
+        padding: 30px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(78,205,196,0.1), rgba(255,255,255,0.95));
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+        margin-bottom: 30px;
+    }
+    
+    .definition-section h3 {
+        color: #4ecdc4;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .definition-word {
+        font-size: 2em;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .definition-text {
+        font-size: 1.3em;
+        line-height: 1.6;
+        margin: 20px 0;
+        min-height: 80px;
+        color: #444;
+        padding: 20px;
+        background: rgba(255,255,255,0.7);
+        border-radius: 15px;
+        border: 2px solid rgba(78,205,196,0.2);
+    }
+    
+    .admin-links {
+        text-align: center;
+        margin-top: 30px;
+    }
+    
+    .btn-admin {
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        color: white;
+        padding: 15px 30px;
+        text-decoration: none;
+        border-radius: 25px;
+        margin: 0 15px;
+        display: inline-block;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn-admin:hover {
+        background: linear-gradient(45deg, #4ecdc4, #ff6b6b);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .teams-container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .global-photos {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+        
+        .global-photo {
+            width: 100px;
+            height: 100px;
+        }
+        
+        h1 {
+            font-size: 2em;
+        }
+        
+        .definition-text {
+            font-size: 1.1em;
+        }
+        
+        .admin-links {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="game-container">
+    <div class="auto-refresh" id="refresh-indicator">
+        🔄 Mise à jour automatique
+    </div>
+
+    <h1>{{ game.name }}</h1>
+    
+    <!-- Image globale -->
+    <div class="global-image">
+        <h3>🏆 Galerie Festive de la Victoire</h3>
+        <div class="global-photos" id="global-photos">
+            {% for photo in game.global_photos.all %}
+                <div class="global-photo {% if forloop.counter0 in game.global_revealed_photos %}revealed{% endif %}">
+                    {% if forloop.counter0 in game.global_revealed_photos %}
+                        <img src="{{ photo.image.url }}" alt="{{ photo.name }}">
+                    {% else %}
+                        Photo {{ forloop.counter }}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Équipes -->
+    <div class="teams-container">
+        <!-- Équipe A -->
+        <div class="team-section team-a">
+            <div class="team-header">
+                <h2>{{ game.team_a_name }}</h2>
+                <div class="team-score" id="team-a-score">{{ game.team_a_score }}</div>
+                <small>{{ game.team_a_photo.name }}</small>
+            </div>
+            <div class="ascii-display" id="team-a-ascii">{{ team_a_ascii }}</div>
+        </div>
+        
+        <!-- Équipe B -->
+        <div class="team-section team-b">
+            <div class="team-header">
+                <h2>{{ game.team_b_name }}</h2>
+                <div class="team-score" id="team-b-score">{{ game.team_b_score }}</div>
+                <small>{{ game.team_b_photo.name }}</small>
+            </div>
+            <div class="ascii-display" id="team-b-ascii">{{ team_b_ascii }}</div>
+        </div>
+    </div>
+    
+    <!-- Définition -->
+    <div class="definition-section">
+        <h3>🎭 Définition à devinerrr</h3>
+        <div class="definition-word" id="definition-word">
+            {{ game.current_definition.word|default:"Aucune définition en cours" }}
+        </div>
+        <div class="definition-text" id="definition-text">
+            {{ definition_display|default:"En attente d'une définition..." }}
+        </div>
+    </div>
+    
+    <!-- Liens d'administration -->
+    <div class="admin-links">
+        <a href="{% url 'max_challenge:admin' game.pk %}" class="btn-admin">🎪 Interface Animateur</a>
+        <a href="{% url 'max_challenge:index' %}" class="btn-admin">🏠 Retour à l'accueil</a>
+    </div>
+</div>
+
+<script>
+// Mise à jour automatique toutes les 2 secondes
+let refreshInterval = setInterval(function() {
+    fetch(`/max_challenge/api/game_state/{{ game.pk }}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour les scores
+            document.getElementById('team-a-score').textContent = data.team_a_score;
+            document.getElementById('team-b-score').textContent = data.team_b_score;
+            
+            // Mettre à jour les ASCII
+            document.getElementById('team-a-ascii').textContent = data.team_a_ascii;
+            document.getElementById('team-b-ascii').textContent = data.team_b_ascii;
+            
+            // Mettre à jour la définition
+            if (data.current_definition_word) {
+                document.getElementById('definition-word').textContent = data.current_definition_word;
+            }
+            if (data.definition_display) {
+                document.getElementById('definition-text').textContent = data.definition_display;
+            }
+            
+            // Indicateur de mise à jour
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.style.background = 'linear-gradient(45deg, #4ecdc4, #44bd87)';
+            setTimeout(() => {
+                indicator.style.background = 'linear-gradient(45deg, #a55eea, #8b5cf6)';
+            }, 200);
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour:', error);
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
+        });
+}, 2000);
+</script>
+</body>
+</html>

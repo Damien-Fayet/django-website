@@ -7,3 +7,4 @@ db.sqlite3
 media/uploads
 __pycache__
 .github
+/media/max_challenge/photos*

@@ -1,0 +1,488 @@
+{% extends 'biblio/base.html' %}
+{% load biblio_extras %}
+
+{% block title %}Liste des livres{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-list"></i> Liste des livres</h1>
+    <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> Ajouter un livre
+    </a>
+</div>
+
+<!-- Barre de recherche -->
+<div class="mb-4">
+    <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher par titre, auteur ou ISBN...">
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Filtres et tri</h5>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                <i class="bi bi-filter"></i>
+            </button>
+        </div>
+    </div>
+    <div class="collapse" id="filtersCollapse">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Tri</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sort" id="sortTitle" value="title">
+                        <label class="form-check-label" for="sortTitle">Titre A-Z</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sort" id="sortAuthor" value="author">
+                        <label class="form-check-label" for="sortAuthor">Auteur A-Z</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sort" id="sortRating" value="rating" checked>
+                        <label class="form-check-label" for="sortRating">Note (meilleure en premier)</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Nombre par page</h6>
+                    <select id="itemsPerPage" class="form-select">
+                        <option value="10">10 livres</option>
+                        <option value="20" selected>20 livres</option>
+                        <option value="50">50 livres</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if books %}
+    <div id="booksContainer" class="row">
+        {% for book in books %}
+            <div class="col-md-6 col-lg-4 mb-4 book-card">
+                <div class="card h-100 shadow-sm">
+                    {% if book.image %}
+                        <div class="position-relative overflow-hidden" style="height: 200px;">
+                            <img src="{{ book.image.url }}" class="card-img-top h-100" style="object-fit: cover;">
+                            <div class="card-overlay">
+                                <div class="text-center">
+                                    <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Voir
+                                    </a>
+                                    <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-outline-light btn-sm">
+                                        <i class="bi bi-pencil"></i> Modifier
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ book.title|truncatechars:50 }}</h5>
+                        <p class="card-text text-muted">{{ book.authors|truncatechars:40 }}</p>
+                        {% if book.rating %}
+                            <div class="mb-2">
+                                {% for i in book.rating|star_range %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                {% endfor %}
+                                {% for i in book.rating|empty_star_range %}
+                                    <i class="bi bi-star text-muted"></i>
+                                {% endfor %}
+                                <small class="text-muted">({{ book.rating }}/5)</small>
+                            </div>
+                        {% endif %}
+                        {% if book.themes %}
+                            <div class="mb-2">
+                                {% for theme in book.themes|split:"," %}
+                                    <span class="badge bg-secondary me-1">{{ theme|strip }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye"></i> Détails
+                            </a>
+                            <small class="text-muted">{{ book.isbn }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination améliorée -->
+    {% if is_paginated %}
+        <nav aria-label="Navigation des livres" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <div class="text-center">
+            <small class="text-muted">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }} 
+                ({{ page_obj.paginator.count }} livre{{ page_obj.paginator.count|pluralize }})
+            </small>
+        </div>
+    {% endif %}
+
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-book display-1 text-muted"></i>
+        <h3 class="mt-3">Aucun livre trouvé</h3>
+        <p class="text-muted">
+            {% if request.GET %}
+                Essayez de modifier vos critères de recherche.
+            {% else %}
+                Commencez par ajouter votre premier livre !
+            {% endif %}
+        </p>
+        <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Ajouter un livre
+        </a>
+    </div>
+{% endif %}
+
+<!-- Scripts -->
+<script>
+// Recherche en temps réel
+document.getElementById('live-search').addEventListener('input', function() {
+    const query = this.value.trim();
+    const books = document.querySelectorAll('.book-item');
+    
+    books.forEach(book => {
+        const title = book.querySelector('.card-title a')?.textContent.toLowerCase() || '';
+        const author = book.querySelector('.card-text')?.textContent.toLowerCase() || '';
+        
+        if (title.includes(query.toLowerCase()) || author.includes(query.toLowerCase())) {
+            book.style.display = '';
+        } else {
+            book.style.display = 'none';
+        }
+    });
+});
+
+function clearLiveSearch() {
+    document.getElementById('live-search').value = '';
+    document.querySelectorAll('.book-item').forEach(book => {
+        book.style.display = '';
+    });
+}
+
+// Changement de tri
+function changeSort(sort) {
+    const url = new URL(window.location);
+    url.searchParams.set('sort', sort);
+    window.location.href = url.toString();
+}
+</script>
+
+<style>
+.book-cover {
+    height: 200px;
+    object-fit: cover;
+}
+
+.book-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.book-overlay {
+    background: rgba(0,0,0,0.7);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.book-card:hover .book-overlay {
+    opacity: 1;
+}
+
+.badge-sm {
+    font-size: 0.7rem;
+}
+
+.pagination {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .col-md-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+</style>
+{% endblock %}s les livres ({{ total_count }})</h1>
+    <div>
+        <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Ajouter un livre
+        </a>
+    </div>
+</div>
+
+<!-- Barre de recherche rapide -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="input-group">
+            <input type="text" id="live-search" class="form-control" 
+                   placeholder="🔍 Recherche instantanée..." 
+                   value="{{ form.search.value|default:'' }}">
+            <button class="btn btn-outline-secondary" type="button" onclick="clearLiveSearch()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres avancés (repliables) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <button class="btn btn-link text-decoration-none p-0 w-100 text-start" 
+                type="button" data-bs-toggle="collapse" data-bs-target="#advanced-filters">
+            <i class="bi bi-funnel"></i> Filtres avancés
+            <i class="bi bi-chevron-down float-end"></i>
+        </button>
+    </div>
+    <div class="collapse" id="advanced-filters">
+        <div class="card-body">
+            <form method="get" class="row g-3" id="filter-form">
+                <div class="col-md-3">
+                    {{ form.rating.label_tag }}
+                    {{ form.rating }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.themes.label_tag }}
+                    {{ form.themes }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.age_range.label_tag }}
+                    {{ form.age_range }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-funnel"></i> Filtrer
+                        </button>
+                        <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tri -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="sort" id="sort-title" value="title" 
+               {% if sort == 'title' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-title">
+            <i class="bi bi-sort-alpha-down"></i> Titre
+        </label>
+        
+        <input type="radio" class="btn-check" name="sort" id="sort-author" value="author" 
+               {% if sort == 'author' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-author">
+            <i class="bi bi-person"></i> Auteur
+        </label>
+        
+        <input type="radio" class="btn-check" name="sort" id="sort-date" value="-added_date" 
+               {% if sort == '-added_date' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-date">
+            <i class="bi bi-clock"></i> Plus récent
+        </label>
+        
+        <input type="radio" class="btn-check" name="sort" id="sort-rating" value="-rating" 
+               {% if sort == '-rating' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-rating">
+            <i class="bi bi-star"></i> Mieux noté
+        </label>
+    </div>
+</div>
+
+<!-- Liste des livres -->
+{% if books %}
+    <div id="books-container">
+        <div class="row">
+            {% for book in books %}
+                <div class="col-md-3 col-sm-6 mb-4 book-item" data-book-id="{{ book.pk }}">
+                    <div class="card h-100 book-card">
+                        <!-- Image de couverture avec overlay -->
+                        <div class="position-relative">
+                            {% if book.cover_image_url %}
+                                <img src="{{ book.cover_image_url }}" class="card-img-top book-cover" alt="{{ book.title }}">
+                            {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center book-cover">
+                                    <i class="bi bi-book display-4 text-muted"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Actions rapides sur hover -->
+                            <div class="book-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-2">
+                                <a href="{% url 'biblio:book_detail' book.pk %}" class="text-decoration-none">
+                                    {{ book.title|truncatechars:40 }}
+                                </a>
+                            </h6>
+                            
+                            <p class="card-text text-muted small mb-2">{{ book.authors|truncatechars:30 }}</p>
+                            
+                            {% if book.rating %}
+                                <div class="mb-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= book.rating %}
+                                            <i class="bi bi-star-fill text-warning small"></i>
+                                        {% else %}
+                                            <i class="bi bi-star text-muted small"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if book.themes %}
+                                <div class="mb-2">
+                                    {% for theme in book.themes|split:","|slice:":2" %}
+                                        <span class="badge bg-secondary badge-sm">{{ theme|trim|truncatechars:15 }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mt-auto">
+                                <small class="text-muted">Ajouté {{ book.added_date|timesince }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+        <!-- Pagination améliorée -->
+    {% if books.has_other_pages %}
+        <nav aria-label="Pagination des livres" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if books.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ books.previous_page_number }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <!-- Pages numérotées -->
+                {% for num in books.paginator.page_range %}
+                    {% if num == books.number %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > books.number|add:'-3' and num < books.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% elif num == 1 or num == books.paginator.num_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% elif num == books.number|add:'-4' or num == books.number|add:'4' %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if books.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ books.next_page_number }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ books.paginator.num_pages }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            
+            <div class="text-center text-muted">
+                Page {{ books.number }} sur {{ books.paginator.num_pages }} 
+                ({{ books.paginator.count }} livres au total)
+            </div>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-book display-1 text-muted"></i>
+        <h3 class="mt-3">Aucun livre trouvé</h3>
+        <p class="text-muted">Commencez par ajouter votre premier livre à la bibliothèque.</p>
+        <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Ajouter un livre
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,26 +1,50 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.core.paginator import Paginator
+from django.utils import timezone
+
 from .models import Book
 from .forms import ISBNSearchForm, BookForm, BookFilterForm, search_book_by_isbn
 
 def index(request):
-    """Page d'accueil de la bibliothèque"""
+    """Page d'accueil améliorée avec plus de statistiques"""
     total_books = Book.objects.count()
     recent_books = Book.objects.order_by('-added_date')[:5]
+    
+    # Livres les mieux notés
+    top_rated_books = Book.objects.filter(rating__gte=4).order_by('-rating', '-added_date')[:5]
+    
+    # Statistiques supplémentaires
+    avg_rating = Book.objects.filter(rating__isnull=False).aggregate(avg=Avg('rating'))['avg'] or 0
+    this_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    this_month_count = Book.objects.filter(added_date__gte=this_month).count()
     
     context = {
         'total_books': total_books,
         'recent_books': recent_books,
+        'top_rated_books': top_rated_books,
+        'avg_rating': avg_rating,
+        'this_month_count': this_month_count,
     }
     return render(request, 'biblio/index.html', context)
 
 def book_list(request):
-    """Liste des livres avec filtres"""
+    """Liste des livres avec filtres améliorés"""
     books = Book.objects.all()
     form = BookFilterForm(request.GET)
+    
+    # Tri
+    sort = request.GET.get('sort', 'title')
+    if sort == '-added_date':
+        books = books.order_by('-added_date')
+    elif sort == '-rating':
+        books = books.order_by('-rating', 'title')
+    elif sort == 'author':
+        books = books.order_by('authors')
+    else:
+        books = books.order_by('title')
     
     if form.is_valid():
         search = form.cleaned_data.get('search')
@@ -32,7 +56,8 @@ def book_list(request):
             books = books.filter(
                 Q(title__icontains=search) |
                 Q(authors__icontains=search) |
-                Q(description__icontains=search)
+                Q(description__icontains=search) |
+                Q(isbn__icontains=search)
             )
         
         if rating:
@@ -44,8 +69,8 @@ def book_list(request):
         if age_range:
             books = books.filter(age_range__icontains=age_range)
     
-    # Pagination
-    paginator = Paginator(books, 12)  # 12 livres par page
+    # Pagination améliorée
+    paginator = Paginator(books, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -53,13 +78,38 @@ def book_list(request):
         'books': page_obj,
         'form': form,
         'total_count': books.count(),
+        'sort': sort,
+        'paginator': paginator,
     }
     return render(request, 'biblio/book_list.html', context)
 
 def book_detail(request, pk):
-    """Détails d'un livre"""
+    """Détails d'un livre avec navigation entre livres"""
     book = get_object_or_404(Book, pk=pk)
-    return render(request, 'biblio/book_detail.html', {'book': book})
+    
+    # Navigation entre livres (basée sur l'ordre alphabétique par défaut)
+    all_books = Book.objects.order_by('title')
+    book_ids = list(all_books.values_list('pk', flat=True))
+    
+    try:
+        current_index = book_ids.index(book.pk)
+        previous_book = all_books[book_ids[current_index - 1]] if current_index > 0 else None
+        next_book = all_books[book_ids[current_index + 1]] if current_index < len(book_ids) - 1 else None
+        current_position = current_index + 1
+        total_books = len(book_ids)
+    except (ValueError, IndexError):
+        previous_book = next_book = None
+        current_position = 1
+        total_books = all_books.count()
+    
+    context = {
+        'book': book,
+        'previous_book': previous_book,
+        'next_book': next_book,
+        'current_position': current_position,
+        'total_books': total_books,
+    }
+    return render(request, 'biblio/book_detail.html', context)
 
 def add_book_isbn(request):
     """Ajouter un livre via ISBN"""
@@ -127,7 +177,7 @@ def add_book_manual(request, isbn=None):
     
     return render(request, 'biblio/add_book_manual.html', {
         'form': form, 
-        'from_isbn': from_isbn
+        'from_isbn': from_isbn if 'from_isbn' in locals() else False
     })
 
 def edit_book(request, pk):
@@ -156,3 +206,27 @@ def delete_book(request, pk):
         return redirect('biblio:book_list')
     
     return render(request, 'biblio/delete_book.html', {'book': book})
+
+def ajax_search(request):
+    """Recherche AJAX rapide"""
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'books': []})
+    
+    books = Book.objects.filter(
+        Q(title__icontains=query) |
+        Q(authors__icontains=query) |
+        Q(isbn__icontains=query)
+    )[:10]  # Limite à 10 résultats pour la recherche rapide
+    
+    books_data = []
+    for book in books:
+        books_data.append({
+            'id': book.pk,
+            'title': book.title,
+            'authors': book.authors,
+            'cover_image_url': book.cover_image_url,
+        })
+    
+    return JsonResponse({'books': books_data})

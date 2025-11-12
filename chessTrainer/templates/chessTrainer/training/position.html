@@ -1,0 +1,495 @@
+{% extends 'chessTrainer/base.html' %}
+
+{% block title %}Position d'entraînement - {{ username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="chess-container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-2">
+                <i class="bi bi-target"></i> Position d'entraînement
+            </h1>
+            <p class="text-center text-muted mb-4">
+                {{ username }} - Jouez avec les 
+                {% if position.player_color == 'white' %}blancs ♙{% else %}noirs ♟{% endif %}
+                <span class="ms-3">
+                    <i class="bi bi-stopwatch"></i> <span id="timer">00:00</span>
+                </span>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Informations synthétiques -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <span class="badge 
+                                {% if position.difficulty == 'easy' %}bg-success
+                                {% elif position.difficulty == 'medium' %}bg-warning
+                                {% else %}bg-danger{% endif %} me-2">
+                                {% if position.difficulty == 'easy' %}Facile
+                                {% elif position.difficulty == 'medium' %}Moyen
+                                {% else %}Difficile{% endif %}
+                            </span>
+                            <small class="text-muted">{{ position.original_game.start_time|date:"d/m/Y" }}</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <strong>{{ position.original_game.white_player }} vs {{ position.original_game.black_player }}</strong>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if position.times_played > 0 %}
+                            <small class="text-muted">
+                                {{ position.times_solved }}/{{ position.times_played }} réussies ({{ position.success_rate|floatformat:0 }}%)
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Échiquier -->
+        <div class="col-lg-8">
+            <div class="chessboard-container">
+                <div id="board" style="width: 400px; margin: 0 auto;"></div>
+            </div>
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="bi bi-mouse"></i> Déplacez une pièce pour jouer votre coup
+                </small>
+            </div>
+            
+            <!-- Actions sous l'échiquier -->
+            <div class="text-center mt-4">
+                <a href="{% url 'chessTrainer:training_session' username %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Retour à la session
+                </a>
+                <button type="button" class="btn btn-warning me-2" id="hintBtn">
+                    <i class="bi bi-lightbulb"></i> Indice
+                </button>
+                <button type="button" class="btn btn-info" id="showSolutionBtn">
+                    <i class="bi bi-eye"></i> Voir la solution
+                </button>
+            </div>
+        </div>
+        
+        <!-- Feedback -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-square-text"></i> Feedback
+                    </h5>
+                </div>
+                <div class="card-body" id="feedbackArea">
+                    <p class="text-muted">Faites votre coup pour recevoir un feedback...</p>
+                    <p class="small text-muted">Évaluation actuelle: {{ display_best_eval|floatformat:2 }} pions</p>
+                    
+                    <div class="mt-3">
+                        <h6>
+                            <i class="bi bi-bullseye"></i> Objectif
+                        </h6>
+                        <p class="small">
+                            Dans cette position, trouvez le meilleur coup possible !
+                        </p>
+                    </div>
+                    
+                    <!-- Coup original - affiché après que le joueur ait joué -->
+                    <div id="originalMoveInfo" style="display: none;" class="mt-3 p-3 bg-light rounded">
+                        <h6 class="text-danger mb-2">
+                            <i class="bi bi-x-circle"></i> Coup original
+                        </h6>
+                        <p class="mb-0">
+                            <strong>Vous aviez joué:</strong> 
+                            <code>{{ position.original_move }}</code>
+                            {% if display_original_eval >= 0 %}
+                                <span class="badge bg-light text-dark">+{{ display_original_eval|floatformat:2 }}</span>
+                            {% else %}
+                                <span class="badge bg-dark text-white">{{ display_original_eval|floatformat:2 }}</span>
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">
+                                ({{ evaluation_loss|floatformat:2 }} pions perdus vs meilleure position)
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la solution -->
+<div class="modal fade" id="solutionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🔍 Solution</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Meilleur coup:</strong> <code>{{ position.best_move }}</code></p>
+                <p><strong>Évaluation:</strong> {{ position.best_evaluation|floatformat:2 }}</p>
+                <p class="text-muted">
+                    Ce coup améliore votre position de {{ position.improvement_potential|floatformat:2 }} points par rapport à votre coup original.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" onclick="nextPosition()">Position suivante</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<script>
+// Variables globales
+let board = null;
+let game = new Chess();
+let startTime = Date.now();
+let timerInterval = null;
+let currentMove = null;
+let positionId = {{ position.id }};
+let playerColor = '{{ position.player_color }}';
+let checkMoveUrl = '{% url "chessTrainer:check_training_move" %}';
+
+// Configuration de l'échiquier
+const boardConfig = {
+    draggable: true,
+    position: '{{ position.fen_position }}',
+    orientation: playerColor,
+    showNotation: true,
+    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onSnapEnd: onSnapEnd
+};
+
+// Initialisation
+$(document).ready(function() {
+    board = Chessboard('board', boardConfig);
+    game.load('{{ position.fen_position }}');
+    
+    // Démarrer le timer
+    startTimer();
+    
+    // Événements pour les boutons
+    $('#hintBtn').click(showHint);
+    $('#showSolutionBtn').click(function() {
+        $('#solutionModal').modal('show');
+    });
+});
+
+function onDragStart(source, piece, position, orientation) {
+    // Ne pas permettre de déplacer les pièces si ce n'est pas le tour du joueur
+    if (game.game_over()) return false;
+    
+    // Ne permettre de déplacer que les pièces de la couleur du joueur
+    if ((playerColor === 'white' && piece.search(/^b/) !== -1) ||
+        (playerColor === 'black' && piece.search(/^w/) !== -1)) {
+        return false;
+    }
+    
+    return true;
+}
+
+function onDrop(source, target) {
+    // Voir si le coup est légal
+    const move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q' // toujours promouvoir en dame pour simplifier
+    });
+    
+    // Coup illégal
+    if (move === null) return 'snapback';
+    
+    // Sauvegarder le coup et soumettre automatiquement
+    currentMove = move;
+    
+    // Soumettre automatiquement le coup
+    submitMove();
+    
+    // Laisser la pièce se placer (pas de snapback)
+    return;
+}
+
+function onSnapEnd() {
+    // Ne rien faire - on laisse l'utilisateur valider explicitement
+}
+
+function submitMove() {
+    if (!currentMove) {
+        alert('Aucun coup à soumettre.');
+        return;
+    }
+    
+    // Calculer le temps passé
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+    
+    // Envoyer le coup au serveur
+    $.ajax({
+        url: checkMoveUrl,
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        data: JSON.stringify({
+            position_id: positionId,
+            move: currentMove.from + currentMove.to + (currentMove.promotion || ''),
+            time_spent: timeSpent
+        }),
+        contentType: 'application/json',
+        success: function(response) {
+            if (response.success) {
+                showFeedback(response.result, timeSpent);
+                
+                // Révéler le coup original maintenant que le joueur a fait son choix
+                $('#originalMoveInfo').show();
+                
+                // Arrêter le timer
+                clearInterval(timerInterval);
+                
+                // Désactiver l'échiquier temporairement (sera réactivé par resetPosition si besoin)
+                if (response.result.is_best) {
+                    board.destroy();
+                    board = Chessboard('board', {
+                        position: game.fen(),
+                        orientation: playerColor,
+                        showNotation: true,
+                        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+                        draggable: false // Désactiver le drag and drop seulement si coup parfait
+                    });
+                }
+                
+            } else {
+                alert('Erreur: ' + (response.error || 'Erreur inconnue'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('Erreur AJAX:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                errorThrown: error
+            });
+            alert('Erreur de communication: ' + error + ' (Status: ' + xhr.status + ')');
+        }
+    });
+}
+
+function showFeedback(result, timeSpent) {
+    const feedbackArea = $('#feedbackArea');
+    let html = '<h5>💬 Feedback</h5>';
+    
+    // Badge de qualité
+    const qualityColors = {
+        'perfect': 'bg-success',
+        'good': 'bg-info', 
+        'suboptimal': 'bg-warning',
+        'poor': 'bg-secondary',
+        'blunder': 'bg-danger',
+        'illegal': 'bg-dark',
+        'invalid': 'bg-dark',
+        'error': 'bg-dark'
+    };
+    
+    const qualityTexts = {
+        'perfect': 'Parfait ! 🎉',
+        'good': 'Bon coup ! 👍',
+        'suboptimal': 'Sous-optimal 🤔',
+        'poor': 'Mauvais coup 😞',
+        'blunder': 'Gaffe ! ⚠️',
+        'illegal': 'Coup illégal ❌',
+        'invalid': 'Coup invalide ❌',
+        'error': 'Erreur ❌'
+    };
+    
+    html += `<span class="badge quality-badge ${qualityColors[result.quality] || 'bg-secondary'}">
+                ${qualityTexts[result.quality] || result.quality}
+             </span>`;
+    
+    // Fonction pour créer un badge d'évaluation
+    function createEvaluationBadge(evaluation) {
+        const badgeClass = evaluation >= 0 ? 'bg-light text-dark border border-secondary' : 'bg-dark text-white';
+        const sign = evaluation >= 0 ? '+' : '';
+        return `<span class="badge ${badgeClass}">${sign}${evaluation.toFixed(2)}</span>`;
+    }
+    
+    html += `<div class="mt-3">
+                <p><strong>Coup d'origine:</strong> 
+                    <code>{{ position.original_move }}</code> 
+                    ${createEvaluationBadge(result.original_evaluation)}
+                </p>
+                <p><strong>Votre coup proposé:</strong> 
+                    <code>${currentMove.san}</code> 
+                    ${createEvaluationBadge(result.evaluation)}
+                </p>
+                <p><strong>Amélioration vs coup original:</strong> ${result.improvement_points > 0 ? '+' : ''}${result.improvement_points.toFixed(2)}</p>
+                <p><strong>Temps:</strong> ${timeSpent}s</p>
+             </div>`;
+    
+    // Ajouter les 5 meilleurs coups de Stockfish
+    if (result.top_moves && result.top_moves.length > 0) {
+        html += '<div class="mt-4">';
+        html += '<h6><i class="bi bi-cpu"></i> Top 5 Stockfish</h6>';
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-sm table-striped">';
+        html += '<thead><tr><th>#</th><th>Coup</th><th>Évaluation</th></tr></thead>';
+        html += '<tbody>';
+        
+        result.top_moves.forEach(function(moveData) {
+            const isPlayerMove = moveData.move_uci === (currentMove.from + currentMove.to + (currentMove.promotion || ''));
+            const rowClass = isPlayerMove ? 'table-success' : '';
+            
+            // Les évaluations viennent déjà du point de vue des blancs (via .white())
+            const evaluation = moveData.evaluation;
+            
+            html += `<tr class="${rowClass}">
+                        <td>${moveData.rank}</td>
+                        <td><code>${moveData.move_san}</code></td>
+                        <td>${createEvaluationBadge(evaluation)}</td>
+                     </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    if (result.is_best) {
+        html += '<div class="alert alert-success mt-3">🏆 Vous avez trouvé le meilleur coup !</div>';
+        html += '<div class="text-center mt-3">';
+        html += '<button type="button" class="btn btn-success" onclick="nextPosition()">';
+        html += '<i class="bi bi-arrow-right"></i> Position suivante</button>';
+        html += '</div>';
+    } else if (result.is_better) {
+        html += '<div class="alert alert-info mt-3">✅ Votre coup améliore la position !</div>';
+        html += '<div class="text-center mt-3">';
+        html += '<button type="button" class="btn btn-warning me-2" onclick="resetPosition()">🔄 Réessayer</button>';
+        html += '<button type="button" class="btn btn-primary" onclick="nextPosition()">';
+        html += '<i class="bi bi-arrow-right"></i> Position suivante</button>';
+        html += '</div>';
+    } else {
+        html += '<div class="alert alert-warning mt-3">💡 Il y avait un meilleur coup...</div>';
+        html += '<div class="text-center mt-3">';
+        html += '<button type="button" class="btn btn-warning me-2" onclick="resetPosition()">🔄 Réessayer</button>';
+        html += '<button type="button" class="btn btn-outline-primary" onclick="nextPosition()">';
+        html += '<i class="bi bi-skip-forward"></i> Passer</button>';
+        html += '</div>';
+    }
+    
+    feedbackArea.html(html);
+}
+
+function showHint() {
+    const hints = [
+        "💡 Regardez les pièces qui peuvent être attaquées",
+        "🎯 Cherchez les tactiques : fourchettes, clouages, découvertes",
+        "♔ La sécurité du roi est-elle en jeu ?",
+        "🏰 Y a-t-il une façon d'améliorer la position de vos pièces ?",
+        "⚡ Regardez les coups forcing : échecs, captures, menaces"
+    ];
+    
+    const randomHint = hints[Math.floor(Math.random() * hints.length)];
+    
+    // Ajouter l'indice au feedback
+    const currentFeedback = $('#feedbackArea').html();
+    const hintHtml = `<div class="alert alert-info mt-3">
+                        <h6>💡 Indice</h6>
+                        <p class="mb-0">${randomHint}</p>
+                      </div>`;
+    
+    $('#feedbackArea').html(currentFeedback + hintHtml);
+}
+
+function startTimer() {
+    timerInterval = setInterval(function() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        $('#timer').text(
+            String(minutes).padStart(2, '0') + ':' + 
+            String(seconds).padStart(2, '0')
+        );
+    }, 1000);
+}
+
+function nextPosition() {
+    // Aller directement à la position suivante
+    window.location.href = '{% url "chessTrainer:next_training_position" username position.id %}';
+}
+
+function resetPosition() {
+    // Réinitialiser l'échiquier à la position d'origine
+    game = new Chess('{{ fen }}');
+    
+    // Recréer l'échiquier avec la configuration initiale
+    board.destroy();
+    board = Chessboard('board', boardConfig);
+    
+    // Remettre le feedback initial
+    $('#feedbackArea').html(`
+        <p class="text-muted">Faites votre coup pour recevoir un feedback...</p>
+        <p class="small text-muted">Évaluation actuelle: {{ display_best_eval|floatformat:2 }} pions</p>
+        
+        <div class="mt-3">
+            <h6>
+                <i class="bi bi-bullseye"></i> Objectif
+            </h6>
+            <p class="small">
+                Dans cette position, trouvez le meilleur coup possible !
+            </p>
+        </div>
+        
+        <!-- Coup original - affiché après que le joueur ait joué -->
+        <div id="originalMoveInfo" style="display: none;" class="mt-3 p-3 bg-light rounded">
+            <h6 class="text-danger mb-2">
+                <i class="bi bi-x-circle"></i> Coup original
+            </h6>
+            <p class="mb-0">
+                <strong>Vous aviez joué:</strong> 
+                <code>{{ position.original_move }}</code>
+                {% if display_original_eval >= 0 %}
+                    <span class="badge bg-light text-dark">+{{ display_original_eval|floatformat:2 }}</span>
+                {% else %}
+                    <span class="badge bg-dark text-white">{{ display_original_eval|floatformat:2 }}</span>
+                {% endif %}
+                <br>
+                <small class="text-muted">
+                    ({{ evaluation_loss|floatformat:2 }} pions perdus vs meilleure position)
+                </small>
+            </p>
+        </div>
+    `);
+    
+    // Masquer à nouveau les informations sur le coup original
+    $('#originalMoveInfo').hide();
+    
+    // Redémarrer le timer
+    startTime = Date.now();
+    startTimer();
+}
+
+// Protection CSRF
+$(document).ready(function() {
+    // Ajouter le token CSRF si pas déjà présent
+    if (!$('[name=csrfmiddlewaretoken]').length) {
+        $('body').append('<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">');
+    }
+});
+</script>
+{% endblock %}

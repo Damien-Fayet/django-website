@@ -3,6 +3,21 @@
 {% block title %}Accueil - Bibliothèque{% endblock %}
 
 {% block content %}
+<!-- Barre de recherche rapide en haut -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="input-group input-group-lg">
+            <input type="text" id="quick-search" class="form-control" 
+                   placeholder="🔍 Recherche rapide : titre, auteur, ISBN..." 
+                   autocomplete="off">
+            <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div id="search-results" class="mt-2" style="display: none;"></div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <h1 class="mb-4">
@@ -12,7 +27,7 @@
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card bg-primary text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -27,16 +42,31 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h5 class="card-title">Ma bibliothèque</h5>
-                        <p class="mb-0">Gérez facilement vos livres</p>
+                        <h5 class="card-title">Note moyenne</h5>
+                        <h2 class="mb-0">{{ avg_rating|floatformat:1 }}/5</h2>
                     </div>
                     <div class="fs-1">
-                        <i class="bi bi-heart"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title">Ce mois</h5>
+                        <h2 class="mb-0">+{{ this_month_count }}</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-plus-circle"></i>
                     </div>
                 </div>
             </div>
@@ -51,46 +81,169 @@
                 <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Actions rapides</h5>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'biblio:scan_barcode' %}" class="btn btn-success">
-                        <i class="bi bi-camera"></i> Scanner un code-barres
-                    </a>
-                    <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
-                        <i class="bi bi-upc-scan"></i> Ajouter un livre avec ISBN
-                    </a>
-                    <a href="{% url 'biblio:add_book_manual' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Ajouter un livre manuellement
-                    </a>
-                    <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-list"></i> Voir tous les livres
-                    </a>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <a href="{% url 'biblio:scan_barcode' %}" class="btn btn-success w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 80px;">
+                            <i class="bi bi-camera fs-3 mb-2"></i>
+                            <span class="fw-bold">Scanner</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 80px;">
+                            <i class="bi bi-upc-scan fs-3 mb-2"></i>
+                            <span class="fw-bold">ISBN</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'biblio:add_book_manual' %}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 80px;">
+                            <i class="bi bi-pencil fs-3 mb-2"></i>
+                            <span class="fw-bold">Manuel</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 80px;">
+                            <i class="bi bi-list fs-3 mb-2"></i>
+                            <span class="fw-bold">Parcourir</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-clock-history"></i> Derniers ajouts</h5>
+                <a href="{% url 'biblio:book_list' %}?sort=-added_date" class="btn btn-sm btn-outline-primary">Voir tous</a>
             </div>
             <div class="card-body">
                 {% if recent_books %}
-                    <ul class="list-unstyled">
-                        {% for book in recent_books %}
-                            <li class="mb-2">
-                                <a href="{% url 'biblio:book_detail' book.pk %}" class="text-decoration-none">
-                                    <strong>{{ book.title }}</strong>
+                    {% for book in recent_books %}
+                        <div class="d-flex align-items-center mb-3 p-2 rounded hover-bg">
+                            <div class="me-3">
+                                {% if book.cover_image_url %}
+                                    <img src="{{ book.cover_image_url }}" class="rounded" style="width: 40px; height: 60px; object-fit: cover;" alt="{{ book.title }}">
+                                {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 60px;">
+                                        <i class="bi bi-book text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'biblio:book_detail' book.pk %}" class="text-decoration-none">
+                                        {{ book.title|truncatechars:30 }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">{{ book.authors|truncatechars:25 }}</small>
+                                {% if book.rating %}
+                                    <div class="mt-1">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= book.rating %}
+                                                <i class="bi bi-star-fill text-warning small"></i>
+                                            {% else %}
+                                                <i class="bi bi-star text-muted small"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ms-2">
+                                <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
                                 </a>
-                                <br>
-                                <small class="text-muted">{{ book.authors }}</small>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                            </div>
+                        </div>
+                    {% endfor %}
                 {% else %}
-                    <p class="text-muted">Aucun livre ajouté récemment.</p>
+                    <p class="text-muted text-center py-4">
+                        <i class="bi bi-book-half fs-3 d-block mb-2"></i>
+                        Aucun livre ajouté récemment.
+                    </p>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<!-- Scripts pour la recherche rapide -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('quick-search');
+    const searchResults = document.getElementById('search-results');
+    const clearBtn = document.getElementById('clear-search');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`{% url 'biblio:ajax_search' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.books && data.books.length > 0) {
+                        let html = '<div class="card"><div class="card-body"><h6>Résultats de recherche :</h6>';
+                        data.books.forEach(book => {
+                            html += `
+                                <div class="d-flex align-items-center mb-2 p-2 rounded hover-bg">
+                                    <div class="me-3">
+                                        ${book.cover_image_url ? 
+                                            `<img src="${book.cover_image_url}" class="rounded" style="width: 30px; height: 45px; object-fit: cover;">` :
+                                            '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 30px; height: 45px;"><i class="bi bi-book text-muted small"></i></div>'
+                                        }
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <a href="/biblio/livre/${book.id}/" class="text-decoration-none">
+                                            <strong>${book.title}</strong>
+                                        </a>
+                                        <br><small class="text-muted">${book.authors}</small>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += '</div></div>';
+                        searchResults.innerHTML = html;
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.innerHTML = '<div class="alert alert-info">Aucun livre trouvé.</div>';
+                        searchResults.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur de recherche:', error);
+                });
+        }, 300);
+    });
+
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        searchResults.style.display = 'none';
+    });
+
+    // Masquer les résultats quand on clique ailleurs
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<style>
+.hover-bg:hover {
+    background-color: rgba(0,123,255,0.1) !important;
+    cursor: pointer;
+}
+
+#search-results {
+    position: relative;
+    z-index: 1000;
+}
+</style>
 {% endblock %}

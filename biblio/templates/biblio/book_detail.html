@@ -4,6 +4,43 @@
 {% block title %}{{ book.title }}{% endblock %}
 
 {% block content %}
+<!-- Navigation rapide entre livres -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <nav aria-label="Navigation entre livres">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {% if previous_book %}
+                        <a href="{% url 'biblio:book_detail' previous_book.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-chevron-left"></i> {{ previous_book.title|truncatechars:20 }}
+                        </a>
+                    {% else %}
+                        <span class="btn btn-outline-secondary disabled">
+                            <i class="bi bi-chevron-left"></i> Premier livre
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="text-center">
+                    <span class="badge bg-secondary">Livre {{ current_position }} sur {{ total_books }}</span>
+                </div>
+                
+                <div>
+                    {% if next_book %}
+                        <a href="{% url 'biblio:book_detail' next_book.pk %}" class="btn btn-outline-primary">
+                            {{ next_book.title|truncatechars:20 }} <i class="bi bi-chevron-right"></i>
+                        </a>
+                    {% else %}
+                        <span class="btn btn-outline-secondary disabled">
+                            Dernier livre <i class="bi bi-chevron-right"></i>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-4">
         {% if book.cover_image_url %}
@@ -15,10 +52,10 @@
         {% endif %}
         
         <div class="mt-3 d-grid gap-2">
-            <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-primary">
-                <i class="bi bi-pencil"></i> Modifier
+            <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-primary" title="Raccourci: E">
+                <i class="bi bi-pencil"></i> Modifier <kbd>E</kbd>
             </a>
-            <a href="{% url 'biblio:delete_book' book.pk %}" class="btn btn-outline-danger">
+            <a href="{% url 'biblio:delete_book' book.pk %}" class="btn btn-outline-danger" title="Raccourci: Suppr">
                 <i class="bi bi-trash"></i> Supprimer
             </a>
         </div>
@@ -27,6 +64,14 @@
     <div class="col-md-8">
         <div class="d-flex justify-content-between align-items-start mb-3">
             <h1>{{ book.title }}</h1>
+            <!-- Breadcrumb amélioré -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'biblio:index' %}">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'biblio:book_list' %}">Livres</a></li>
+                    <li class="breadcrumb-item active">{{ book.title|truncatechars:30 }}</li>
+                </ol>
+            </nav>
         </div>
         
         <div class="row mb-4">
@@ -118,9 +163,91 @@
     </div>
 </div>
 
-<div class="mt-4">
-    <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Retour à la liste
-    </a>
+<!-- Navigation de retour sticky -->
+<div class="sticky-bottom bg-white border-top py-2 mt-4">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </a>
+            
+            <div class="btn-group">
+                <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Modifier
+                </a>
+                <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimer
+                    </a></li>
+                    <li><a class="dropdown-item copy-url" href="#">
+                        <i class="bi bi-link"></i> Copier le lien
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'biblio:delete_book' book.pk %}">
+                        <i class="bi bi-trash"></i> Supprimer
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Raccourcis clavier
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+        
+        switch(e.key.toLowerCase()) {
+            case 'e':
+                if (!e.ctrlKey && !e.metaKey) {
+                    window.location.href = "{% url 'biblio:edit_book' book.pk %}";
+                }
+                break;
+            case 'arrowleft':
+                {% if previous_book %}
+                    window.location.href = "{% url 'biblio:book_detail' previous_book.pk %}";
+                {% endif %}
+                break;
+            case 'arrowright':
+                {% if next_book %}
+                    window.location.href = "{% url 'biblio:book_detail' next_book.pk %}";
+                {% endif %}
+                break;
+            case 'escape':
+                window.location.href = "{% url 'biblio:book_list' %}";
+                break;
+        }
+    });
+    
+    // Copier URL
+    document.querySelectorAll('.copy-url').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText(window.location.href).then(function() {
+                alert('Lien copié dans le presse-papiers !');
+            });
+        });
+    });
+});
+</script>
+
+<style>
+.sticky-bottom {
+    position: sticky;
+    bottom: 0;
+    z-index: 1020;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+@media print {
+    .sticky-bottom, nav[aria-label="Navigation entre livres"] {
+        display: none !important;
+    }
+}
+</style>
 {% endblock %}

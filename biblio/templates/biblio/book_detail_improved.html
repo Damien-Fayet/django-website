@@ -1,0 +1,447 @@
+{% extends 'biblio/base.html' %}
+{% load biblio_extras %}
+
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+<!-- Navigation rapide entre livres -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <nav aria-label="Navigation entre livres">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {% if previous_book %}
+                        <a href="{% url 'biblio:book_detail' previous_book.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-chevron-left"></i> {{ previous_book.title|truncatechars:20 }}
+                        </a>
+                    {% else %}
+                        <span class="btn btn-outline-secondary disabled">
+                            <i class="bi bi-chevron-left"></i> Premier livre
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="text-center">
+                    <span class="badge bg-secondary">Livre {{ current_position }} sur {{ total_books }}</span>
+                </div>
+                
+                <div>
+                    {% if next_book %}
+                        <a href="{% url 'biblio:book_detail' next_book.pk %}" class="btn btn-outline-primary">
+                            {{ next_book.title|truncatechars:20 }} <i class="bi bi-chevron-right"></i>
+                        </a>
+                    {% else %}
+                        <span class="btn btn-outline-secondary disabled">
+                            Dernier livre <i class="bi bi-chevron-right"></i>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        {% if book.cover_image_url %}
+            <img src="{{ book.cover_image_url }}" class="img-fluid book-cover rounded shadow" alt="{{ book.title }}">
+        {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center rounded shadow" style="height: 300px; width: 100%;">
+                <i class="bi bi-book display-3 text-muted"></i>
+            </div>
+        {% endif %}
+        
+        <!-- Actions rapides avec raccourcis clavier -->
+        <div class="mt-3 d-grid gap-2">
+            <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-primary" title="Raccourci: E">
+                <i class="bi bi-pencil"></i> Modifier <kbd>E</kbd>
+            </a>
+            
+            <!-- Note rapide -->
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-warning dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-star"></i> 
+                    {% if book.rating %}Note: {{ book.rating }}/5{% else %}Noter{% endif %}
+                </button>
+                <ul class="dropdown-menu">
+                    {% for i in "12345" %}
+                        <li>
+                            <a class="dropdown-item quick-rate" href="#" data-book-id="{{ book.pk }}" data-rating="{{ forloop.counter }}">
+                                {% for j in "12345" %}
+                                    {% if forloop.counter <= forloop.parentloop.counter %}
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    {% else %}
+                                        <i class="bi bi-star text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ forloop.counter }} étoile{{ forloop.counter|pluralize }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <a href="{% url 'biblio:delete_book' book.pk %}" class="btn btn-outline-danger" title="Raccourci: Suppr">
+                <i class="bi bi-trash"></i> Supprimer
+            </a>
+        </div>
+        
+        <!-- Actions de partage -->
+        <div class="mt-3">
+            <h6>Partager</h6>
+            <div class="btn-group w-100" role="group">
+                <button class="btn btn-outline-secondary btn-sm copy-url" title="Copier le lien">
+                    <i class="bi bi-link"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm print-book" title="Imprimer">
+                    <i class="bi bi-printer"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm export-book" title="Exporter">
+                    <i class="bi bi-download"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <h1>{{ book.title }}</h1>
+            <!-- Breadcrumb amélioré -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'biblio:index' %}">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'biblio:book_list' %}">Livres</a></li>
+                    <li class="breadcrumb-item active">{{ book.title|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- Informations organisées en onglets -->
+        <ul class="nav nav-tabs" id="bookTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button">
+                    <i class="bi bi-info-circle"></i> Informations
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="description-tab" data-bs-toggle="tab" data-bs-target="#description" type="button">
+                    <i class="bi bi-file-text"></i> Description
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pedagogy-tab" data-bs-toggle="tab" data-bs-target="#pedagogy" type="button">
+                    <i class="bi bi-mortarboard"></i> Pédagogie
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button">
+                    <i class="bi bi-chat-dots"></i> Notes
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content mt-3" id="bookTabsContent">
+            <!-- Onglet Informations -->
+            <div class="tab-pane fade show active" id="info" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item mb-3">
+                            <h6><i class="bi bi-person"></i> Auteur(s)</h6>
+                            <p class="mb-1">{{ book.authors }}</p>
+                        </div>
+                        
+                        {% if book.publisher %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-building"></i> Éditeur</h6>
+                                <p class="mb-1">{{ book.publisher }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if book.published_date %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-calendar"></i> Date de publication</h6>
+                                <p class="mb-1">{{ book.published_date|date:"d F Y" }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if book.page_count %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-file-text"></i> Nombre de pages</h6>
+                                <p class="mb-1">{{ book.page_count }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item mb-3">
+                            <h6><i class="bi bi-upc"></i> ISBN</h6>
+                            <p class="mb-1">
+                                <code>{{ book.isbn }}</code>
+                                <button class="btn btn-sm btn-outline-secondary ms-2 copy-isbn" data-isbn="{{ book.isbn }}">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </p>
+                        </div>
+                        
+                        {% if book.rating %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-star-fill text-warning"></i> Note</h6>
+                                <p class="mb-1">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= book.rating %}
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        {% else %}
+                                            <i class="bi bi-star text-muted"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    ({{ book.rating }}/5)
+                                </p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="info-item mb-3">
+                            <h6><i class="bi bi-calendar-plus"></i> Ajouté le</h6>
+                            <p class="mb-1">{{ book.added_date|date:"d F Y à H:i" }}</p>
+                        </div>
+                        
+                        {% if book.updated_date != book.added_date %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-calendar-check"></i> Modifié le</h6>
+                                <p class="mb-1">{{ book.updated_date|date:"d F Y à H:i" }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Onglet Description -->
+            <div class="tab-pane fade" id="description" role="tabpanel">
+                {% if book.description %}
+                    <div class="description-content">
+                        {{ book.description|linebreaks }}
+                    </div>
+                {% else %}
+                    <div class="text-muted text-center py-4">
+                        <i class="bi bi-file-text fs-3 d-block mb-2"></i>
+                        Aucune description disponible.
+                        <br>
+                        <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-sm btn-outline-primary mt-2">
+                            Ajouter une description
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Onglet Pédagogie -->
+            <div class="tab-pane fade" id="pedagogy" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% if book.age_range %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-people"></i> Tranche d'âge</h6>
+                                <span class="badge bg-primary">{{ book.age_range }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if book.reading_level %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-speedometer2"></i> Niveau de lecture</h6>
+                                <span class="badge bg-info">{{ book.reading_level }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if book.themes %}
+                            <div class="info-item mb-3">
+                                <h6><i class="bi bi-tags"></i> Thèmes</h6>
+                                <div>
+                                    {% for theme in book.themes|split:"," %}
+                                        <span class="badge bg-secondary me-1">{{ theme|trim }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if not book.age_range and not book.reading_level and not book.themes %}
+                    <div class="text-muted text-center py-4">
+                        <i class="bi bi-mortarboard fs-3 d-block mb-2"></i>
+                        Aucune information pédagogique renseignée.
+                        <br>
+                        <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-sm btn-outline-primary mt-2">
+                            Compléter les informations
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Onglet Notes -->
+            <div class="tab-pane fade" id="notes" role="tabpanel">
+                {% if book.comments %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-chat-square-text"></i> Commentaires de la maîtresse
+                            </h6>
+                            <div class="comments-content">
+                                {{ book.comments|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-muted text-center py-4">
+                        <i class="bi bi-chat-dots fs-3 d-block mb-2"></i>
+                        Aucun commentaire pour le moment.
+                        <br>
+                        <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-sm btn-outline-primary mt-2">
+                            Ajouter un commentaire
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation de retour sticky -->
+<div class="sticky-bottom bg-white border-top py-2 mt-4">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </a>
+            
+            <div class="btn-group">
+                <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Modifier
+                </a>
+                <button class="btn btn-outline-primary quick-action" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimer
+                    </a></li>
+                    <li><a class="dropdown-item copy-url" href="#">
+                        <i class="bi bi-link"></i> Copier le lien
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'biblio:delete_book' book.pk %}">
+                        <i class="bi bi-trash"></i> Supprimer
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Raccourcis clavier
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+        
+        switch(e.key.toLowerCase()) {
+            case 'e':
+                if (!e.ctrlKey && !e.metaKey) {
+                    window.location.href = "{% url 'biblio:edit_book' book.pk %}";
+                }
+                break;
+            case 'arrowleft':
+                {% if previous_book %}
+                    window.location.href = "{% url 'biblio:book_detail' previous_book.pk %}";
+                {% endif %}
+                break;
+            case 'arrowright':
+                {% if next_book %}
+                    window.location.href = "{% url 'biblio:book_detail' next_book.pk %}";
+                {% endif %}
+                break;
+            case 'escape':
+                window.location.href = "{% url 'biblio:book_list' %}";
+                break;
+        }
+    });
+    
+    // Notation rapide
+    document.querySelectorAll('.quick-rate').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const bookId = this.dataset.bookId;
+            const rating = this.dataset.rating;
+            
+            fetch('{% url "biblio:ajax_rate_book" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    book_id: bookId,
+                    rating: rating
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        });
+    });
+    
+    // Copier URL
+    document.querySelectorAll('.copy-url').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText(window.location.href).then(function() {
+                // Afficher un toast ou notification
+                alert('Lien copié dans le presse-papiers !');
+            });
+        });
+    });
+    
+    // Copier ISBN
+    document.querySelector('.copy-isbn')?.addEventListener('click', function() {
+        const isbn = this.dataset.isbn;
+        navigator.clipboard.writeText(isbn).then(function() {
+            alert('ISBN copié dans le presse-papiers !');
+        });
+    });
+});
+</script>
+
+<style>
+.info-item h6 {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.sticky-bottom {
+    position: sticky;
+    bottom: 0;
+    z-index: 1020;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.book-cover {
+    max-height: 400px;
+    object-fit: cover;
+}
+
+.description-content, .comments-content {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+@media print {
+    .sticky-bottom, .nav-tabs, nav[aria-label="Navigation entre livres"] {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}

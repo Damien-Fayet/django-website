@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ game.name }} - Max Challenge</title>
+    
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+    }
+    
+    .game-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 10px;
+        position: relative;
+    }
+    
+    /* Confettis en arrière-plan */
+    .game-container::before {
+        content: '🎉 🎊 ✨ 🎈 🎁 🎂 🌟 🎵 🎭 🎨';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 1.2em;
+        opacity: 0.03;
+        pointer-events: none;
+        white-space: pre-wrap;
+        line-height: 4;
+        z-index: -1;
+        animation: float 25s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(2deg); }
+    }
+    
+    h1 {
+        text-align: center;
+        color: #2c3e50;
+        font-size: 1.2em;
+        margin-bottom: 8px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        font-weight: bold;
+    }
+    
+    .auto-refresh {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        color: white;
+        padding: 12px 15px;
+        border-radius: 25px;
+        font-size: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+    
+    .global-image {
+        text-align: center;
+        margin-bottom: 15px;
+        border: 3px solid #ff6b6b;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .global-image h3 {
+        color: #ff6b6b;
+        font-size: 1.3em;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    .global-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .global-photo {
+        width: 120px;
+        height: 120px;
+        border: 2px solid rgba(255,107,107,0.3);
+        background: rgba(240,240,240,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #666;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    .global-photo.revealed {
+        background: rgba(232,245,232,0.9);
+        border-color: #4ecdc4;
+        box-shadow: 0 5px 15px rgba(78,205,196,0.3);
+        transform: scale(1.05);
+    }
+    
+    .global-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    
+    .teams-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+        .team-section {
+        border: 3px solid;
+        padding: 5px;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .team-section:hover {
+        transform: translateY(-5px);
+    }
+    
+    .team-a {
+        border-color: #ff6b6b;
+        background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(255,255,255,0.9));
+    }
+    
+    .team-b {
+        border-color: #a55eea;
+        background: linear-gradient(135deg, rgba(165,94,234,0.1), rgba(255,255,255,0.9));
+    }
+    
+    .team-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .team-header h2 {
+        color: #2c3e50;
+        font-size: 1.1em;
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .team-score {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .team-a .team-score {
+        color: #ff6b6b;
+    }
+    
+    .team-b .team-score {
+        color: #a55eea;
+    }
+    
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        gap: 0;
+        margin: 0 auto;
+        border: 3px solid rgba(0,0,0,0.2);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        position: relative;
+        /* Toutes les photos sont 400x600 */
+        width: 400px;
+        height: 600px;
+    }
+    
+    .grid-square {
+        width: 100%;
+        height: 100%;
+        background-color: #ddd;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .grid-square.revealed {
+        background-color: transparent;
+    }
+    
+    .grid-square.revealed::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: var(--bg-image);
+        /* Toutes les photos sont 400x600 */
+        background-size: 400px 600px;
+        background-position: var(--bg-position);
+        background-repeat: no-repeat;
+    }
+    
+    .photo-display {
+        background: rgba(248,249,250,0.9);
+        padding: 5px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 2px solid rgba(0,0,0,0.1);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        /* Exactement les mêmes dimensions que la grille */
+        width: 400px;
+        height: 600px;
+    }
+    
+    .photo-display img {
+        /* Image prend exactement la taille du conteneur */
+        width: 400px;
+        height: 600px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .definition-section {
+        border: 2px solid #4ecdc4;
+        padding: 8px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(78,205,196,0.1), rgba(255,255,255,0.95));
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+        margin-bottom: 8px;
+    }
+    
+    .definition-section h3 {
+        color: #4ecdc4;
+        font-size: 1.1em;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    
+    .definition-word {
+        display: none;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 5px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .definition-text {
+        font-size: 1.8em; /* Augmente la taille de la police pour le texte de la définition */
+        line-height: 1.6;
+        margin: 10px 0;
+        min-height: 50px;
+        color: #2c3e50; /* Couleur du texte */
+        padding: 15px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 10px;
+        border: 2px solid rgba(78,205,196,0.3);
+    }
+    
+    .admin-links {
+        text-align: center;
+        margin-top: 5px;
+    }
+    
+    .btn-admin {
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 20px;
+        margin: 0 10px;
+        display: inline-block;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        font-size: 0.9em;
+    }
+    
+    .btn-admin:hover {
+        background: linear-gradient(45deg, #4ecdc4, #ff6b6b);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .teams-container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .global-photos {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+        
+        .global-photo {
+            width: 100px;
+            height: 100px;
+        }
+        
+        h1 {
+            font-size: 2em;
+        }
+        
+        .definition-text {
+            font-size: 1.1em;
+        }
+        
+        .admin-links {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="game-container">
+    <div class="auto-refresh" id="refresh-indicator">
+        🔄 Mise à jour automatique
+    </div>
+    
+    <!-- Définition en haut -->
+    <div class="definition-section">
+        <h3>🎭 Définition à deviner</h3>
+        <div class="definition-word" id="definition-word">
+            {{ game.current_definition.word|default:"Aucune définition en cours" }}
+        </div>
+        <div class="definition-text" id="definition-text">
+            {{ definition_display|safe|default:"En attente d'une définition..." }}
+        </div>
+    </div>
+    
+    <!-- Équipes -->
+    <div class="teams-container">
+        <!-- Équipe A -->
+        <div class="team-section team-a">
+            <div class="team-header">
+                <h2>{{ game.team_a_name }}</h2>
+                <div class="team-score" id="team-a-score">{{ game.team_a_score }}</div>
+            </div>
+            {% if game.team_a_photo_revealed %}
+                <div class="photo-display" id="team-a-photo">
+                    <img src="{{ game.team_a_photo.image_400x400.url }}" alt="{{ game.team_a_photo.name }}" />
+                </div>
+            {% elif team_a_grid %}
+                <div class="grid-container" id="team-a-grid" data-image-url="{{ team_a_grid.image_url }}" data-revealed-squares="{{ team_a_grid.revealed_squares|join:',' }}">
+                    <!-- Grille 10x10 générée en JavaScript -->
+                </div>
+            {% else %}
+                <div style="padding: 50px; text-align: center; color: #666;">
+                    En attente de l'image...
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Équipe B -->
+        <div class="team-section team-b">
+            <div class="team-header">
+                <h2>{{ game.team_b_name }}</h2>
+                <div class="team-score" id="team-b-score">{{ game.team_b_score }}</div>
+            </div>
+            {% if game.team_b_photo_revealed %}
+                <div class="photo-display" id="team-b-photo">
+                    <img src="{{ game.team_b_photo.image_400x400.url }}" alt="{{ game.team_b_photo.name }}" />
+                </div>
+            {% elif team_b_grid %}
+                <div class="grid-container" id="team-b-grid" data-image-url="{{ team_b_grid.image_url }}" data-revealed-squares="{{ team_b_grid.revealed_squares|join:',' }}">
+                    <!-- Grille 10x10 générée en JavaScript -->
+                </div>
+            {% else %}
+                <div style="padding: 50px; text-align: center; color: #666;">
+                    En attente de l'image...
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Liens d'administration -->
+    <div class="admin-links">
+        <a href="{% url 'max_challenge:admin' game.pk %}" class="btn-admin">🎪 Interface Animateur</a>
+        <a href="{% url 'max_challenge:index' %}" class="btn-admin">🏠 Retour à l'accueil</a>
+    </div>
+</div>
+
+<script>
+// Initialiser les grilles au chargement
+function initGrid(gridId) {
+    const gridContainer = document.getElementById(gridId);
+    if (!gridContainer) return;
+    
+    const imageUrl = gridContainer.dataset.imageUrl;
+    const revealedSquaresStr = gridContainer.dataset.revealedSquares;
+    const revealedSquares = revealedSquaresStr ? revealedSquaresStr.split(',').map(Number) : [];
+    
+    gridContainer.innerHTML = '';
+    gridContainer.style.setProperty('--bg-image', `url(${imageUrl})`);
+    
+    // Toutes les images sont 400x600, tuiles de 40x60
+    const tileWidth = 40;
+    const tileHeight = 60;
+    
+    // Créer 100 carrés (10x10)
+    for (let i = 0; i < 100; i++) {
+        const square = document.createElement('div');
+        square.className = 'grid-square';
+        square.dataset.index = i;
+        
+        if (revealedSquares.includes(i)) {
+            square.classList.add('revealed');
+            const row = Math.floor(i / 10);
+            const col = i % 10;
+            square.style.setProperty('--bg-position', `-${col * tileWidth}px -${row * tileHeight}px`);
+        }
+        
+        gridContainer.appendChild(square);
+    }
+}
+
+// Mettre à jour une grille
+function updateGrid(gridId, revealedSquares, imageUrl) {
+    const gridContainer = document.getElementById(gridId);
+    if (!gridContainer) return;
+    
+    // Vérifier si l'image a changé
+    const currentImageUrl = gridContainer.dataset.imageUrl;
+    const imageChanged = currentImageUrl !== imageUrl;
+    
+    // Si l'image a changé, recréer complètement la grille
+    if (imageChanged) {
+        gridContainer.dataset.imageUrl = imageUrl;
+        gridContainer.dataset.revealedSquares = revealedSquares.join(',');
+        gridContainer.innerHTML = '';
+        gridContainer.style.setProperty('--bg-image', `url(${imageUrl})`);
+        
+        // Toutes les images sont 400x600, tuiles de 40x60
+        const tileWidth = 40;
+        const tileHeight = 60;
+        
+        // Recréer les 100 carrés
+        for (let i = 0; i < 100; i++) {
+            const square = document.createElement('div');
+            square.className = 'grid-square';
+            square.dataset.index = i;
+            
+            if (revealedSquares.includes(i)) {
+                square.classList.add('revealed');
+                const row = Math.floor(i / 10);
+                const col = i % 10;
+                square.style.setProperty('--bg-position', `-${col * tileWidth}px -${row * tileHeight}px`);
+            }
+            
+            gridContainer.appendChild(square);
+        }
+    } else {
+        // Sinon, mettre à jour seulement les nouveaux carrés révélés
+        gridContainer.style.setProperty('--bg-image', `url(${imageUrl})`);
+        
+        // Toutes les images sont 400x600, tuiles de 40x60
+        const tileWidth = 40;
+        const tileHeight = 60;
+        
+        revealedSquares.forEach(index => {
+            const square = gridContainer.querySelector(`[data-index="${index}"]`);
+            if (square && !square.classList.contains('revealed')) {
+                square.classList.add('revealed');
+                const row = Math.floor(index / 10);
+                const col = index % 10;
+                square.style.setProperty('--bg-position', `-${col * tileWidth}px -${row * tileHeight}px`);
+            }
+        });
+    }
+}
+
+// Initialiser les grilles au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    initGrid('team-a-grid');
+    initGrid('team-b-grid');
+});
+
+// Mise à jour automatique toutes les 3 secondes
+let refreshInterval = setInterval(function() {
+    fetch(`/max_challenge/api/game_state/{{ game.pk }}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour les scores
+            document.getElementById('team-a-score').textContent = data.team_a_score;
+            document.getElementById('team-b-score').textContent = data.team_b_score;
+            
+            // Mettre à jour la grille ou photo pour l'équipe A
+            if (data.team_a_photo_revealed && data.team_a_photo_url) {
+                // Remplacer la grille par la photo
+                const teamAContainer = document.querySelector('.team-section.team-a');
+                const existingPhoto = teamAContainer.querySelector('#team-a-photo');
+                
+                if (!existingPhoto) {
+                    const teamAHeader = teamAContainer.querySelector('.team-header');
+                    teamAContainer.innerHTML = '';
+                    teamAContainer.appendChild(teamAHeader);
+                    teamAContainer.innerHTML += `
+                        <div class="photo-display" id="team-a-photo">
+                            <img src="${data.team_a_photo_url}" alt="Photo révélée" />
+                        </div>
+                    `;
+                }
+            } else if (data.team_a_grid) {
+                // Si la grille n'existe pas, la créer
+                const teamAContainer = document.querySelector('.team-section.team-a');
+                let gridContainer = document.getElementById('team-a-grid');
+                
+                if (!gridContainer) {
+                    const teamAHeader = teamAContainer.querySelector('.team-header');
+                    teamAContainer.innerHTML = '';
+                    teamAContainer.appendChild(teamAHeader);
+                    teamAContainer.innerHTML += `
+                        <div class="grid-container" id="team-a-grid" data-image-url="${data.team_a_grid.image_url}" data-revealed-squares="${data.team_a_grid.revealed_squares.join(',')}">
+                        </div>
+                    `;
+                    initGrid('team-a-grid');
+                } else {
+                    updateGrid('team-a-grid', data.team_a_grid.revealed_squares, data.team_a_grid.image_url);
+                }
+            }
+            
+            // Mettre à jour la grille ou photo pour l'équipe B
+            if (data.team_b_photo_revealed && data.team_b_photo_url) {
+                // Remplacer la grille par la photo
+                const teamBContainer = document.querySelector('.team-section.team-b');
+                const existingPhoto = teamBContainer.querySelector('#team-b-photo');
+                
+                if (!existingPhoto) {
+                    const teamBHeader = teamBContainer.querySelector('.team-header');
+                    teamBContainer.innerHTML = '';
+                    teamBContainer.appendChild(teamBHeader);
+                    teamBContainer.innerHTML += `
+                        <div class="photo-display" id="team-b-photo">
+                            <img src="${data.team_b_photo_url}" alt="Photo révélée" />
+                        </div>
+                    `;
+                }
+            } else if (data.team_b_grid) {
+                // Si la grille n'existe pas, la créer
+                const teamBContainer = document.querySelector('.team-section.team-b');
+                let gridContainer = document.getElementById('team-b-grid');
+                
+                if (!gridContainer) {
+                    const teamBHeader = teamBContainer.querySelector('.team-header');
+                    teamBContainer.innerHTML = '';
+                    teamBContainer.appendChild(teamBHeader);
+                    teamBContainer.innerHTML += `
+                        <div class="grid-container" id="team-b-grid" data-image-url="${data.team_b_grid.image_url}" data-revealed-squares="${data.team_b_grid.revealed_squares.join(',')}">
+                        </div>
+                    `;
+                    initGrid('team-b-grid');
+                } else {
+                    updateGrid('team-b-grid', data.team_b_grid.revealed_squares, data.team_b_grid.image_url);
+                }
+            }
+            
+            // Mettre à jour la définition
+            if (data.current_definition_word) {
+                document.getElementById('definition-word').textContent = data.current_definition_word;
+            }
+            if (data.definition_display) {
+                document.getElementById('definition-text').innerHTML = data.definition_display;
+            }
+            
+            // Indicateur de mise à jour
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.style.background = 'linear-gradient(45deg, #4ecdc4, #44bd87)';
+            setTimeout(() => {
+                indicator.style.background = 'linear-gradient(45deg, #a55eea, #8b5cf6)';
+            }, 200);
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour:', error);
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
+        });
+}, 2000);
+</script>
+</body>
+</html>

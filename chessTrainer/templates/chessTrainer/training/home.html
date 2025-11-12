@@ -1,0 +1,142 @@
+{% extends 'chessTrainer/base.html' %}
+
+{% block title %}Module d'entraînement{% endblock %}
+
+{% block content %}
+<div class="chess-container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="bi bi-target"></i> Module d'Entraînement
+            </h1>
+            <p class="text-center text-muted mb-5">
+                Améliorez votre jeu en pratiquant vos erreurs passées avec des positions personnalisées.
+            </p>
+        </div>
+    </div>
+    <!-- Fonctionnalités -->
+    <div class="row mb-5">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-search display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Analyse de vos erreurs</h5>
+                    <p class="card-text">Nous extrayons automatiquement les positions où vous avez fait des erreurs dans vos parties analysées.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-chess display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Entraînement interactif</h5>
+                    <p class="card-text">Rejouez ces positions critiques sur un échiquier interactif pour apprendre de vos erreurs.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Suivi des progrès</h5>
+                    <p class="card-text">Stockfish évalue vos coups et suit votre progression au fil des sessions d'entraînement.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulaire de démarrage -->
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-play-circle"></i> Commencer l'entraînement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'chessTrainer:training_session' 'placeholder' %}" id="trainingForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nom d'utilisateur</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="username" 
+                                   name="username" 
+                                   placeholder="akrTik"
+                                   value="akrTik"
+                                   required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Nous générerons des positions d'entraînement basées sur vos parties analysées
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-play"></i> Démarrer l'entraînement
+                        </button>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Pas encore de parties analysées ? 
+                            <a href="{% url 'chessTrainer:chess_analysis' %}" class="text-decoration-none">
+                                Commencez par analyser vos parties
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comment ça marche -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-question-circle"></i> Comment ça marche ?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 text-center mb-3">
+                            <div class="display-1 text-primary">1</div>
+                            <h6>Analysez vos parties</h6>
+                            <p class="small text-muted">Utilisez notre système d'analyse pour identifier vos erreurs</p>
+                        </div>
+                        <div class="col-lg-3 text-center mb-3">
+                            <div class="display-1 text-info">2</div>
+                            <h6>Positions extraites</h6>
+                            <p class="small text-muted">Nous créons des exercices basés sur vos erreurs réelles</p>
+                        </div>
+                        <div class="col-lg-3 text-center mb-3">
+                            <div class="display-1 text-warning">3</div>
+                            <h6>Entraînement ciblé</h6>
+                            <p class="small text-muted">Rejouez ces positions pour apprendre le bon coup</p>
+                        </div>
+                        <div class="col-lg-3 text-center mb-3">
+                            <div class="display-1 text-success">4</div>
+                            <h6>Progrès mesurés</h6>
+                            <p class="small text-muted">Stockfish évalue vos améliorations en temps réel</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('trainingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    if (username) {
+        // Remplacer 'placeholder' par le vrai nom d'utilisateur dans l'URL
+        const url = this.action.replace('placeholder', encodeURIComponent(username));
+        window.location.href = url;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1376 @@
+{% extends 'chessTrainer/base.html' %}
+{% load chess_extras %}
+
+{% block title %}Parties de {{ username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 text-primary">
+                <i class="bi bi-chess"></i> Parties de {{ username }}
+            </h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-warning analyze-all-btn position-relative overflow-hidden" 
+                        data-username="{{ username }}" style="min-width: 200px;">
+                    <!-- Barre de progression en arrière-plan -->
+                    <div class="progress-background position-absolute top-0 start-0 h-100 bg-success" 
+                         style="width: 0%; transition: width 0.3s ease; opacity: 0.3; z-index: 0;"></div>
+                    <!-- Contenu du bouton -->
+                    <span class="position-relative" style="z-index: 1;">
+                        <i class="bi bi-lightning-charge"></i> 
+                        <span class="button-text">Tout analyser</span>
+                        <span class="progress-percentage" style="display: none;"></span>
+                    </span>
+                </button>
+                <a href="{% url 'chessTrainer:chess_analysis' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+
+        <!-- Zone d'import et statistiques des parties -->
+        <div class="card border-info mb-4">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <img src="https://www.chess.com/bundles/web/images/offline-play/standard.84a92436.svg" alt="Chess.com" style="height:1.5em;vertical-align:middle;margin-right:0.5em;">
+                        Synchronisation Chess.com
+                    </h5>
+                    <div id="syncStatus" class="badge bg-light text-dark">
+                        <i class="bi bi-check-circle"></i> À jour
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-database text-primary me-2"></i>
+                                    <strong>Parties chargées :</strong>
+                                    <span class="badge bg-primary ms-2">{{ total_games }} parties</span>
+                                </div>
+                                {% if sync_status %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-clock-history text-muted me-2"></i>
+                                    <small class="text-muted">
+                                        Dernière sync : {{ sync_status.last_sync|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if date_range %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-calendar-range text-success me-2"></i>
+                                    <strong>Période :</strong>
+                                    <small class="ms-2">{{ date_range.start|date:"d/m/Y" }} - {{ date_range.end|date:"d/m/Y" }}</small>
+                                </div>
+                                {% endif %}
+                                {% if analyzed_count %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <strong>Analysées :</strong>
+                                    <span class="badge bg-success ms-2">{{ analyzed_count }}/{{ total_games }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <div class="me-3">
+                                <label for="searchMonths" class="form-label mb-1 small">Recherche (mois)</label>
+                                <select id="searchMonths" class="form-select form-select-sm" style="width: 80px;">
+                                    <option value="3" selected>3</option>
+                                    <option value="6">6</option>
+                                    <option value="12">12</option>
+                                    <option value="24">24</option>
+                                    <option value="all">Tout</option>
+                                </select>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" id="importNewGamesBtn" class="btn btn-success">
+                                    <i class="bi bi-download"></i> Importer nouvelles
+                                </button>
+                                <button type="button" id="fullSyncBtn" class="btn btn-outline-warning">
+                                    <i class="bi bi-arrow-clockwise"></i> Sync complète
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Zone de progression de l'import -->
+                <div id="importProgressSection" class="mt-3" style="display: none;">
+                    <div class="progress mb-2">
+                        <div id="importProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <div id="importProgressMessage" class="text-muted small">Import en cours...</div>
+                </div>
+            </div>
+        </div>
+
+        {% if games_by_time_class %}
+
+            <!-- Navigation par onglets -->
+            <ul class="nav nav-tabs mb-4" id="timeClassTabs" role="tablist">
+                {% for time_class, category_data in games_by_time_class %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if forloop.first %}active{% endif %} position-relative" 
+                                id="{{ time_class }}-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#{{ time_class }}-content" 
+                                type="button" 
+                                role="tab">
+                            <span class="me-2">{{ category_data.info.icon }}</span>
+                            {{ category_data.info.name }}
+                            <span class="badge bg-secondary ms-2">{{ category_data.count }}</span>
+                            {% if category_data.analyzed_count > 0 %}
+                                <span class="badge bg-success ms-1">{{ category_data.analyzed_count }} analysée{% if category_data.analyzed_count > 1 %}s{% endif %}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+            <!-- Contenu des onglets -->
+            <div class="tab-content" id="timeClassTabsContent">
+                {% for time_class, category_data in games_by_time_class %}
+                    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                         id="{{ time_class }}-content" 
+                         role="tabpanel" 
+                         aria-labelledby="{{ time_class }}-tab">
+                         
+                        <!-- Statistiques de la catégorie -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card bg-light">
+                                    <div class="card-body py-2">
+                                        <div class="row text-center">
+                                            <div class="col-md-3">
+                                                <strong>{{ category_data.info.icon }} {{ category_data.info.name }}</strong>
+                                                <br><small class="text-muted">{{ category_data.info.description }}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong>{{ category_data.count }}</strong>
+                                                <br><small class="text-muted">Parties</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong>{{ category_data.analyzed_count }}</strong>
+                                                <br><small class="text-muted">Analysées</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong class="text-{% if category_data.total_errors == 0 %}success{% elif category_data.total_errors <= 5 %}warning{% else %}danger{% endif %}">
+                                                    {{ category_data.total_errors }}
+                                                </strong>
+                                                <br><small class="text-muted">Erreurs totales</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                {% if category_data.analyzed_count > 0 %}
+                                                    {% with percentage=category_data.analyzed_count|multiply:100|divide:category_data.count %}
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar bg-success" 
+                                                                 style="width: {{ percentage }}%">
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted">{{ percentage|floatformat:0 }}% analysées</small>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    <small class="text-muted">Aucune partie analysée</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Grille des parties -->
+                        <div class="row">
+                            {% for game_info in category_data.games %}
+                                {% with game_data=game_info.game_data existing_game=game_info.existing_game error_count=game_info.error_count is_analyzed=game_info.is_analyzed %}
+                                    <div class="col-md-6 col-lg-4 mb-4">
+                                        <div class="card h-100 {% if is_analyzed %}border-success{% endif %}">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <small class="text-muted">
+                                                        {{ game_data.start_time|date:"d/m/Y" }}
+                                                    </small>
+                                                    <small class="text-info">
+                                                        <i class="bi bi-clock"></i> {{ game_data.time_control|format_time_control }}
+                                                    </small>
+                                                    {% if is_analyzed and error_count is not None %}
+                                                        <small class="text-{% if error_count == 0 %}success{% elif error_count <= 3 %}warning{% else %}danger{% endif %}">
+                                                            <i class="bi bi-exclamation-triangle"></i> {{ error_count }}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                                {% if is_analyzed %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle"></i> Analysée
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-clock"></i> Non analysée
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="card-body">
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="border rounded p-2 bg-light">
+                                            <div class="fw-bold d-flex align-items-center justify-content-center">
+                                                <span style="font-size: 1.2em;" class="me-1">♙</span> 
+                                                <span class="text-truncate" style="max-width: 100px;" title="{{ game_data.white.username }}">{{ game_data.white.username }}</span>
+                                            </div>
+                                            <div class="small text-muted">{{ game_data.white.rating }}</div>
+                                            {% if game_data.white.result and game_data.white.result != 'unknown' %}
+                                                <div class="small {{ game_data.white.result|get_player_result_class }}">{{ game_data.white.result|format_result }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="border rounded p-2 bg-light">
+                                            <div class="fw-bold d-flex align-items-center justify-content-center">
+                                                <span style="font-size: 1.2em;" class="me-1">♟</span> 
+                                                <span class="text-truncate" style="max-width: 100px;" title="{{ game_data.black.username }}">{{ game_data.black.username }}</span>
+                                            </div>
+                                            <div class="small text-muted">{{ game_data.black.rating }}</div>
+                                            {% if game_data.black.result and game_data.black.result != 'unknown' %}
+                                                <div class="small {{ game_data.black.result|get_player_result_class }}">{{ game_data.black.result|format_result }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>                                            </div>
+                                            
+                                            <div class="card-footer">
+                                                {% if is_analyzed %}
+                                                    <!-- Boutons pour partie déjà analysée -->
+                                                    <div class="btn-group w-100" role="group">
+                                                        <a href="{% url 'chessTrainer:analyze_specific_game' username=username game_id=game_data.game_id %}" class="btn btn-primary btn-sm">
+                                                            <i class="bi bi-graph-up"></i> Voir l'analyse
+                                                        </a>
+                                                        <button type="button" class="btn btn-warning btn-sm analyze-btn" 
+                                                                data-username="{{ username }}" 
+                                                                data-game-id="{{ game_data.game_id }}" 
+                                                                data-action="force-analyze"
+                                                                id="btn-{{ game_data.game_id }}">
+                                                            <i class="bi bi-arrow-clockwise"></i> Re-analyser
+                                                        </button>
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Bouton pour analyser la partie -->
+                                                    <button type="button" class="btn btn-primary btn-sm w-100 analyze-btn" 
+                                                            data-username="{{ username }}" 
+                                                            data-game-id="{{ game_data.game_id }}" 
+                                                            data-action="analyze"
+                                                            id="btn-{{ game_data.game_id }}">
+                                                        <i class="bi bi-play-circle"></i> Analyser cette partie
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Aucune partie trouvée pour {{ username }}. 
+                Vérifiez que le nom d'utilisateur est correct et qu'il y a des parties récentes.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#analysisProgressContainer {
+    border-left: 4px solid #0d6efd;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+}
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.border-success {
+    border-color: #28a745 !important;
+}
+
+.nav-tabs .nav-link {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    font-weight: 600;
+}
+
+.tab-content {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.375rem 0.375rem;
+    padding: 1rem;
+    background-color: #fff;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Afficher un indicateur de chargement lors du changement de pagination
+document.addEventListener('DOMContentLoaded', function() {
+    const archiveLinks = document.querySelectorAll('.btn-group a');
+    
+    archiveLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+            // Ajouter un indicateur de chargement
+            const loadingDiv = document.createElement('div');
+            loadingDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                        Récupération des parties en cours... Cela peut prendre quelques instants.
+                    </div>
+                </div>
+            `;
+            
+            const content = document.querySelector('.col-12');
+            if (content) {
+                content.insertBefore(loadingDiv, content.firstChild);
+            }
+        });
+    });
+});
+
+// Gestion des boutons d'analyse avec Server-Sent Events
+document.addEventListener('DOMContentLoaded', function() {
+    let currentEventSource = null;
+    
+    // Vérifier au chargement s'il y a une analyse en cours
+    checkForOngoingAnalysis();
+    
+    // Fonction pour vérifier s'il y a une analyse en cours au chargement
+    function checkForOngoingAnalysis() {
+        const username = '{{ username }}';
+        
+        // Vérifier s'il y a une session d'import en cours dans localStorage
+        const importSession = localStorage.getItem('importSession_' + username);
+        if (importSession) {
+            const session = JSON.parse(importSession);
+            const elapsed = Date.now() - session.startTime;
+            
+            // Si moins de 45 minutes, tenter de se reconnecter
+            if (elapsed < 45 * 60 * 1000) {
+                console.log('🔄 Session d\'import détectée, tentative de reconnexion...');
+                reconnectToOngoingImport(username, session);
+                return;
+            } else {
+                // Session trop ancienne, nettoyer
+                localStorage.removeItem('importSession_' + username);
+            }
+        }
+        
+        // Vérifier via l'API s'il y a une analyse en cours sur le serveur
+        fetch(`/chessTrainer/check-analysis-status/${username}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.analysis_in_progress) {
+                console.log('🔄 Analyse en cours détectée sur le serveur, reconnexion...');
+                showOngoingAnalysisStatus(data);
+                
+                if (data.session_id) {
+                    // Reconnecter aux SSE avec l'ID de session du serveur
+                    connectToImportSSE(username, data.session_id, data.is_full_sync || false);
+                }
+            }
+        })
+        .catch(error => {
+            console.log('ℹ️ Aucune analyse en cours détectée');
+        });
+    }
+    
+    // Fonction pour afficher le statut d'une analyse en cours
+    function showOngoingAnalysisStatus(data) {
+        const importBtn = document.getElementById('importNewGamesBtn');
+        const fullSyncBtn = document.getElementById('fullSyncBtn');
+        const progressSection = document.getElementById('importProgressSection');
+        const progressMessage = document.getElementById('importProgressMessage');
+        const syncStatus = document.getElementById('syncStatus');
+        
+        // Désactiver les boutons
+        if (importBtn) {
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Import en cours...';
+        }
+        if (fullSyncBtn) {
+            fullSyncBtn.disabled = true;
+            fullSyncBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> En cours...';
+        }
+        
+        // Afficher la progression
+        if (progressSection) progressSection.style.display = 'block';
+        if (progressMessage) progressMessage.textContent = data.message || 'Reconnexion à l\'analyse en cours...';
+        if (syncStatus) {
+            syncStatus.className = 'badge bg-warning text-dark';
+            syncStatus.innerHTML = '<i class="bi bi-arrow-clockwise"></i> En cours...';
+        }
+        
+        // Mettre à jour la barre de progression si disponible
+        if (data.progress !== undefined) {
+            updateImportProgressBar(data.progress);
+        }
+    }
+    
+    // Fonction pour reconnecter à une session d'import existante
+    function reconnectToOngoingImport(username, session) {
+        showOngoingAnalysisStatus({
+            message: 'Reconnexion à la session d\'import...',
+            progress: session.lastProgress || 0
+        });
+        
+        // Connecter aux SSE avec l'ID de session sauvegardé
+        connectToImportSSE(username, session.sessionId, session.isFullSync || false);
+    }
+    
+    // Fonction pour mettre à jour la progression du bouton avec barre colorée
+    function updateButtonProgress(button, percentage, text) {
+        const progressBg = button.querySelector('.progress-background');
+        const buttonText = button.querySelector('.button-text');
+        const progressText = button.querySelector('.progress-percentage');
+        
+        // Mettre à jour la barre de progression
+        if (progressBg) {
+            progressBg.style.width = percentage + '%';
+            
+            // Changer la couleur selon le pourcentage
+            if (percentage < 25) {
+                progressBg.className = 'progress-background position-absolute top-0 start-0 h-100 bg-danger';
+            } else if (percentage < 50) {
+                progressBg.className = 'progress-background position-absolute top-0 start-0 h-100 bg-warning';
+            } else if (percentage < 75) {
+                progressBg.className = 'progress-background position-absolute top-0 start-0 h-100 bg-info';
+            } else {
+                progressBg.className = 'progress-background position-absolute top-0 start-0 h-100 bg-success';
+            }
+        }
+        
+        // Mettre à jour le texte
+        if (buttonText) {
+            buttonText.textContent = text;
+        }
+        
+        // Afficher/masquer le pourcentage
+        if (progressText) {
+            if (percentage > 0) {
+                progressText.textContent = ` (${percentage}%)`;
+                progressText.style.display = 'inline';
+            } else {
+                progressText.style.display = 'none';
+            }
+        }
+    }
+    
+    // Fonction pour le suivi SSE de l'analyse complète
+    function startAnalysisAllTracking(username, button, originalText) {
+        // Fermer la connexion précédente si elle existe
+        if (currentEventSource) {
+            currentEventSource.close();
+        }
+        
+        // Établir la connexion SSE pour l'analyse complète
+        const eventUrl = `/chessTrainer/analysis-events/${username}/`;
+        currentEventSource = new EventSource(eventUrl);
+        
+        const statusContainer = document.getElementById('analysisProgressContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        currentEventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('📡 Événement SSE analyse complète reçu:', data);
+            
+            switch(data.type) {
+                case 'connection':
+                    console.log('✅ Connexion SSE analyse complète établie');
+                    updateButtonProgress(button, 0, 'Connexion établie...');
+                    break;
+                    
+                case 'progress':
+                    // Mettre à jour le bouton avec la progression
+                    updateButtonProgress(button, data.progress, `Analyse en cours`);
+                    
+                    // Mettre à jour le statut global
+                    if (statusContainer && statusMessage) {
+                        statusMessage.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${data.message}`;
+                        statusContainer.style.display = 'block';
+                    }
+                    break;
+                    
+                case 'finished':
+                    console.log('🎉 Analyse complète terminée:', data.status);
+                    
+                    if (data.status === 'completed') {
+                        // Progression à 100% avec succès
+                        updateButtonProgress(button, 100, 'Terminé !');
+                        
+                        // Changer la couleur du bouton pour le succès
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-success');
+                        
+                        if (statusMessage) {
+                            statusMessage.innerHTML = '<i class="bi bi-check-circle-fill text-success me-2"></i>Analyse terminée ! Rechargement...';
+                        }
+                        
+                        // Recharger après 3 secondes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else {
+                        // En cas d'erreur
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-warning');
+                        
+                        if (statusContainer) {
+                            statusContainer.style.display = 'none';
+                        }
+                        
+                        alert('Erreur lors de l\'analyse: ' + (data.message || 'Erreur inconnue'));
+                    }
+                    
+                    // Fermer la connexion
+                    currentEventSource.close();
+                    currentEventSource = null;
+                    break;
+                    
+                case 'error':
+                    console.log('❌ Erreur SSE analyse complète:', data.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('btn-warning');
+                    
+                    if (statusContainer) {
+                        statusContainer.style.display = 'none';
+                    }
+                    
+                    alert('Erreur lors de l\'analyse: ' + data.message);
+                    currentEventSource.close();
+                    currentEventSource = null;
+                    break;
+            }
+        };
+        
+        currentEventSource.onerror = function(event) {
+            console.error('❌ Erreur connexion SSE analyse complète:', event);
+            button.innerHTML = originalText;
+            button.disabled = false;
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-warning');
+            
+            if (statusContainer) {
+                statusContainer.style.display = 'none';
+            }
+            
+            currentEventSource.close();
+            currentEventSource = null;
+        };
+    }
+    
+    // Fonction pour se connecter aux SSE de l'analyse complète (nouvelle version)
+    function connectToAnalysisAllSSE(username, sessionId, button, originalText) {
+        const eventSource = new EventSource(`/chessTrainer/analysis-progress/${username}/${sessionId}/`);
+        const statusContainer = document.getElementById('analysisProgressContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Fermer la connexion précédente si elle existe
+        if (currentEventSource) {
+            currentEventSource.close();
+        }
+        currentEventSource = eventSource;
+        
+        eventSource.onopen = function(event) {
+            console.log('🔗 Connexion SSE analyse complète établie');
+            updateButtonProgress(button, 0, 'Connexion établie...');
+        };
+        
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('📡 Événement SSE analyse complète reçu:', data);
+                
+                switch (data.type) {
+                    case 'connected':
+                    case 'reconnected':
+                        console.log('✅ Connexion SSE analyse complète établie');
+                        updateButtonProgress(button, 0, 'Connexion établie...');
+                        break;
+                        
+                    case 'analysis_start':
+                        console.log('🔍 Début de l\'analyse complète');
+                        updateButtonProgress(button, 5, 'Analyse en cours...');
+                        if (statusContainer && statusMessage) {
+                            statusMessage.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${data.message}`;
+                            statusContainer.style.display = 'block';
+                        }
+                        break;
+                        
+                    case 'analysis_progress':
+                        console.log('📊 Progression analyse complète:', data.current_game + '/' + data.total_games);
+                        const progress = Math.round((data.current_game / data.total_games) * 95) + 5; // 5-100%
+                        updateButtonProgress(button, progress, `Analyse en cours`);
+                        
+                        if (statusContainer && statusMessage) {
+                            statusMessage.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>Analyse: ${data.current_game}/${data.total_games}`;
+                            statusContainer.style.display = 'block';
+                        }
+                        break;
+                        
+                    case 'complete':
+                        console.log('🎉 Analyse complète terminée');
+                        updateButtonProgress(button, 100, 'Presque terminé...');
+                        if (statusContainer && statusMessage) {
+                            statusMessage.innerHTML = '<i class="bi bi-check-circle-fill text-success me-2"></i>Analyse terminée, finalisation...';
+                        }
+                        break;
+                        
+                    case 'finished':
+                        console.log('🎉 Analyse complète finalisée:', data.status);
+                        
+                        if (data.status === 'completed') {
+                            // Progression à 100% avec succès
+                            updateButtonProgress(button, 100, 'Terminé !');
+                            
+                            // Changer la couleur du bouton pour le succès
+                            button.classList.remove('btn-secondary');
+                            button.classList.add('btn-success');
+                            
+                            if (statusMessage) {
+                                const gamesCount = data.games_count || 0;
+                                let finalMessage;
+                                if (gamesCount === 0) {
+                                    finalMessage = 'Analyse terminée - toutes les parties étaient déjà analysées';
+                                } else if (gamesCount === 1) {
+                                    finalMessage = 'Analyse terminée - 1 partie analysée';
+                                } else {
+                                    finalMessage = `Analyse terminée - ${gamesCount} parties analysées`;
+                                }
+                                statusMessage.innerHTML = `<i class="bi bi-check-circle-fill text-success me-2"></i>${finalMessage} ! Rechargement...`;
+                            }
+                            
+                            // Recharger après 3 secondes
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 3000);
+                        } else {
+                            // En cas d'erreur
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                            button.classList.remove('btn-secondary');
+                            button.classList.add('btn-warning');
+                            
+                            if (statusContainer) {
+                                statusContainer.style.display = 'none';
+                            }
+                            
+                            alert('Erreur lors de l\'analyse: ' + (data.message || 'Erreur inconnue'));
+                        }
+                        
+                        // Fermer la connexion
+                        eventSource.close();
+                        currentEventSource = null;
+                        break;
+                        
+                    case 'error':
+                        console.log('❌ Erreur SSE analyse complète:', data.message);
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-warning');
+                        
+                        if (statusContainer) {
+                            statusContainer.style.display = 'none';
+                        }
+                        
+                        alert('Erreur lors de l\'analyse: ' + data.message);
+                        eventSource.close();
+                        currentEventSource = null;
+                        break;
+                        
+                    default:
+                        console.log('❓ Événement SSE analyse complète non géré:', data.type, data);
+                        break;
+                }
+            } catch (parseError) {
+                console.error('❌ Erreur de parsing JSON SSE analyse complète:', parseError, 'Data reçue:', event.data);
+                return;
+            }
+        };
+        
+        eventSource.onerror = function(event) {
+            console.error('❌ Erreur connexion SSE analyse complète:', event);
+            button.innerHTML = originalText;
+            button.disabled = false;
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-warning');
+            
+            if (statusContainer) {
+                statusContainer.style.display = 'none';
+            }
+            
+            eventSource.close();
+            currentEventSource = null;
+        };
+    }
+    
+    // Fonction pour démarrer le suivi SSE d'une analyse
+    function startAnalysisTracking(username, gameId, button) {
+        // Fermer la connexion précédente si elle existe
+        if (currentEventSource) {
+            currentEventSource.close();
+        }
+        
+        // Établir la connexion SSE
+        const eventUrl = `/chessTrainer/events/${username}/${gameId}/`;
+        currentEventSource = new EventSource(eventUrl);
+        
+        const statusContainer = document.getElementById('analysisProgressContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        currentEventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('📡 Événement SSE reçu:', data);
+            
+            switch(data.type) {
+                case 'connected':
+                    console.log('✅ Connexion SSE établie');
+                    // Mettre à jour le bouton pour indiquer la connexion
+                    button.innerHTML = '<i class="bi bi-wifi"></i> Connexion établie...';
+                    break;
+                    
+                case 'progress':
+                    // Mettre à jour le texte du bouton avec la progression
+                    button.innerHTML = `<i class="bi bi-hourglass-split"></i> Analyse en cours... ${data.progress}%`;
+                    
+                    // Mettre à jour le statut global
+                    if (statusContainer && statusMessage) {
+                        statusMessage.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${data.message} (${data.progress}%)`;
+                        statusContainer.style.display = 'block';
+                    }
+                    break;
+                    
+                case 'finished':
+                    console.log('🎉 Analyse terminée:', data.status);
+                    
+                    // Restaurer le bouton selon le statut
+                    if (data.status === 'completed') {
+                        // Attendre 2 secondes puis recharger la page pour voir les résultats
+                        if (statusMessage) {
+                            statusMessage.innerHTML = '<i class="bi bi-check-circle-fill text-success me-2"></i>Analyse terminée ! Rechargement...';
+                        }
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        // En cas d'erreur, restaurer le bouton
+                        restoreButton(button);
+                        if (statusContainer) {
+                            statusContainer.style.display = 'none';
+                        }
+                        alert('Erreur lors de l\'analyse: ' + data.message);
+                    }
+                    
+                    // Fermer la connexion
+                    currentEventSource.close();
+                    currentEventSource = null;
+                    break;
+                    
+                case 'timeout':
+                    console.log('⏰ Timeout SSE');
+                    restoreButton(button);
+                    if (statusContainer) {
+                        statusContainer.style.display = 'none';
+                    }
+                    currentEventSource.close();
+                    currentEventSource = null;
+                    break;
+            }
+        };
+        
+        currentEventSource.onerror = function(error) {
+            console.error('❌ Erreur SSE:', error);
+            restoreButton(button);
+            if (statusContainer) {
+                statusContainer.style.display = 'none';
+            }
+            currentEventSource.close();
+            currentEventSource = null;
+        };
+    }
+    
+    // Fonction pour restaurer l'état original d'un bouton
+    function restoreButton(button) {
+        const action = button.getAttribute('data-action');
+        if (action === 'force-analyze') {
+            button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Re-analyser';
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-warning');
+        } else {
+            button.innerHTML = '<i class="bi bi-play-circle"></i> Analyser cette partie';
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-primary');
+        }
+        button.disabled = false;
+    }
+    
+    // Gestionnaire pour tous les boutons d'analyse
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('analyze-btn') || e.target.closest('.analyze-btn')) {
+            e.preventDefault();
+            
+            const button = e.target.classList.contains('analyze-btn') ? e.target : e.target.closest('.analyze-btn');
+            const username = button.getAttribute('data-username');
+            const gameId = button.getAttribute('data-game-id');
+            const action = button.getAttribute('data-action');
+            
+            console.log('🎯 Lancement analyse:', { username, gameId, action });
+            
+            // Changer l'état du bouton pendant l'analyse
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Analyse en cours...';
+            button.disabled = true;
+            button.classList.remove('btn-primary', 'btn-warning');
+            button.classList.add('btn-secondary');
+            
+            // Démarrer le suivi SSE
+            startAnalysisTracking(username, gameId, button);
+            
+            // Lancer l'analyse en arrière-plan
+            const analysisUrl = action === 'force-analyze' 
+                ? `/chessTrainer/force-analyze/${username}/${gameId}/`
+                : `/chessTrainer/analyze/${username}/${gameId}/`;
+            
+            fetch(analysisUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur lors du lancement de l\'analyse');
+                }
+                console.log('✅ Analyse lancée avec succès');
+            })
+            .catch(error => {
+                console.error('❌ Erreur lors du lancement de l\'analyse:', error);
+                
+                // Restaurer le bouton en cas d'erreur
+                restoreButton(button);
+                
+                // Fermer la connexion SSE
+                if (currentEventSource) {
+                    currentEventSource.close();
+                    currentEventSource = null;
+                }
+                
+                alert('Erreur lors du lancement de l\'analyse: ' + error.message);
+            });
+        }
+    });
+    
+    // Gestionnaire pour le bouton "Tout analyser"
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('analyze-all-btn') || e.target.closest('.analyze-all-btn')) {
+            e.preventDefault();
+            
+            const button = e.target.classList.contains('analyze-all-btn') ? e.target : e.target.closest('.analyze-all-btn');
+            const username = button.getAttribute('data-username');
+            
+            // Demander confirmation pour l'analyse de toutes les parties
+            if (confirm('Voulez-vous vraiment analyser toutes les parties ? Cela peut prendre du temps.')) {
+                console.log('🎯 Lancement analyse complète pour:', username);
+                
+                // Changer l'état du bouton avec barre de progression
+                const originalText = button.innerHTML;
+                updateButtonProgress(button, 0, 'Initialisation...');
+                button.disabled = true;
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-secondary');
+                
+                // Afficher le statut global
+                const statusContainer = document.getElementById('analysisProgressContainer');
+                const statusMessage = document.getElementById('statusMessage');
+                
+                if (statusContainer && statusMessage) {
+                    statusMessage.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Analyse de toutes les parties en cours...';
+                    statusContainer.style.display = 'block';
+                }
+                
+                // Lancer l'analyse de toutes les parties (version asynchrone)
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                 document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                
+                fetch(`/chessTrainer/analyze-all-async/${username}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => {
+                    console.log('📡 Réponse reçue:', response.status, response.statusText);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    // Vérifier si la réponse est bien du JSON
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        console.error('❌ Réponse non-JSON reçue, Content-Type:', contentType);
+                        return response.text().then(text => {
+                            console.error('❌ Contenu de la réponse:', text.substring(0, 500));
+                            throw new Error('Réponse du serveur non-JSON: ' + text.substring(0, 100));
+                        });
+                    }
+                    
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📊 Données reçues:', data);
+                    if (data.success) {
+                        console.log('✅ Analyse complète lancée avec succès, session:', data.session_id);
+                        
+                        // Connecter aux SSE pour suivre la progression
+                        connectToAnalysisAllSSE(username, data.session_id, button, originalText);
+                    } else {
+                        throw new Error(data.error || 'Erreur inconnue');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erreur lors du lancement de l\'analyse complète:', error);
+                    
+                    // Restaurer le bouton en cas d'erreur
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('btn-success');
+                    
+                    // Cacher le statut
+                    if (statusContainer) {
+                        statusContainer.style.display = 'none';
+                    }
+                    
+                    alert('Erreur lors du lancement de l\'analyse complète: ' + error.message);
+                });
+            }
+        }
+    });
+    
+    // Gestionnaire pour les boutons d'import de nouvelles parties
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'importNewGamesBtn' || e.target.closest('#importNewGamesBtn')) {
+            e.preventDefault();
+            
+            const button = e.target.id === 'importNewGamesBtn' ? e.target : e.target.closest('#importNewGamesBtn');
+            const username = '{{ username }}';
+            const searchMonths = document.getElementById('searchMonths').value;
+            
+            startImport(username, false, searchMonths); // Import incrémental avec durée personnalisée
+        }
+        
+        if (e.target.id === 'fullSyncBtn' || e.target.closest('#fullSyncBtn')) {
+            e.preventDefault();
+            
+            const button = e.target.id === 'fullSyncBtn' ? e.target : e.target.closest('#fullSyncBtn');
+            const username = '{{ username }}';
+            
+            if (confirm('Voulez-vous vraiment effectuer une synchronisation complète ? Cela peut prendre du temps.')) {
+                const searchMonths = document.getElementById('searchMonths').value;
+                startImport(username, true, searchMonths); // Sync complète avec durée personnalisée
+            }
+        }
+    });
+    
+    // Fonction pour démarrer l'import des parties
+    function startImport(username, fullSync = false, searchMonths = '3') {
+        const importBtn = document.getElementById('importNewGamesBtn');
+        const fullSyncBtn = document.getElementById('fullSyncBtn');
+        const progressSection = document.getElementById('importProgressSection');
+        const progressBar = document.getElementById('importProgressBar');
+        const progressMessage = document.getElementById('importProgressMessage');
+        const syncStatus = document.getElementById('syncStatus');
+        
+        // Désactiver les boutons
+        if (importBtn) importBtn.disabled = true;
+        if (fullSyncBtn) fullSyncBtn.disabled = true;
+        
+        // Afficher la progression
+        if (progressSection) progressSection.style.display = 'block';
+        if (syncStatus) {
+            syncStatus.className = 'badge bg-warning text-dark';
+            syncStatus.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Synchronisation...';
+        }
+        
+        // Mettre à jour les boutons
+        if (fullSync) {
+            if (fullSyncBtn) fullSyncBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sync en cours...';
+            if (progressMessage) progressMessage.textContent = 'Synchronisation complète en cours...';
+        } else {
+            if (importBtn) importBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Vérification...';
+            if (progressMessage) progressMessage.textContent = 'Recherche de nouvelles parties...';
+        }
+        
+        // Démarrer l'analyse asynchrone
+        const url = `/chessTrainer/analyze-async/${username}/`;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                         document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                full_sync: fullSync,
+                search_months: searchMonths,
+                check_only: !fullSync
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Sauvegarder les informations de session pour reconnexion
+                const sessionInfo = {
+                    sessionId: data.session_id,
+                    username: username,
+                    isFullSync: fullSync,
+                    startTime: Date.now(),
+                    lastProgress: 0
+                };
+                localStorage.setItem('importSession_' + username, JSON.stringify(sessionInfo));
+                
+                // Connecter aux SSE pour suivre la progression
+                connectToImportSSE(username, data.session_id, fullSync);
+            } else {
+                showImportError('Erreur lors du démarrage de l\'import: ' + data.error);
+            }
+        })
+        .catch(error => {
+            showImportError('Erreur de connexion: ' + error.message);
+        });
+    }
+    
+    // Fonction pour se connecter aux SSE d'import
+    function connectToImportSSE(username, sessionId, fullSync) {
+        const eventSource = new EventSource(`/chessTrainer/analysis-progress/${username}/${sessionId}/`);
+        const progressBar = document.getElementById('importProgressBar');
+        const progressMessage = document.getElementById('importProgressMessage');
+        const syncStatus = document.getElementById('syncStatus');
+        
+        // Fermer la connexion précédente si elle existe
+        if (currentEventSource) {
+            currentEventSource.close();
+        }
+        currentEventSource = eventSource;
+        
+        eventSource.onopen = function(event) {
+            if (syncStatus) {
+                syncStatus.className = 'badge bg-info text-white';
+                syncStatus.innerHTML = '<i class="bi bi-wifi"></i> Connecté';
+            }
+        };
+        
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                // Logger tous les événements reçus
+                console.log('📡 Événement SSE reçu:', data);
+                
+                // Mettre à jour la progression dans localStorage
+                const sessionInfo = JSON.parse(localStorage.getItem('importSession_' + username) || '{}');
+                if (data.progress !== undefined) {
+                    sessionInfo.lastProgress = data.progress;
+                    sessionInfo.lastMessage = data.message;
+                    localStorage.setItem('importSession_' + username, JSON.stringify(sessionInfo));
+                }
+                
+                switch (data.type) {
+                    case 'connected':
+                    case 'reconnected':
+                        console.log('🔗 Connexion SSE établie');
+                        if (syncStatus) {
+                            syncStatus.className = 'badge bg-info text-white';
+                            syncStatus.innerHTML = '<i class="bi bi-wifi"></i> Connecté';
+                        }
+                        break;
+                        
+                    case 'sync_start':
+                        console.log('🚀 Début de synchronisation');
+                        updateImportProgressBar(10);
+                        if (progressMessage) progressMessage.textContent = 'Récupération des parties depuis Chess.com...';
+                        break;
+                    
+                    case 'sync_progress':
+                        console.log('⏳ Progression sync:', data.message);
+                        updateImportProgressBar(30);
+                        if (progressMessage) progressMessage.textContent = data.message || 'Synchronisation en cours...';
+                        if (syncStatus) {
+                            syncStatus.className = 'badge bg-warning text-dark';
+                            syncStatus.innerHTML = '<i class="bi bi-arrow-repeat"></i> Synchronisation';
+                        }
+                        break;
+                        
+                    case 'sync_complete':
+                        console.log('✅ Synchronisation terminée:', data);
+                        updateImportProgressBar(60);
+                        {
+                            const gamesCount = data.games_count || 0;
+                            if (gamesCount === 0) {
+                                // Pas de nouvelles parties trouvées
+                                if (progressMessage) progressMessage.textContent = 'Aucune nouvelle partie trouvée';
+                                if (syncStatus) {
+                                    syncStatus.className = 'badge bg-info text-white';
+                                    syncStatus.innerHTML = '<i class="bi bi-info-circle"></i> À jour';
+                                }
+                                
+                                // Important: Ne pas fermer la connexion SSE ici car l'événement 'complete' va arriver
+                                // La connexion sera fermée lors de l'événement 'complete'
+                            } else {
+                                if (progressMessage) progressMessage.textContent = `${gamesCount} nouvelles parties trouvées`;
+                            }
+                        }
+                        break;
+                        
+                    case 'analysis_start':
+                        console.log('🔍 Début d\'analyse');
+                        updateImportProgressBar(70);
+                        if (progressMessage) progressMessage.textContent = 'Début de l\'analyse...';
+                        break;
+                        
+                    case 'analysis_progress':
+                        console.log('📊 Progression analyse:', data.current_game + '/' + data.total_games);
+                        const percent = Math.round((data.current_game / data.total_games) * 30) + 70; // 70-100%
+                        updateImportProgressBar(percent);
+                        if (progressMessage) progressMessage.textContent = `Analyse: ${data.current_game}/${data.total_games}`;
+                        break;
+                        
+                    case 'complete':
+                        console.log('🎉 Synchronisation terminée');
+                        updateImportProgressBar(100);
+                        if (progressMessage) progressMessage.textContent = 'Synchronisation terminée, en attente de finalisation...';
+                        if (syncStatus) {
+                            syncStatus.className = 'badge bg-success text-white';
+                            syncStatus.innerHTML = '<i class="bi bi-check-circle"></i> Presque terminé';
+                        }
+                        
+                        // Ne pas fermer la connexion ni recharger ici - attendre 'finished'
+                        break;
+                        
+                    case 'finished':
+                        console.log('🎉 Import et analyse terminés');
+                        updateImportProgressBar(100);
+                        
+                        // Construire le message avec le nombre de parties
+                        {
+                            const gamesCount = data.games_count || 0;
+                            let finalMessage;
+                            if (gamesCount === 0) {
+                                finalMessage = 'Import terminé - aucune nouvelle partie trouvée';
+                            } else if (gamesCount === 1) {
+                                finalMessage = 'Import terminé - 1 nouvelle partie récupérée';
+                            } else {
+                                finalMessage = `Import terminé - ${gamesCount} nouvelles parties récupérées`;
+                            }
+                            
+                            if (progressMessage) progressMessage.textContent = finalMessage;
+                        }
+                        
+                        if (syncStatus) {
+                            syncStatus.className = 'badge bg-success text-white';
+                            syncStatus.innerHTML = '<i class="bi bi-check-circle"></i> Terminé';
+                        }
+                        
+                        // Nettoyer localStorage
+                        localStorage.removeItem('importSession_' + username);
+                        
+                        // Attendre 2 secondes avant de recharger pour laisser voir le message final
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                        
+                        // Fermer la connexion SSE après un court délai pour laisser le temps au message de s'afficher
+                        setTimeout(() => {
+                            eventSource.close();
+                            currentEventSource = null;
+                        }, 1000);
+                        break;
+                        
+                    case 'error':
+                        console.error('❌ Erreur SSE:', data);
+                        // Nettoyer localStorage en cas d'erreur
+                        localStorage.removeItem('importSession_' + username);
+                        showImportError(data.message);
+                        eventSource.close();
+                        currentEventSource = null;
+                        break;
+                        
+                    case 'session_not_found':
+                    case 'timeout':
+                        console.warn('⏰ Session SSE expirée ou introuvable');
+                        // Nettoyer localStorage et réinitialiser l'interface proprement
+                        localStorage.removeItem('importSession_' + username);
+                        
+                        const importBtn = document.getElementById('importNewGamesBtn');
+                        const fullSyncBtn = document.getElementById('fullSyncBtn');
+                        const progressSection = document.getElementById('importProgressSection');
+                        
+                        if (importBtn) {
+                            importBtn.disabled = false;
+                            importBtn.innerHTML = '<i class="bi bi-download"></i> Importer nouvelles';
+                        }
+                        if (fullSyncBtn) {
+                            fullSyncBtn.disabled = false;
+                            fullSyncBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Sync complète';
+                        }
+                        if (progressSection) progressSection.style.display = 'none';
+                        if (syncStatus) {
+                            syncStatus.className = 'badge bg-secondary';
+                            syncStatus.innerHTML = '<i class="bi bi-dash-circle"></i> Aucune activité';
+                        }
+                        
+                        eventSource.close();
+                        currentEventSource = null;
+                        break;
+                        
+                    default:
+                        console.log('❓ Événement SSE non géré:', data.type, data);
+                        break;
+                }
+            } catch (parseError) {
+                console.error('❌ Erreur de parsing JSON SSE:', parseError, 'Data reçue:', event.data);
+                return;
+            }
+        };
+        
+        eventSource.onerror = function(event) {
+            console.warn('🚨 Erreur de connexion SSE:', event);
+            
+            if (syncStatus) {
+                syncStatus.className = 'badge bg-warning text-dark';
+                syncStatus.innerHTML = '<i class="bi bi-wifi-off"></i> Reconnexion...';
+            }
+            
+            // Compter les tentatives de reconnexion
+            if (!window.sseReconnectCount) window.sseReconnectCount = 0;
+            window.sseReconnectCount++;
+            
+            // Après 3 tentatives échouées, arrêter et réinitialiser l'interface
+            if (window.sseReconnectCount > 3) {
+                console.error('❌ Trop de tentatives de reconnexion SSE échouées, arrêt');
+                
+                // Nettoyer localStorage et réinitialiser l'interface
+                localStorage.removeItem('importSession_' + username);
+                
+                const importBtn = document.getElementById('importNewGamesBtn');
+                const fullSyncBtn = document.getElementById('fullSyncBtn');
+                const progressSection = document.getElementById('importProgressSection');
+                
+                if (importBtn) {
+                    importBtn.disabled = false;
+                    importBtn.innerHTML = '<i class="bi bi-download"></i> Importer nouvelles';
+                }
+                if (fullSyncBtn) {
+                    fullSyncBtn.disabled = false;
+                    fullSyncBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Sync complète';
+                }
+                if (progressSection) progressSection.style.display = 'none';
+                if (syncStatus) {
+                    syncStatus.className = 'badge bg-secondary';
+                    syncStatus.innerHTML = '<i class="bi bi-dash-circle"></i> Déconnecté';
+                }
+                
+                eventSource.close();
+                currentEventSource = null;
+                window.sseReconnectCount = 0;
+                return;
+            }
+            
+            // Pour les autres erreurs, laisser la reconnexion automatique du navigateur se faire
+            // mais avec un timeout pour éviter les boucles infinies
+            setTimeout(() => {
+                if (eventSource.readyState === EventSource.CLOSED && window.sseReconnectCount <= 3) {
+                    console.log('🔄 Tentative de reconnexion SSE manuelle...');
+                    // Le navigateur va automatiquement tenter de se reconnecter
+                }
+            }, 5000);
+        };
+    }
+    
+    // Fonction pour mettre à jour la barre de progression d'import
+    function updateImportProgressBar(percent) {
+        const progressBar = document.getElementById('importProgressBar');
+        if (progressBar) {
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = percent + '%';
+        }
+    }
+    
+    // Fonction pour afficher les erreurs d'import
+    function showImportError(message) {
+        const importBtn = document.getElementById('importNewGamesBtn');
+        const fullSyncBtn = document.getElementById('fullSyncBtn');
+        const progressSection = document.getElementById('importProgressSection');
+        const syncStatus = document.getElementById('syncStatus');
+        
+        // Réactiver les boutons
+        if (importBtn) {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '<i class="bi bi-download"></i> Importer nouvelles parties';
+        }
+        if (fullSyncBtn) {
+            fullSyncBtn.disabled = false;
+            fullSyncBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Sync complète';
+        }
+        
+        // Cacher la progression
+        if (progressSection) progressSection.style.display = 'none';
+        
+        // Mettre à jour le statut
+        if (syncStatus) {
+            syncStatus.className = 'badge bg-danger text-white';
+            syncStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Erreur';
+        }
+        
+        alert('Erreur d\'import: ' + message);
+    }
+});
+</script>
+{% endblock %}

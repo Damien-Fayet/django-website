@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ game.name }} - Max Challenge</title>
+    
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+    }
+    
+    .game-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+    }
+    
+    /* Confettis en arrière-plan */
+    .game-container::before {
+        content: '🎉 🎊 ✨ 🎈 🎁 🎂 🌟 🎵 🎭 🎨';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 1.2em;
+        opacity: 0.03;
+        pointer-events: none;
+        white-space: pre-wrap;
+        line-height: 4;
+        z-index: -1;
+        animation: float 25s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(2deg); }
+    }
+    
+    h1 {
+        text-align: center;
+        color: #2c3e50;
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        font-weight: bold;
+    }
+    
+    .global-image {
+        text-align: center;
+        margin-bottom: 30px;
+        border: 4px solid #ff6b6b;
+        padding: 25px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .global-image h3 {
+        color: #ff6b6b;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .global-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .global-photo {
+        width: 150px;
+        height: 150px;
+        border: 2px solid #ccc;
+        background: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .global-photo.revealed {
+        background: #e8f5e8;
+        border-color: #28a745;
+    }
+    
+    .teams-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .team-section {
+        border: 3px solid;
+        padding: 20px;
+        border-radius: 10px;
+    }
+    
+    .team-a {
+        border-color: #007bff;
+        background: #f8f9ff;
+    }
+    
+    .team-b {
+        border-color: #dc3545;
+        background: #fff8f8;
+    }
+    
+    .team-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .team-score {
+        font-size: 2em;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .ascii-display {
+        font-family: 'Courier New', monospace;
+        font-size: 8px;
+        line-height: 1;
+        background: #f0f0f0;
+        padding: 15px;
+        border-radius: 5px;
+        overflow: auto;
+        max-height: 400px;
+        white-space: pre;
+    }
+    
+    .definition-section {
+        border: 3px solid #28a745;
+        padding: 20px;
+        border-radius: 10px;
+        background: #f8fff8;
+        text-align: center;
+    }
+    
+    .definition-text {
+        font-size: 1.2em;
+        line-height: 1.5;
+        margin: 20px 0;
+        min-height: 60px;
+    }
+    
+    .definition-word {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #28a745;
+        margin-bottom: 10px;
+    }
+    
+    .admin-links {
+        text-align: center;
+        margin-top: 30px;
+    }
+    
+    .btn-admin {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 0 10px;
+    }
+    
+    .btn-admin:hover {
+        background: #5a6268;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .auto-refresh {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <div class="auto-refresh" id="refresh-indicator">
+        🔄 Mise à jour automatique
+    </div>
+
+    <h1 class="text-center mb-4">{{ game.name }}</h1>
+    
+    <!-- Image globale -->
+    <div class="global-image">
+        <h3>Image Globale du Louvre</h3>
+        <div class="global-photos" id="global-photos">
+            {% for photo in game.global_photos.all %}
+                <div class="global-photo {% if forloop.counter0 in game.global_revealed_photos %}revealed{% endif %}">
+                    {% if forloop.counter0 in game.global_revealed_photos %}
+                        <img src="{{ photo.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        Photo {{ forloop.counter }}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Équipes -->
+    <div class="teams-container">
+        <!-- Équipe A -->
+        <div class="team-section team-a">
+            <div class="team-header">
+                <h2>{{ game.team_a_name }}</h2>
+                <div class="team-score" id="team-a-score">{{ game.team_a_score }}</div>
+                <small>{{ game.team_a_photo.name }}</small>
+            </div>
+            <div class="ascii-display" id="team-a-ascii">{{ team_a_ascii }}</div>
+        </div>
+        
+        <!-- Équipe B -->
+        <div class="team-section team-b">
+            <div class="team-header">
+                <h2>{{ game.team_b_name }}</h2>
+                <div class="team-score" id="team-b-score">{{ game.team_b_score }}</div>
+                <small>{{ game.team_b_photo.name }}</small>
+            </div>
+            <div class="ascii-display" id="team-b-ascii">{{ team_b_ascii }}</div>
+        </div>
+    </div>
+    
+    <!-- Définition -->
+    <div class="definition-section">
+        <h3>Définition à deviner</h3>
+        <div class="definition-word" id="definition-word">
+            {{ game.current_definition.word|default:"Aucune définition en cours" }}
+        </div>
+        <div class="definition-text" id="definition-text">
+            {{ definition_display|default:"En attente d'une définition..." }}
+        </div>
+    </div>
+    
+    <!-- Liens d'administration -->
+    <div class="admin-links">
+        <a href="{% url 'max_challenge:admin' game.pk %}" class="btn-admin">Interface Animateur</a>
+        <a href="{% url 'max_challenge:index' %}" class="btn-admin">Retour à l'accueil</a>
+    </div>
+</div>
+
+<script>
+// Mise à jour automatique toutes les 2 secondes
+let refreshInterval = setInterval(function() {
+    fetch(`/max_challenge/api/game_state/{{ game.pk }}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour les scores
+            document.getElementById('team-a-score').textContent = data.team_a_score;
+            document.getElementById('team-b-score').textContent = data.team_b_score;
+            
+            // Mettre à jour les ASCII
+            document.getElementById('team-a-ascii').textContent = data.team_a_ascii;
+            document.getElementById('team-b-ascii').textContent = data.team_b_ascii;
+            
+            // Mettre à jour la définition
+            if (data.current_definition_word) {
+                document.getElementById('definition-word').textContent = data.current_definition_word;
+            }
+            if (data.definition_display) {
+                document.getElementById('definition-text').textContent = data.definition_display;
+            }
+            
+            // Indicateur de mise à jour
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.style.background = '#28a745';
+            setTimeout(() => {
+                indicator.style.background = '#6c757d';
+            }, 200);
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour:', error);
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.style.background = '#dc3545';
+        });
+}, 2000);
+</script>
+{% endblock %}

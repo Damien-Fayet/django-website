@@ -1,0 +1,165 @@
+{% extends 'chessTrainer/base.html' %}
+
+{% block title %}Session d'entraînement - {{ username }}{% endblock %}
+
+{% block content %}
+<div class="chess-container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-2">
+                <i class="bi bi-target"></i> Session d'entraînement
+            </h1>
+            <p class="text-center text-muted mb-4">
+                {{ username }} - {{ total_positions }} positions dans cette session
+                {% if total_available and total_available > total_positions %}
+                    <br><small class="text-info">{{ total_available }} positions disponibles au total</small>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <!-- Statistiques de session -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-graph-up"></i> Statistiques de session
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h4 class="text-primary">{{ total_positions }}</h4>
+                    <small class="text-muted">Positions cette session</small>
+                    {% if total_available and total_available > total_positions %}
+                        <br><small class="text-info">({{ total_available }} au total)</small>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-success">0</h4>
+                    <small class="text-muted">Complétées</small>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-warning">{{ session.max_positions }}</h4>
+                    <small class="text-muted">Objectif de session</small>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-info">0%</h4>
+                    <small class="text-muted">Précision</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Instructions -->
+    <div class="alert alert-info" role="alert">
+        <h5 class="alert-heading">
+            <i class="bi bi-info-circle"></i> Instructions
+        </h5>
+        <p class="mb-0">
+            Choisissez une position ci-dessous pour commencer votre entraînement. 
+            Chaque position provient d'une de vos parties où vous avez fait une erreur. 
+            Votre objectif est de trouver le meilleur coup dans cette position.
+        </p>
+    </div>
+    
+    <!-- Grille des positions -->
+    <div class="row">
+        {% for position in positions %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 position-card" onclick="startPosition({{ position.id }})" style="cursor: pointer;">
+                <div class="card-body position-relative">
+                    <!-- Badge de difficulté -->
+                    <span class="badge position-absolute top-0 end-0 m-2
+                        {% if position.difficulty == 'easy' %}bg-success
+                        {% elif position.difficulty == 'medium' %}bg-warning
+                        {% else %}bg-danger{% endif %}">
+                        {% if position.difficulty == 'easy' %}Facile
+                        {% elif position.difficulty == 'medium' %}Moyen
+                        {% else %}Difficile{% endif %}
+                    </span>
+                    
+                    <!-- Informations de la position -->
+                    <h6 class="card-title">
+                        Position #{{ forloop.counter }}
+                        <span class="text-muted small">
+                            ({% if position.player_color == 'white' %}♙ vs ♟{% else %}♟ vs ♙{% endif %})
+                        </span>
+                    </h6>
+                    
+                    <p class="card-text small text-muted">
+                        <strong>Partie d'origine:</strong><br>
+                        {{ position.original_game.white_player }} vs {{ position.original_game.black_player }}<br>
+                        <small>{{ position.original_game.start_time|date:"d/m/Y" }}</small>
+                    </p>
+                    
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">
+                            {% if position.times_played > 0 %}
+                                Tentatives: {{ position.times_played }}
+                            {% else %}
+                                Nouveau
+                            {% endif %}
+                        </small>
+                        {% if position.times_played > 0 %}
+                        <small class="text-success">
+                            Réussite: {{ position.success_rate|floatformat:0 }}%
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center">
+                <h5>
+                    <i class="bi bi-exclamation-triangle"></i> Aucune position d'entraînement disponible
+                </h5>
+                <p>Nous n'avons pas pu générer de positions d'entraînement pour {{ username }}.</p>
+                <p>Assurez-vous d'avoir analysé quelques parties en premier.</p>
+                <a href="{% url 'chessTrainer:chess_analysis' %}" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Analyser mes parties
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Actions -->
+    <div class="text-center mt-4">
+        <a href="{% url 'chessTrainer:training_home' %}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+        <button class="btn btn-primary" onclick="startRandomPosition()" {% if not positions %}disabled{% endif %}>
+            <i class="bi bi-shuffle"></i> Position aléatoire
+        </button>
+    </div>
+</div>
+
+<script>
+function startPosition(positionId) {
+    window.location.href = `{% url 'chessTrainer:training_position' username 0 %}`.replace('0', positionId);
+}
+
+function startRandomPosition() {
+    const positions = [{% for pos in positions %}{{ pos.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
+    if (positions.length > 0) {
+        const randomIndex = Math.floor(Math.random() * positions.length);
+        startPosition(positions[randomIndex]);
+    }
+}
+
+// Animation d'apparition des cartes
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.position-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.5s, transform 0.5s';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

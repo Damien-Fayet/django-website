@@ -1,0 +1,557 @@
+{% extends 'biblio/base.html' %}
+{% load biblio_extras %}
+
+{% block title %}Liste des livres{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-list"></i> Tous les livres ({{ total_count }})</h1>
+    <div class="btn-group">
+        <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Ajouter un livre
+        </a>
+        <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="selectAllBooks()">
+                <i class="bi bi-check-all"></i> Tout sélectionner
+            </a></li>
+            <li><a class="dropdown-item" href="#" onclick="clearSelection()">
+                <i class="bi bi-x-square"></i> Tout désélectionner
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'biblio:book_list' %}?export=csv">
+                <i class="bi bi-download"></i> Exporter CSV
+            </a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Barre de recherche rapide -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="input-group">
+            <input type="text" id="live-search" class="form-control" 
+                   placeholder="🔍 Recherche instantanée..." 
+                   value="{{ form.search.value|default:'' }}">
+            <button class="btn btn-outline-secondary" type="button" onclick="clearLiveSearch()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres avancés (repliables) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <button class="btn btn-link text-decoration-none p-0 w-100 text-start" 
+                type="button" data-bs-toggle="collapse" data-bs-target="#advanced-filters">
+            <i class="bi bi-funnel"></i> Filtres avancés
+            <i class="bi bi-chevron-down float-end"></i>
+        </button>
+    </div>
+    <div class="collapse" id="advanced-filters">
+        <div class="card-body">
+            <form method="get" class="row g-3" id="filter-form">
+                <div class="col-md-3">
+                    {{ form.rating.label_tag }}
+                    {{ form.rating }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.themes.label_tag }}
+                    {{ form.themes }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.age_range.label_tag }}
+                    {{ form.age_range }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-funnel"></i> Filtrer
+                        </button>
+                        <a href="{% url 'biblio:book_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tri et vue -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="sort" id="sort-title" value="title" 
+               {% if sort == 'title' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-title">
+            <i class="bi bi-sort-alpha-down"></i> Titre
+        </label>
+        
+        <input type="radio" class="btn-check" name="sort" id="sort-author" value="author" 
+               {% if sort == 'author' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-author">
+            <i class="bi bi-person"></i> Auteur
+        </label>
+        
+        <input type="radio" class="btn-check" name="sort" id="sort-date" value="-added_date" 
+               {% if sort == '-added_date' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-date">
+            <i class="bi bi-clock"></i> Plus récent
+        </label>
+        
+        <input type="radio" class="btn-check" name="sort" id="sort-rating" value="-rating" 
+               {% if sort == '-rating' %}checked{% endif %} onchange="changeSort(this.value)">
+        <label class="btn btn-outline-secondary btn-sm" for="sort-rating">
+            <i class="bi bi-star"></i> Mieux noté
+        </label>
+    </div>
+    
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="view" id="view-grid" checked onchange="changeView('grid')">
+        <label class="btn btn-outline-secondary btn-sm" for="view-grid">
+            <i class="bi bi-grid"></i>
+        </label>
+        
+        <input type="radio" class="btn-check" name="view" id="view-list" onchange="changeView('list')">
+        <label class="btn btn-outline-secondary btn-sm" for="view-list">
+            <i class="bi bi-list"></i>
+        </label>
+    </div>
+</div>
+
+<!-- Actions en lot -->
+<div id="bulk-actions" class="alert alert-info d-none">
+    <form method="post" action="{% url 'biblio:bulk_actions' %}" class="d-flex align-items-center gap-3">
+        {% csrf_token %}
+        <span><span id="selected-count">0</span> livre(s) sélectionné(s)</span>
+        
+        <select name="action" class="form-select form-select-sm" style="width: auto;">
+            <option value="">-- Choisir une action --</option>
+            <option value="delete">Supprimer</option>
+            <option value="set_rating">Définir une note</option>
+            <option value="add_theme">Ajouter un thème</option>
+        </select>
+        
+        <input type="text" name="rating" placeholder="Note (1-5)" class="form-control form-control-sm" style="width: 100px; display: none;">
+        <input type="text" name="theme" placeholder="Nouveau thème" class="form-control form-control-sm" style="width: 150px; display: none;">
+        
+        <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Êtes-vous sûr ?')">
+            Appliquer
+        </button>
+        
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+            Annuler
+        </button>
+        
+        <input type="hidden" name="book_ids" id="selected-book-ids">
+    </form>
+</div>
+
+<!-- Liste des livres -->
+{% if books %}
+    <div id="books-container">
+        <!-- Vue grille (par défaut) -->
+        <div id="grid-view" class="row">
+            {% for book in books %}
+                <div class="col-md-3 col-sm-6 mb-4 book-item" data-book-id="{{ book.pk }}">
+                    <div class="card h-100 book-card">
+                        <!-- Checkbox de sélection -->
+                        <div class="position-absolute top-0 start-0 p-2">
+                            <input type="checkbox" class="form-check-input book-checkbox" 
+                                   value="{{ book.pk }}" onchange="updateSelection()">
+                        </div>
+                        
+                        <!-- Image de couverture avec overlay -->
+                        <div class="position-relative">
+                            {% if book.cover_image_url %}
+                                <img src="{{ book.cover_image_url }}" class="card-img-top book-cover" alt="{{ book.title }}">
+                            {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center book-cover">
+                                    <i class="bi bi-book display-4 text-muted"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Actions rapides sur hover -->
+                            <div class="book-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-2">
+                                <a href="{% url 'biblio:book_detail' book.pk %}" class="text-decoration-none">
+                                    {{ book.title|truncatechars:40 }}
+                                </a>
+                            </h6>
+                            
+                            <p class="card-text text-muted small mb-2">{{ book.authors|truncatechars:30 }}</p>
+                            
+                            {% if book.rating %}
+                                <div class="mb-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= book.rating %}
+                                            <i class="bi bi-star-fill text-warning small"></i>
+                                        {% else %}
+                                            <i class="bi bi-star text-muted small"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if book.themes %}
+                                <div class="mb-2">
+                                    {% for theme in book.themes|split:","|slice:":2" %}
+                                        <span class="badge bg-secondary badge-sm">{{ theme|trim|truncatechars:15 }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mt-auto">
+                                <small class="text-muted">Ajouté {{ book.added_date|timesince }} </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Vue liste -->
+        <div id="list-view" class="d-none">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="30">
+                                <input type="checkbox" class="form-check-input" id="select-all" onchange="toggleAllSelection()">
+                            </th>
+                            <th width="60">Cover</th>
+                            <th>Titre</th>
+                            <th>Auteur(s)</th>
+                            <th>Note</th>
+                            <th>Thèmes</th>
+                            <th>Ajouté</th>
+                            <th width="100">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                            <tr class="book-item" data-book-id="{{ book.pk }}">
+                                <td>
+                                    <input type="checkbox" class="form-check-input book-checkbox" 
+                                           value="{{ book.pk }}" onchange="updateSelection()">
+                                </td>
+                                <td>
+                                    {% if book.cover_image_url %}
+                                        <img src="{{ book.cover_image_url }}" class="rounded" style="width: 40px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 60px;">
+                                            <i class="bi bi-book text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'biblio:book_detail' book.pk %}" class="text-decoration-none fw-bold">
+                                        {{ book.title }}
+                                    </a>
+                                </td>
+                                <td>{{ book.authors }}</td>
+                                <td>
+                                    {% if book.rating %}
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= book.rating %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-star text-muted"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if book.themes %}
+                                        {% for theme in book.themes|split:","|slice:":2" %}
+                                            <span class="badge bg-secondary me-1">{{ theme|trim }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ book.added_date|date:"d/m/Y" }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'biblio:book_detail' book.pk %}" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'biblio:edit_book' book.pk %}" class="btn btn-outline-warning btn-sm">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagination améliorée -->
+    {% if books.has_other_pages %}
+        <nav aria-label="Pagination des livres" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if books.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{{ request.GET.urlencode|add:'&' }}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ books.previous_page_number }}{{ request.GET.urlencode|add:'&' }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <!-- Pages numérotées -->
+                {% for num in books.paginator.page_range %}
+                    {% if num == books.number %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > books.number|add:'-3' and num < books.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{{ request.GET.urlencode|add:'&' }}">{{ num }}</a>
+                        </li>
+                    {% elif num == 1 or num == books.paginator.num_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{{ request.GET.urlencode|add:'&' }}">{{ num }}</a>
+                        </li>
+                    {% elif num == books.number|add:'-4' or num == books.number|add:'4' %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if books.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ books.next_page_number }}{{ request.GET.urlencode|add:'&' }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ books.paginator.num_pages }}{{ request.GET.urlencode|add:'&' }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            
+            <div class="text-center text-muted">
+                Page {{ books.number }} sur {{ books.paginator.num_pages }} 
+                ({{ books.paginator.count }} livres au total)
+            </div>
+        </nav>
+    {% endif %}
+    
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-book display-1 text-muted"></i>
+        <h3 class="mt-3">Aucun livre trouvé</h3>
+        <p class="text-muted">
+            {% if request.GET %}
+                Essayez de modifier vos critères de recherche.
+            {% else %}
+                Commencez par ajouter votre premier livre !
+            {% endif %}
+        </p>
+        <a href="{% url 'biblio:add_book_isbn' %}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Ajouter un livre
+        </a>
+    </div>
+{% endif %}
+
+<!-- Scripts -->
+<script>
+let selectedBooks = new Set();
+
+// Recherche en temps réel
+document.getElementById('live-search').addEventListener('input', function() {
+    const query = this.value.trim();
+    const books = document.querySelectorAll('.book-item');
+    
+    books.forEach(book => {
+        const title = book.querySelector('.card-title a, td:nth-child(3) a')?.textContent.toLowerCase() || '';
+        const author = book.querySelector('.card-text, td:nth-child(4)')?.textContent.toLowerCase() || '';
+        
+        if (title.includes(query.toLowerCase()) || author.includes(query.toLowerCase())) {
+            book.style.display = '';
+        } else {
+            book.style.display = 'none';
+        }
+    });
+});
+
+function clearLiveSearch() {
+    document.getElementById('live-search').value = '';
+    document.querySelectorAll('.book-item').forEach(book => {
+        book.style.display = '';
+    });
+}
+
+// Changement de tri
+function changeSort(sort) {
+    const url = new URL(window.location);
+    url.searchParams.set('sort', sort);
+    window.location.href = url.toString();
+}
+
+// Changement de vue
+function changeView(view) {
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    
+    if (view === 'list') {
+        gridView.classList.add('d-none');
+        listView.classList.remove('d-none');
+    } else {
+        gridView.classList.remove('d-none');
+        listView.classList.add('d-none');
+    }
+    
+    localStorage.setItem('preferred-view', view);
+}
+
+// Restaurer la vue préférée
+document.addEventListener('DOMContentLoaded', function() {
+    const preferredView = localStorage.getItem('preferred-view');
+    if (preferredView === 'list') {
+        document.getElementById('view-list').checked = true;
+        changeView('list');
+    }
+});
+
+// Sélection multiple
+function updateSelection() {
+    const checkboxes = document.querySelectorAll('.book-checkbox:checked');
+    selectedBooks.clear();
+    
+    checkboxes.forEach(cb => selectedBooks.add(cb.value));
+    
+    const count = selectedBooks.size;
+    document.getElementById('selected-count').textContent = count;
+    document.getElementById('selected-book-ids').value = Array.from(selectedBooks).join(',');
+    
+    const bulkActions = document.getElementById('bulk-actions');
+    if (count > 0) {
+        bulkActions.classList.remove('d-none');
+    } else {
+        bulkActions.classList.add('d-none');
+    }
+}
+
+function selectAllBooks() {
+    document.querySelectorAll('.book-checkbox').forEach(cb => cb.checked = true);
+    updateSelection();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.book-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('select-all').checked = false;
+    updateSelection();
+}
+
+function toggleAllSelection() {
+    const selectAll = document.getElementById('select-all');
+    document.querySelectorAll('.book-checkbox').forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    updateSelection();
+}
+
+// Gestion des actions en lot
+document.querySelector('select[name="action"]')?.addEventListener('change', function() {
+    const ratingInput = document.querySelector('input[name="rating"]');
+    const themeInput = document.querySelector('input[name="theme"]');
+    
+    // Masquer tous les champs supplémentaires
+    ratingInput.style.display = 'none';
+    themeInput.style.display = 'none';
+    
+    // Afficher le champ approprié
+    if (this.value === 'set_rating') {
+        ratingInput.style.display = 'block';
+        ratingInput.required = true;
+    } else if (this.value === 'add_theme') {
+        themeInput.style.display = 'block';
+        themeInput.required = true;
+    } else {
+        ratingInput.required = false;
+        themeInput.required = false;
+    }
+});
+</script>
+
+<style>
+.book-cover {
+    height: 200px;
+    object-fit: cover;
+}
+
+.book-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.book-overlay {
+    background: rgba(0,0,0,0.7);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.book-card:hover .book-overlay {
+    opacity: 1;
+}
+
+.badge-sm {
+    font-size: 0.7rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+.pagination {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .col-md-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+</style>
+{% endblock %}

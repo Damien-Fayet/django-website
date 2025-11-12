@@ -1,0 +1,482 @@
+{% extends 'chessTrainer/base.html' %}
+
+{% block title %}Analyse de Parties{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="text-center mb-4">
+            <i class="bi bi-chess"></i> Analyse de Parties d'Échecs
+        </h1>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Analyser une partie Chess.com</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Entrez votre nom d'utilisateur Chess.com pour analyser votre dernière partie 
+                    et voir les coups considérés comme des erreurs.
+                </p>
+                
+                <form id="analysisForm" class="row g-3">
+                    {% csrf_token %}
+                    <div class="col-md-8">
+                        <label for="username" class="form-label">Nom d'utilisateur Chess.com</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               placeholder="akrTik"
+                               value="akrTik"
+                               required>
+                        <div class="form-text">
+                            Votre nom d'utilisateur public sur Chess.com (akrTik par défaut)
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" id="analyzeBtn" class="btn btn-primary w-100">
+                            <img src="https://www.chess.com/bundles/web/images/offline-play/standard.84a92436.svg" alt="Chess.com" style="height:1.2em;vertical-align:middle;margin-right:0.3em;"> 
+                            <i class="bi bi-search"></i> Analyser
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Zone de progression -->
+                <div id="progressSection" class="mt-4" style="display: none;">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-clock-history"></i> Analyse en cours...
+                                </h6>
+                                <div id="connectionStatus" class="badge bg-success">
+                                    <i class="bi bi-wifi"></i> Connecté
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="progressMessage" class="mb-2">Démarrage de l'analyse...</div>
+                            <div class="progress mb-2">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" 
+                                     style="width: 0%" 
+                                     aria-valuenow="0" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    0%
+                                </div>
+                            </div>
+                            <div id="progressDetails" class="text-muted small">
+                                Initialisation...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section Entraînement -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-trophy"></i> Entraînement Personnalisé
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Entraînez-vous sur vos erreurs passées ! L'application analysera vos parties pour vous proposer 
+                    des positions où vous avez fait des erreurs, et vous pourrez rejouer ces coups.
+                </p>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>Fonctionnalités :</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> Positions basées sur vos erreurs réelles</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Échiquier interactif pour rejouer les coups</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Comparaison avec Stockfish</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Suivi de vos progrès</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{% url 'chessTrainer:training_home' %}" class="btn btn-success btn-lg">
+                            <i class="bi bi-play-circle"></i> Commencer l'Entraînement
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5>Comment ça marche ?</h5>
+                <ul>
+                    <li>Entrez votre nom d'utilisateur Chess.com</li>
+                    <li>L'application récupère votre dernière partie</li>
+                    <li>Les coups sont analysés pour détecter les erreurs</li>
+                    <li>Les erreurs sont affichées sur un échiquier interactif</li>
+                </ul>
+                
+                <p class="text-muted mb-0">
+                    <strong>Note:</strong> L'analyse utilise des critères simplifiés pour identifier les erreurs. 
+                    Pour une analyse plus approfondie, utilisez des outils dédiés comme l'analyse Chess.com ou Lichess.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded');
+    
+    const analysisForm = document.getElementById('analysisForm');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const progressSection = document.getElementById('progressSection');
+    const progressBar = document.getElementById('progressBar');
+    const progressMessage = document.getElementById('progressMessage');
+    const progressDetails = document.getElementById('progressDetails');
+    const connectionStatus = document.getElementById('connectionStatus');
+    
+    console.log('Elements found:');
+    console.log('analysisForm:', analysisForm);
+    console.log('analyzeBtn:', analyzeBtn);
+    console.log('progressSection:', progressSection);
+    
+    if (!analysisForm) {
+        console.error('analysisForm not found!');
+        return;
+    }
+    
+    // Vérifier s'il y a une session en cours au chargement
+    checkExistingSession();
+    
+    analysisForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('Form submitted!');
+
+        const username = document.getElementById('username').value.trim();
+        console.log('Username:', username);
+
+        if (!username) {
+            alert('Veuillez entrer un nom d\'utilisateur valide.');
+            return;
+        }
+
+        // Rediriger vers la page de sélection des parties sans lancer d'analyse
+        window.location.href = `/chessTrainer/games/${username}/`;
+    });
+    
+    function checkExistingSession() {
+        const sessionData = localStorage.getItem('analysisSession');
+        if (sessionData) {
+            const session = JSON.parse(sessionData);
+            const elapsed = Date.now() - session.startTime;
+            
+            // Si moins de 30 minutes, proposer de reconnecter
+            if (elapsed < 30 * 60 * 1000) {
+                const progressData = localStorage.getItem('analysisProgress');
+                if (progressData) {
+                    const progress = JSON.parse(progressData);
+                    
+                    // Afficher la progression sauvegardée
+                    progressSection.style.display = 'block';
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Analyse en cours...';
+                    
+                    updateProgressBar(progress.progress);
+                    progressMessage.textContent = progress.message + ' (reprise)';
+                    progressDetails.textContent = 'Reconnexion à la session en cours...';
+                    
+                    // Reconnecter automatiquement
+                    connectToSSE(session.username, session.sessionId);
+                }
+            } else {
+                // Session trop ancienne, nettoyer
+                localStorage.removeItem('analysisSession');
+                localStorage.removeItem('analysisProgress');
+            }
+        }
+    }
+    
+    // Nouvelle fonction pour lancer l'import/analyse des parties (appelée depuis un bouton dédié)
+    function startAnalysis(username) {
+        try {
+            console.log('startAnalysis called with:', username);
+            // Sauvegarder le nom d'utilisateur pour les redirections
+            localStorage.setItem('currentUsername', username);
+            // Désactiver le bouton et afficher la progression
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Analyse en cours...';
+            progressSection.style.display = 'block';
+            console.log('About to make fetch request...');
+            const url = `/chessTrainer/analyze-async/${username}/`;
+            console.log('URL to fetch:', url);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            console.log('CSRF token:', csrfToken);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                console.log('Response received:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data);
+                if (data.success) {
+                    connectToSSE(username, data.session_id);
+                } else {
+                    showError('Erreur lors du démarrage de l\'analyse: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                showError('Erreur de connexion: ' + error.message);
+            });
+        } catch (error) {
+            console.error('Error in startAnalysis:', error);
+            showError('Erreur JavaScript: ' + error.message);
+        }
+    }
+    
+    function connectToSSE(username, sessionId) {
+        let eventSource;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        let isConnected = false;
+        let lastReceivedProgress = -1;
+        
+        // Sauvegarder les infos de session pour reconnexion
+        localStorage.setItem('analysisSession', JSON.stringify({
+            username: username,
+            sessionId: sessionId,
+            startTime: Date.now()
+        }));
+        
+        function connect() {
+            // Indiquer la tentative de connexion
+            if (reconnectAttempts > 0) {
+                progressDetails.textContent = `Reconnexion en cours... (tentative ${reconnectAttempts})`;
+            }
+            
+            eventSource = new EventSource(`/chessTrainer/analysis-progress/${username}/${sessionId}/`);
+            
+            eventSource.onopen = function(event) {
+                console.log('✅ SSE connecté');
+                isConnected = true;
+                reconnectAttempts = 0;
+                
+                // Mettre à jour l'indicateur de statut
+                connectionStatus.className = 'badge bg-success';
+                connectionStatus.innerHTML = '<i class="bi bi-wifi"></i> Connecté';
+                
+                // Retirer le message de reconnexion si présent
+                if (progressDetails.textContent.includes('Reconnexion')) {
+                    progressDetails.textContent = 'Connexion rétablie...';
+                }
+            };
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                // Mettre à jour le dernier progrès reçu
+                if (data.progress !== undefined) {
+                    lastReceivedProgress = data.progress;
+                    localStorage.setItem('analysisProgress', JSON.stringify({
+                        progress: data.progress,
+                        message: data.message,
+                        timestamp: Date.now()
+                    }));
+                }
+                
+                updateProgress(data);
+                
+                // Si terminé, nettoyer le localStorage
+                if (data.type === 'complete' || data.type === 'error') {
+                    localStorage.removeItem('analysisSession');
+                    localStorage.removeItem('analysisProgress');
+                    eventSource.close();
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('❌ Erreur SSE:', event);
+                isConnected = false;
+                eventSource.close();
+                
+                // Mettre à jour l'indicateur de statut
+                connectionStatus.className = 'badge bg-warning';
+                connectionStatus.innerHTML = '<i class="bi bi-wifi-off"></i> Reconnexion...';
+                
+                // Vérifier si on doit tenter une reconnexion
+                const sessionData = localStorage.getItem('analysisSession');
+                if (sessionData && reconnectAttempts < maxReconnectAttempts) {
+                    const session = JSON.parse(sessionData);
+                    const elapsed = Date.now() - session.startTime;
+                    
+                    // Ne pas reconnecter si plus de 30 minutes
+                    if (elapsed < 30 * 60 * 1000) {
+                        scheduleReconnect();
+                    } else {
+                        connectionStatus.className = 'badge bg-danger';
+                        connectionStatus.innerHTML = '<i class="bi bi-wifi-off"></i> Timeout';
+                        showError('Analyse trop longue - timeout de sécurité atteint.');
+                        localStorage.removeItem('analysisSession');
+                        localStorage.removeItem('analysisProgress');
+                    }
+                } else {
+                    connectionStatus.className = 'badge bg-danger';
+                    connectionStatus.innerHTML = '<i class="bi bi-wifi-off"></i> Échec';
+                    showError('Connexion perdue définitivement. Vérifiez manuellement l\'état de l\'analyse.');
+                }
+            };
+        }
+        
+        function scheduleReconnect() {
+            reconnectAttempts++;
+            // Backoff exponentiel: 2^tentative secondes (max 30s)
+            const delay = Math.min(Math.pow(2, reconnectAttempts) * 1000, 30000);
+            
+            progressMessage.innerHTML = `🔄 Reconnexion automatique... (${Math.round(delay/1000)}s)`;
+            progressDetails.textContent = `Tentative ${reconnectAttempts}/${maxReconnectAttempts}`;
+            
+            setTimeout(() => {
+                console.log(`🔄 Tentative de reconnexion ${reconnectAttempts}/${maxReconnectAttempts}`);
+                connect();
+            }, delay);
+        }
+        
+        // Démarrer la première connexion
+        connect();
+        
+        // Fonction de nettoyage globale
+        window.cleanupSSE = function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            localStorage.removeItem('analysisSession');
+            localStorage.removeItem('analysisProgress');
+        };
+    }
+    
+    function updateProgress(data) {
+        switch (data.type) {
+            case 'connected':
+            case 'reconnected':
+                if (data.type === 'reconnected') {
+                    progressMessage.textContent = '🔄 ' + data.message;
+                    progressDetails.textContent = 'Connexion rétablie';
+                }
+                break;
+                
+            case 'heartbeat':
+                // Ne pas afficher les heartbeats
+                break;
+                
+            case 'session_not_found':
+                showError('Session d\'analyse introuvable. Elle a peut-être déjà terminé.');
+                break;
+                
+            case 'sync_start':
+                progressMessage.textContent = '🔄 Synchronisation des parties depuis Chess.com...';
+                progressDetails.textContent = 'Récupération des nouvelles parties...';
+                updateProgressBar(10);
+                break;
+                
+            case 'sync_complete':
+                progressMessage.textContent = `✅ ${data.games_count} parties synchronisées`;
+                progressDetails.textContent = 'Début de l\'analyse des parties...';
+                updateProgressBar(30);
+                break;
+                
+            case 'analysis_start':
+                progressMessage.textContent = '🔍 Analyse des parties avec Stockfish...';
+                progressDetails.textContent = `Analyse de ${data.total_games} parties...`;
+                updateProgressBar(40);
+                break;
+                
+            case 'analysis_progress':
+                const percent = Math.round((data.current_game / data.total_games) * 60) + 30; // 30-90%
+                progressMessage.textContent = `🔍 Analyse en cours... (${data.current_game}/${data.total_games})`;
+                progressDetails.textContent = `Partie: ${data.game_info || 'Analyse en cours...'}`;
+                updateProgressBar(percent);
+                break;
+                
+            case 'complete':
+                progressMessage.textContent = '🎉 Analyse terminée !';
+                progressDetails.textContent = `${data.analyzed_games} parties analysées, ${data.training_positions} positions d'entraînement créées`;
+                updateProgressBar(100);
+                
+                // Nettoyer le localStorage
+                localStorage.removeItem('analysisSession');
+                localStorage.removeItem('analysisProgress');
+                
+                // Rediriger vers les résultats après 2 secondes
+                setTimeout(() => {
+                    const redirectUsername = data.username || localStorage.getItem('currentUsername') || 'akrTik';
+                    window.location.href = `/chessTrainer/games/${redirectUsername}/`;
+                }, 2000);
+                break;
+                
+            case 'error':
+                showError(data.message);
+                break;
+                
+            case 'timeout':
+                showError('Timeout de connexion. L\'analyse continue en arrière-plan. Vérifiez manuellement dans quelques minutes.');
+                break;
+        }
+    }
+    
+    function updateProgressBar(percent) {
+        progressBar.style.width = percent + '%';
+        progressBar.setAttribute('aria-valuenow', percent);
+        progressBar.textContent = percent + '%';
+        
+        if (percent >= 100) {
+            progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+            progressBar.classList.add('bg-success');
+        }
+    }
+    
+    function showError(message) {
+        progressMessage.innerHTML = '<i class="bi bi-exclamation-triangle text-danger"></i> ' + message;
+        progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        progressBar.classList.add('bg-danger');
+        
+        // Réactiver le bouton
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '<i class="bi bi-search"></i> Analyser';
+    }
+    
+    // Nettoyage lors de la fermeture de la page
+    window.addEventListener('beforeunload', function() {
+        if (window.cleanupSSE) {
+            window.cleanupSSE();
+        }
+    });
+    
+    // Nettoyage si l'utilisateur navigue ailleurs
+    window.addEventListener('pagehide', function() {
+        if (window.cleanupSSE) {
+            window.cleanupSSE();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Max Challenge - Accueil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .hero-section {
+            text-align: center;
+            color: white;
+            padding: 60px 0;
+        }
+        
+        .hero-title {
+            font-size: 4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .action-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .action-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .create-icon { color: #28a745; }
+        .join-icon { color: #007bff; }
+        .admin-icon { color: #fd7e14; }
+        
+        .action-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .action-description {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .action-btn {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-create {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .btn-join {
+            background: linear-gradient(45deg, #007bff, #6610f2);
+            color: white;
+        }
+        
+        .btn-admin {
+            background: linear-gradient(45deg, #fd7e14, #e83e8c);
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .games-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .game-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        
+        .game-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .game-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .game-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .game-actions {
+            margin-top: 10px;
+        }
+        
+        .btn-sm-custom {
+            padding: 5px 15px;
+            font-size: 0.8em;
+            margin-right: 10px;
+            border-radius: 15px;
+        }
+        
+        .footer-info {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Section héro -->
+        <div class="hero-section">
+            <h1 class="hero-title">
+                <i class="bi bi-trophy-fill text-warning"></i>
+                Max Challenge
+            </h1>
+            <p class="hero-subtitle">
+                Le jeu de devinettes le plus festif ! Créez des défis amusants pour vos soirées.
+            </p>
+        </div>
+
+        <!-- Actions principales -->
+        <div class="row g-4 mb-5">
+            <div class="col-lg-4">
+                <div class="action-card">
+                    <i class="bi bi-plus-circle-fill action-icon create-icon"></i>
+                    <h3 class="action-title">Créer une partie</h3>
+                    <p class="action-description">
+                        Lancez une nouvelle session de jeu avec vos propres équipes et défis personnalisés.
+                    </p>
+                    <a href="{% url 'max_challenge:create_game' %}" class="btn action-btn btn-create">
+                        <i class="bi bi-rocket-fill"></i>
+                        Créer maintenant
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="action-card">
+                    <i class="bi bi-controller action-icon join-icon"></i>
+                    <h3 class="action-title">Rejoindre une partie</h3>
+                    <p class="action-description">
+                        Participez à une session de jeu existante et amusez-vous avec vos amis.
+                    </p>
+                    <button class="btn action-btn btn-join" data-bs-toggle="modal" data-bs-target="#joinModal">
+                        <i class="bi bi-people-fill"></i>
+                        Rejoindre
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="action-card">
+                    <i class="bi bi-gear-fill action-icon admin-icon"></i>
+                    <h3 class="action-title">Administration</h3>
+                    <p class="action-description">
+                        Gérez vos parties en cours et animez le jeu depuis l'interface d'administration.
+                    </p>
+                    <button class="btn action-btn btn-admin" data-bs-toggle="modal" data-bs-target="#adminModal">
+                        <i class="bi bi-shield-fill"></i>
+                        Administrer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des parties actives -->
+        {% if active_games %}
+        <div class="main-card p-4">
+            <h2 class="text-center mb-4">
+                <i class="bi bi-list-stars"></i>
+                Parties en cours
+            </h2>
+            
+            <div class="games-list">
+                {% for game in active_games %}
+                <div class="game-item">
+                    <div class="game-name">{{ game.name }}</div>
+                    <div class="game-info">
+                        {{ game.team_a_name }} ({{ game.team_a_score }}) vs {{ game.team_b_name }} ({{ game.team_b_score }})
+                        • Créée le {{ game.created_at|date:"d/m/Y à H:i" }}
+                    </div>
+                    <div class="game-actions">
+                        <a href="{% url 'max_challenge:game' game.id %}" class="btn btn-primary btn-sm-custom">
+                            <i class="bi bi-play-fill"></i>
+                            Voir le jeu
+                        </a>
+                        <a href="{% url 'max_challenge:admin' game.id %}" class="btn btn-warning btn-sm-custom">
+                            <i class="bi bi-gear"></i>
+                            Administrer
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Informations -->
+        <div class="footer-info">
+            <h4><i class="bi bi-info-circle"></i> Comment jouer ?</h4>
+            <p class="mb-0">
+                Max Challenge est un jeu de devinettes interactif parfait pour animer vos soirées !<br>
+                Créez des équipes, devinez des photos et des mots, et amusez-vous !
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal Rejoindre -->
+    <div class="modal fade" id="joinModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-people-fill"></i>
+                        Rejoindre une partie
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% if active_games %}
+                        <p>Sélectionnez une partie à rejoindre :</p>
+                        {% for game in active_games %}
+                        <div class="d-grid mb-2">
+                            <a href="{% url 'max_challenge:game' game.id %}" class="btn btn-outline-primary">
+                                {{ game.name }}
+                                <small class="text-muted d-block">
+                                    {{ game.team_a_name }} vs {{ game.team_b_name }}
+                                </small>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Aucune partie active pour le moment. Créez-en une nouvelle !
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Administration -->
+    <div class="modal fade" id="adminModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-gear-fill"></i>
+                        Administration
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% if active_games %}
+                        <p>Sélectionnez une partie à administrer :</p>
+                        {% for game in active_games %}
+                        <div class="d-grid mb-2">
+                            <a href="{% url 'max_challenge:admin' game.id %}" class="btn btn-outline-warning">
+                                {{ game.name }}
+                                <small class="text-muted d-block">
+                                    Administrer cette partie
+                                </small>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Aucune partie à administrer. Créez-en une nouvelle !
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

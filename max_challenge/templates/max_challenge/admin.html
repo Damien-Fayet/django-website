@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - {{ game.name }}</title>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.3;
+        font-size: 14px;
+    }
+    
+    /* Confettis en arrière-plan */
+    body::before {
+        content: '🎉 🎊 ✨ 🎈 🎁 🎂 🌟 🎵 🎭 🎨';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 1.2em;
+        opacity: 0.03;
+        pointer-events: none;
+        white-space: pre-wrap;
+        line-height: 4;
+        z-index: -1;
+    }
+    
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 10px;
+        position: relative;
+    }
+    
+    h1 {
+        text-align: center;
+        color: #2c3e50;
+        font-size: 1.8em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        font-weight: bold;
+    }
+    
+    .admin-section {
+        border: none;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        backdrop-filter: blur(10px);
+    }
+    
+    .admin-section h3 {
+        color: #ff6b6b;
+        margin-bottom: 10px;
+        font-size: 1.1em;
+        font-weight: 600;
+        text-align: center;
+        border-bottom: 2px solid #ff6b6b;
+        padding-bottom: 5px;
+    }
+    
+    .score-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    
+    .team-control {
+        text-align: center;
+        padding: 12px;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .team-a-control {
+        background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(255,255,255,0.8));
+        border: 2px solid #ff6b6b;
+    }
+    
+    .team-b-control {
+        background: linear-gradient(135deg, rgba(165,94,234,0.1), rgba(255,255,255,0.8));
+        border: 2px solid #a55eea;
+    }
+    
+    .team-control h4 {
+        color: #2c3e50;
+        font-size: 1em;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .score-btn {
+        font-size: 1.1em;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        margin: 5px;
+        min-width: 160px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .btn-team-a {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+    }
+    
+    .btn-team-a:hover {
+        background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(255,107,107,0.3);
+    }
+    
+    .btn-team-b {
+        background: linear-gradient(45deg, #a55eea, #8b5cf6);
+        color: white;
+    }
+    
+    .btn-team-b:hover {
+        background: linear-gradient(45deg, #8b5cf6, #a55eea);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(165,94,234,0.3);
+    }
+    
+    .reveal-btn {
+        font-size: 0.95em;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 5px;
+        min-width: 140px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        color: white;
+    }
+    
+    .reveal-btn:hover {
+        background: linear-gradient(45deg, #44bd87, #4ecdc4);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 10px 25px rgba(78,205,196,0.3);
+    }
+    
+    .reveal-btn:disabled {
+        background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    
+    .reveal-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .definition-controls {
+        text-align: center;
+        font-size: 1.8em; /* Augmente la taille de la police */
+    }
+    
+    .definition-select {
+        width: 100%;
+        max-width: 400px;
+        padding: 8px;
+        font-size: 0.95em;
+        margin: 8px;
+        border: 2px solid #4ecdc4;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.9);
+        color: #2c3e50;
+    }
+    
+    .btn-definition {
+        background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 4px;
+        font-size: 0.95em;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .btn-definition:hover {
+        background: linear-gradient(45deg, #44bd87, #4ecdc4);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(68,189,135,0.3);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+        box-shadow: 0 5px 15px rgba(255,107,107,0.3);
+    }
+    
+    .current-state {
+        background: linear-gradient(135deg, rgba(78,205,196,0.1), rgba(255,255,255,0.9));
+        border: 2px solid #4ecdc4;
+    }
+    
+    .game-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .stat-card {
+        background: rgba(255,255,255,0.8);
+        padding: 10px;
+        border-radius: 10px;
+        border: 2px solid rgba(255,107,107,0.2);
+        backdrop-filter: blur(5px);
+    }
+    
+    .stat-number {
+        font-size: 1.6em;
+        font-weight: bold;
+        color: #ff6b6b;
+        margin-bottom: 3px;
+    }
+    
+    .auto-reveal {
+        background: linear-gradient(135deg, rgba(255,193,7,0.2), rgba(255,255,255,0.9));
+        border: 2px solid #ffc107;
+    }
+    
+    .reveal-timer {
+        font-size: 1em;
+        font-weight: bold;
+        color: #856404;
+        margin: 8px 0;
+    }
+    
+    .definition-text {
+        font-size: 0.95em;
+        color: #2c3e50;
+        margin-top: 6px;
+    }
+    
+    .stat-label {
+        font-size: 0.85em;
+        color: #666;
+    }
+
+</style>
+</head>
+<body>
+
+<div class="admin-container">
+    <h1 class="text-center mb-4">Interface Animateur - {{ game.name }}</h1>
+    
+    <!-- État actuel du jeu -->
+    <div class="admin-section current-state">
+        <h3>État Actuel</h3>
+        <div class="game-stats">
+            <div class="stat-card">
+                <div class="stat-number" id="current-team-a-score">{{ game.team_a_score }}</div>
+                <div>{{ game.team_a_name }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="current-team-b-score">{{ game.team_b_score }}</div>
+                <div>{{ game.team_b_name }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contrôles des scores -->
+    <div class="admin-section">
+        <h3>Attribution des Points</h3>
+        <button class="btn btn-danger" style="float:right;margin-bottom:10px;" onclick="resetScores()">
+            🔄 Réinitialiser la fête
+        </button>
+        
+        <div style="clear:both;margin-bottom:15px;padding:10px;background:#f0f0f0;border-radius:5px;">
+            <label for="squares-per-reveal" style="font-weight:bold;margin-right:10px;">
+                Nombre de carrés révélés par bonne réponse:
+            </label>
+            <input type="number" 
+                   id="squares-per-reveal" 
+                   value="{{ game.squares_per_reveal }}" 
+                   min="1" 
+                   max="50" 
+                   style="width:60px;padding:5px;font-size:14px;"
+                   onchange="updateSquaresPerReveal(this.value)">
+            <span style="margin-left:10px;color:#666;font-size:12px;">
+                (Valeur par défaut: 6)
+            </span>
+        </div>
+        
+        <div class="score-controls">
+            <div class="team-control team-a-control">
+                <h4>{{ game.team_a_name }}</h4>
+                <p id="score-team-a-photo-name">{{ game.team_a_photo.name }}</p>
+                <button class="score-btn btn-team-a" onclick="givePoint('A')">
+                    ✓ Bonne Réponse !
+                </button>
+            </div>
+            <div class="team-control team-b-control">
+                <h4>{{ game.team_b_name }}</h4>
+                <p id="score-team-b-photo-name">{{ game.team_b_photo.name }}</p>
+                <button class="score-btn btn-team-b" onclick="givePoint('B')">
+                    ✓ Bonne Réponse !
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gestion des définitions -->
+    <div class="admin-section">
+        <h3>Gestion des Définitions</h3>
+        <div class="definition-controls">
+            <div style="margin-bottom: 20px;">
+                <p style="font-weight: bold; margin-bottom: 10px;">
+                    <span id="current-word">
+                        {% if game.current_definition %}
+                            [{{ game.current_definition.get_difficulty_display }}] {{ game.current_definition.word }}
+                        {% else %}
+                            Aucune définition en cours
+                        {% endif %}
+                    </span>
+                </p>
+                <div class="definition-text" id="current-definition" style="font-size: 0.95em; line-height: 1.4; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                    {% if game.current_definition %}
+                        {{ game.definition_display|safe }}
+                    {% else %}
+                        Cliquez sur un bouton ci-dessous pour lancer une définition
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <p style="font-weight: bold; margin-bottom: 15px;">Choisir le niveau de difficulté :</p>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
+                    <button class="btn-definition" onclick="nextDefinitionByDifficulty(1)" 
+                            style="background: linear-gradient(135deg, #52c234 0%, #2ecc71 100%); font-size: 1.1em; padding: 15px 30px;">
+                        😊 Facile
+                    </button>
+                    <button class="btn-definition" onclick="nextDefinitionByDifficulty(2)" 
+                            style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); font-size: 1.1em; padding: 15px 30px;">
+                        😐 Moyen
+                    </button>
+                    <button class="btn-definition" onclick="nextDefinitionByDifficulty(3)" 
+                            style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); font-size: 1.1em; padding: 15px 30px;">
+                        😰 Difficile
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Révélation automatique -->
+    <div class="admin-section auto-reveal">
+        <h3>Révélation Automatique des Mots</h3>
+        <p>Un mot de la définition sera révélé automatiquement toutes les 5 secondes</p>
+        <div class="reveal-timer" id="reveal-timer">Prochain mot dans : <span id="countdown">5</span>s</div>
+        <div>
+            <button class="btn-definition" onclick="toggleAutoReveal()" id="auto-reveal-btn">
+                ⏸️ Suspendre l'auto-révélation
+            </button>
+            <button class="btn-definition" onclick="revealWordNow()">
+                ⚡ Révéler maintenant
+            </button>
+        </div>
+    </div>
+    
+    <!-- Révélation des photos -->
+    <div class="admin-section">
+        <h3>Révélation des Photos</h3>
+        <div class="reveal-controls">
+            <div class="team-control team-a-control">
+                <h4>{{ game.team_a_name }}</h4>
+                <p id="team-a-photo-name">{{ game.team_a_photo.name }}</p>
+                <div id="team-a-buttons">
+                    {% if game.team_a_photo_revealed %}
+                        <button class="reveal-btn" style="background: #28a745; cursor: default;" disabled>
+                            ✅ Photo révélée !
+                        </button>
+                        <button class="reveal-btn" onclick="hidePhoto('A')" style="background: #ffc107; margin-top: 10px;">
+                            🔄 Changer la photo
+                        </button>
+                    {% else %}
+                        <button class="reveal-btn btn-reveal-a" onclick="revealPhoto('A')">
+                            📸 Révéler la Photo
+                        </button>
+                        <button class="reveal-btn" onclick="hidePhoto('A')" style="background: #ffc107; margin-top: 10px;">
+                            � Changer la photo
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="team-control team-b-control">
+                <h4>{{ game.team_b_name }}</h4>
+                <p id="team-b-photo-name">{{ game.team_b_photo.name }}</p>
+                <div id="team-b-buttons">
+                    {% if game.team_b_photo_revealed %}
+                        <button class="reveal-btn" style="background: #28a745; cursor: default;" disabled>
+                            ✅ Photo révélée !
+                        </button>
+                        <button class="reveal-btn" onclick="hidePhoto('B')" style="background: #ffc107; margin-top: 10px;">
+                            🔄 Changer la photo
+                        </button>
+                    {% else %}
+                        <button class="reveal-btn btn-reveal-b" onclick="revealPhoto('B')">
+                            📸 Révéler la Photo
+                        </button>
+                        <button class="reveal-btn" onclick="hidePhoto('B')" style="background: #ffc107; margin-top: 10px;">
+                            � Changer la photo
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="admin-section" style="text-align: center;">
+        <a href="{% url 'max_challenge:game' game.pk %}" class="btn-definition">
+            👀 Voir le jeu
+        </a>
+        <a href="{% url 'max_challenge:index' %}" class="btn-definition">
+            🏠 Retour à l'accueil
+        </a>
+    </div>
+</div>
+
+<script>
+// Réinitialiser la fête (scores, révélations, etc.)
+function resetScores() {
+    if (!confirm('Voulez-vous vraiment réinitialiser la fête ? Cette action est irréversible.')) return;
+    fetch(`/max_challenge/api/reset_scores/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la réinitialisation.');
+        }
+    })
+    .catch(error => {
+        alert('Erreur lors de la réinitialisation.');
+        console.error('Erreur:', error);
+    });
+}
+
+// Mettre à jour le nombre de carrés révélés par bonne réponse
+function updateSquaresPerReveal(value) {
+    fetch(`/max_challenge/api/update_squares_per_reveal/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            squares_per_reveal: parseInt(value)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Nombre de carrés mis à jour:', value);
+        } else {
+            alert('Erreur lors de la mise à jour.');
+        }
+    })
+    .catch(error => {
+        alert('Erreur lors de la mise à jour.');
+        console.error('Erreur:', error);
+    });
+}
+
+let autoRevealActive = true;
+let countdown = 5;
+
+// Donner un point à une équipe
+function givePoint(team) {
+    fetch(`/max_challenge/api/team_point/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({team: team})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('current-team-a-score').textContent = data.scores.team_a;
+            document.getElementById('current-team-b-score').textContent = data.scores.team_b;
+            
+            // Animation de succès
+            const btn = team === 'A' ? document.querySelector('.btn-team-a') : document.querySelector('.btn-team-b');
+            btn.style.transform = 'scale(1.1)';
+            btn.textContent = '✅ Point ajouté !';
+            
+            // Afficher la définition complète révélée
+            if (data.definition_display) {
+                document.getElementById('current-definition').innerHTML = data.definition_display;
+            }
+            
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+                btn.textContent = '✓ Bonne Réponse !';
+            }, 1000);
+            
+            // Reset du countdown
+            countdown = 5;
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+// Lancer la prochaine définition automatiquement
+function nextDefinitionByDifficulty(difficulty) {
+    fetch(`/max_challenge/api/next_definition/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({difficulty: difficulty})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const def = data.definition;
+            
+            // Mettre à jour le mot et la difficulté
+            document.getElementById('current-word').textContent = 
+                `[${def.difficulty_display}] ${def.word}`;
+            
+            // Mettre à jour la définition avec les mots masqués/révélés
+            document.getElementById('current-definition').innerHTML = def.definition_display;
+            
+            // Reset du countdown
+            countdown = 5;
+            
+            // Animation de succès avec couleur selon difficulté
+            const currentDefDiv = document.getElementById('current-definition');
+            const colors = {1: '#d4edda', 2: '#fff3cd', 3: '#f8d7da'};
+            const originalBg = currentDefDiv.style.backgroundColor;
+            currentDefDiv.style.backgroundColor = colors[difficulty] || '#d4edda';
+            setTimeout(() => {
+                currentDefDiv.style.backgroundColor = originalBg;
+            }, 1000);
+            
+            // Notification visuelle
+            const difficultyLabels = {1: '😊 Facile', 2: '😐 Moyen', 3: '😰 Difficile'};
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 9999; font-weight: bold;';
+            notification.textContent = `✅ Nouvelle définition : ${difficultyLabels[difficulty]}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        } else {
+            alert(data.message || 'Erreur lors du chargement de la définition');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors du chargement de la définition');
+    });
+}
+
+// Révéler un mot de la définition
+function revealWord() {
+    fetch(`/max_challenge/api/reveal_word/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour l'affichage de la définition
+            if (data.definition_display) {
+                document.getElementById('current-definition').innerHTML = data.definition_display;
+            }
+            
+            // Reset du countdown
+            countdown = 5;
+            
+            // Petite notification du mot révélé
+            if (data.revealed_word) {
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #d4edda; color: #155724; padding: 10px 20px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); z-index: 9999; font-weight: bold;';
+                notification.textContent = `💡 Mot révélé : ${data.revealed_word}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 2000);
+            }
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+// Révéler un mot immédiatement
+function revealWordNow() {
+    revealWord();
+}
+
+
+
+// Révéler la photo d'une équipe
+function revealPhoto(team) {
+    fetch(`/max_challenge/api/reveal_photo/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({team: team})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour l'interface avec les boutons révélé + masquer
+            const buttonsDiv = document.getElementById(`team-${team.toLowerCase()}-buttons`);
+            buttonsDiv.innerHTML = `
+                <button class="reveal-btn" style="background: #28a745; cursor: default;" disabled>
+                    ✅ Photo révélée !
+                </button>
+                <button class="reveal-btn" onclick="hidePhoto('${team}')" style="background: #ffc107; margin-top: 10px;">
+                    🔄 Masquer et changer
+                </button>
+            `;
+            
+            // Notification
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 9999; font-weight: bold;';
+            notification.textContent = `✅ Photo révélée pour ${team === 'A' ? '{{ game.team_a_name }}' : '{{ game.team_b_name }}'}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+// Changer la photo d'une équipe (masquer l'actuelle et charger une nouvelle)
+function hidePhoto(team) {
+    console.log('Changer photo équipe:', team);
+    
+    fetch(`/max_challenge/api/hide_photo/{{ game.pk }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({team: team})
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Mettre à jour le nom de la photo dans la section "Révélation des Photos"
+            const photoNameElement = document.getElementById(`team-${team.toLowerCase()}-photo-name`);
+            if (photoNameElement && data.new_photo_name) {
+                photoNameElement.textContent = data.new_photo_name;
+            }
+            
+            // Mettre à jour le nom de la photo dans la section "Attribution des Points"
+            const scorePhotoNameElement = document.getElementById(`score-team-${team.toLowerCase()}-photo-name`);
+            if (scorePhotoNameElement && data.new_photo_name) {
+                scorePhotoNameElement.textContent = data.new_photo_name;
+            }
+            
+            // Mettre à jour les boutons pour afficher "Révéler la Photo" et "Changer la photo"
+            const buttonsDiv = document.getElementById(`team-${team.toLowerCase()}-buttons`);
+            buttonsDiv.innerHTML = `
+                <button class="reveal-btn btn-reveal-${team.toLowerCase()}" onclick="revealPhoto('${team}')">
+                    📸 Révéler la Photo
+                </button>
+                <button class="reveal-btn" onclick="hidePhoto('${team}')" style="background: #ffc107; margin-top: 10px;">
+                    🔄 Changer la photo
+                </button>
+            `;
+            
+            // Notification
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ffc107; color: #333; padding: 15px 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 9999; font-weight: bold;';
+            notification.textContent = `🔄 Nouvelle photo chargée: ${data.new_photo_name}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        } else {
+            alert('Erreur: ' + (data.error || 'Impossible de changer la photo'));
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la requête: ' + error.message);
+    });
+}
+
+// Fonction utilitaire pour récupérer le token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Basculer l'auto-révélation
+function toggleAutoReveal() {
+    autoRevealActive = !autoRevealActive;
+    const btn = document.getElementById('auto-reveal-btn');
+    btn.textContent = autoRevealActive ? '⏸️ Suspendre l\'auto-révélation' : '▶️ Reprendre l\'auto-révélation';
+}
+
+// Compte à rebours pour l'auto-révélation
+setInterval(() => {
+    if (autoRevealActive && countdown > 0) {
+        countdown--;
+        document.getElementById('countdown').textContent = countdown;
+        
+        if (countdown === 0) {
+            revealWord();
+            countdown = 5;
+        }
+    }
+}, 1000);
+</script>
+</body>
+</html>

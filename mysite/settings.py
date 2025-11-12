@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "accounts",
     "biblio",
+    "chessTrainer.apps.ChessTrainerConfig",
+    "max_challenge.apps.MaxChallengeConfig",
 ]
 
 MIDDLEWARE = [

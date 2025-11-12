@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Max Challenge - Accueil</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Ta                      <li>La première équipe à identifier sa photo mystère remporte la fête ! 🎊</li>
+        </ol>
+    </div>
+</div>
+</body>
+</html>  <li>La première équipe à identifier sa photo mystère remporte la fête ! 🎊</li>
+        </ol>
+    </div>
+</div>
+</body>
+</html>  <li>La première équipe à identifier sa photo mystère remporte la fête ! 🎊</li>
+        </ol>
+    </div>
+</div>
+</body>
+</html> Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+    
+    .home-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+    }
+    
+    /* Confettis animés en arrière-plan */
+    .home-container::before {
+        content: '🎉 🎊 ✨ 🎈 🎁 🎂 🌟 🎵 🎭 🎨';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 2em;
+        opacity: 0.1;
+        pointer-events: none;
+        white-space: pre-wrap;
+        line-height: 3;
+        z-index: -1;
+        animation: float 20s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(5deg); }
+    }
+    
+    .hero-section {
+        text-align: center;
+        background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%);
+        color: white;
+        padding: 50px 20px;
+        border-radius: 20px;
+        margin-bottom: 40px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: rotate 10s linear infinite;
+    }
+    
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .hero-title {
+        font-size: 3.5em;
+        margin-bottom: 20px;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 1;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.4em;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+        font-weight: 300;
+    }
+    
+    .actions-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+    
+    .action-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 20px;
+        padding: 35px;
+        text-align: center;
+        transition: all 0.4s ease;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.5s;
+    }
+    
+    .action-card:hover::before {
+        left: 100%;
+    }
+    
+    .action-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .action-icon {
+        font-size: 4.5em;
+        margin-bottom: 20px;
+        display: block;
+        filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
+    }
+    
+    .create-game .action-icon {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .join-game .action-icon {
+        background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .action-card h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 1.4em;
+        font-weight: 600;
+    }
+    
+    .action-card p {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    .btn-action {
+        display: inline-block;
+        padding: 15px 35px;
+        border: none;
+        border-radius: 30px;
+        font-size: 1.1em;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        margin-top: 15px;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-create {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+    }
+    
+    .btn-create:hover {
+        background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255,107,107,0.3);
+    }
+    
+    .active-games {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .active-games h2 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2em;
+        font-weight: 600;
+    }
+    
+    .game-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .game-item {
+        background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(248,249,250,0.8));
+        border: 1px solid rgba(233,236,239,0.5);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    .game-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: rgba(255,107,107,0.3);
+    }
+    
+    .game-info h4 {
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+        font-size: 1.3em;
+        font-weight: 600;
+    }
+    
+    .game-info p {
+        margin: 0 0 5px 0;
+        color: #555;
+        font-size: 0.95em;
+        line-height: 1.4;
+    }
+    
+    .game-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .btn-small {
+        padding: 10px 18px;
+        font-size: 0.9em;
+        border-radius: 20px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .btn-play {
+        background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        color: white;
+    }
+    
+    .btn-play:hover {
+        background: linear-gradient(45deg, #44bd87, #4ecdc4);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(68,189,135,0.3);
+    }
+    
+    .btn-admin {
+        background: linear-gradient(45deg, #a55eea, #8b5cf6);
+        color: white;
+    }
+    
+    .btn-admin:hover {
+        background: linear-gradient(45deg, #8b5cf6, #a55eea);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(165,94,234,0.3);
+    }
+    
+    .no-games {
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
+        padding: 50px;
+        font-size: 1.1em;
+    }
+    
+    .rules-section {
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,255,248,0.95));
+        border: 2px solid rgba(255,107,107,0.2);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        backdrop-filter: blur(10px);
+    }
+    
+    .rules-title {
+        color: #ff6b6b;
+        margin-bottom: 20px;
+        font-size: 1.5em;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .rules-list {
+        margin: 0;
+        padding-left: 25px;
+        color: #444;
+    }
+    
+    .rules-list li {
+        margin-bottom: 12px;
+        line-height: 1.6;
+        position: relative;
+    }
+    
+    .rules-list li::marker {
+        color: #ff6b6b;
+        font-weight: bold;
+    }
+    
+    .rules-list li strong {
+        color: #2c3e50;
+    }
+    
+    /* Animations d'entrée */
+    .hero-section {
+        animation: slideInDown 0.8s ease-out;
+    }
+    
+    .action-card {
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    .action-card:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .active-games {
+        animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+    
+    .rules-section {
+        animation: fadeInUp 0.8s ease-out 0.6s both;
+    }
+    
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .actions-section {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .hero-title {
+            font-size: 2.5em;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.1em;
+        }
+        
+        .action-icon {
+            font-size: 3.5em;
+        }
+        
+        .game-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 15px;
+        }
+        
+        .game-actions {
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="home-container">
+    <!-- Section Hero -->
+    <div class="hero-section">
+        <h1 class="hero-title">� Max Challenge 🎊</h1>
+        <p class="hero-subtitle">Le jeu ultime de devinettes en ASCII Art pour faire la fête entre équipes !</p>
+    </div>
+    
+    <!-- Actions principales -->
+    <div class="actions-section">
+        <div class="action-card create-game">
+            <div class="action-icon">🎮</div>
+            <h3>Lancer une nouvelle fête</h3>
+            <p>Configurez une nouvelle partie festive avec vos photos et équipes personnalisées</p>
+            <a href="{% url 'max_challenge:create_game' %}" class="btn-action btn-create">
+                🚀 Créer la fête
+            </a>
+        </div>
+        
+        <div class="action-card join-game">
+            <div class="action-icon">🎊</div>
+            <h3>Rejoindre la fête</h3>
+            <p>Participez à une fête en cours ou regardez les équipes s'affronter</p>
+            <div style="margin-top: 15px;">
+                {% if active_games %}
+                    <p>🎉 {{ active_games|length }} fête{{ active_games|length|pluralize }} en cours !</p>
+                {% else %}
+                    <p style="color: #666; font-style: italic;">🎭 Aucune fête en cours</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parties actives -->
+    <div class="active-games">
+        <h2>🔥 Fêtes en cours</h2>
+        
+        {% if active_games %}
+            <ul class="game-list">
+                {% for game in active_games %}
+                    <li class="game-item">
+                        <div class="game-info">
+                            <h4>{{ game.name }}</h4>
+                            <p>
+                                <strong>{{ game.team_a_name }}</strong> ({{ game.team_a_score }}) vs 
+                                <strong>{{ game.team_b_name }}</strong> ({{ game.team_b_score }})
+                            </p>
+                            <p>Créée le {{ game.created_at|date:"d/m/Y à H:i" }}</p>
+                        </div>
+                        <div class="game-actions">
+                            <a href="{% url 'max_challenge:game' game.pk %}" class="btn-small btn-play">
+                                👀 Regarder la fête
+                            </a>
+                            <a href="{% url 'max_challenge:admin' game.pk %}" class="btn-small btn-admin">
+                                � Animer la fête
+                            </a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="no-games">
+                <p>🌟 Aucune fête en cours. Soyez le premier à organiser une fête !</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Règles du jeu -->
+    <div class="rules-section">
+        <h3 class="rules-title">🎊 Comment faire la fête ?</h3>
+        <ol class="rules-list">
+            <li><strong>2 équipes festives</strong> s'affrontent pour deviner des personnages en ASCII Art</li>
+            <li>Chaque équipe a sa <strong>photo mystère</strong> convertie en caractères ASCII magiques</li>
+            <li>Une <strong>définition cachée</strong> apparaît avec des mots qui se révèlent toutes les 5 secondes</li>
+            <li>L'animateur clique sur le bouton de l'équipe qui trouve la bonne réponse en premier</li>
+            <li>À chaque bonne réponse : <strong>1 point</strong> + <strong>révélation d'un caractère ASCII</strong> ✨</li>
+            <li>L'<strong>image globale festive</strong> se dévoile progressivement avec les bonnes réponses</li>
+            <li>La première équipe à identifier sa photo mystère remporte la fête ! �</li>
+        </ol>
+    </div>
+</div>
+</body>
+</html>

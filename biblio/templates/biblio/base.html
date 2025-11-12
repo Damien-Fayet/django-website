@@ -38,21 +38,10 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'biblio:book_list' %}">Tous les livres</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            Ajouter un livre
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'biblio:scan_barcode' %}">
+                            <i class="bi bi-plus-circle"></i> Ajouter un livre
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'biblio:scan_barcode' %}">
-                                <i class="bi bi-camera"></i> Scanner code-barres
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'biblio:add_book_isbn' %}">
-                                <i class="bi bi-upc-scan"></i> Avec ISBN
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'biblio:add_book_manual' %}">
-                                <i class="bi bi-pencil"></i> Saisie manuelle
-                            </a></li>
-                        </ul>
                     </li>
                 </ul>
             </div>

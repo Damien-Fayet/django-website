@@ -25,6 +25,8 @@ urlpatterns = [
     path("sudoku/", include("sudoku.urls")),
     path("avent/", include("avent2024.urls")),  # Nouveau chemin pour avent
     path("biblio/", include("biblio.urls")),    # Nouveau chemin pour biblio
+    path("chessTrainer/", include("chessTrainer.urls")),      # Nouveau chemin pour chessTrainer
+    path("max_challenge/", include("max_challenge.urls")),    # Nouveau chemin pour max_challenge
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("", TemplateView.as_view(template_name="home.html"), name="home"),

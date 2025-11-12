@@ -27,6 +27,7 @@
         height: 180px;
         display: flex;
         margin: 0 auto;
+        margin-bottom: 20px;
         align-items: center;
         justify-content: center;
         background-color: #007bff;
@@ -48,27 +49,84 @@
     .tiles-container img{
         border-radius: 10px; 
     }
+
+    .chess-tile {
+        background-color: #8B4513;
+    }
+    .chess-tile:hover {
+        background-color: #654321;
+    }
+
+    .biblio-tile {
+        background-color: #17a2b8;
+    }
+    .biblio-tile:hover {
+        background-color: #138496;
+    }
+
+    .apps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
 </style>
 
 <div class="tiles-container">
     
-    <p>Cette année, vous avez le choix entre deux types de calendriers (Bien sur vous pouvez faire les deux !)</p>
-    <p>Le premier calendrier est pour les aventuriers avides d'aventure et d'énigmes en tout genre, 2 énigmes par semaine à résoudre.</p>
-    <!--<a href="{% url 'avent2024:avent2024' %}" class="tile">Avent 2024 Enigmes<br>(Niveau intermédiaire)</a>-->
-    <div>
-        <a style="position:relative;" href="{% url 'avent2024:avent2024' %}" class="tile">
-            <img src="/static/avent2024/images/bouton_enigme.png" height="100%" width="100%">
-            <p style="position:absolute;">Enigmes<br>(Niveau intermédiaire)</p>
-        </a>
-    </div>    
-    <br>
-    <div>
-        <p>Le deuxième calendrier est une suite de devinettes imagées où il faudra retrouver un artiste, une chanson, un film, etc... Une énigme chaque jour ! </p>
-        <a style="position:relative;" href="{% url 'avent2024:avent2024_devinette' %}" class="tile">
-            <img src="/static/avent2024/images/bouton_devinette.png" height="100%" width="100%">
-            <p style="position:absolute;">Devinettes <br> (Niveau facile)</p>
-        </a>
+    <h2 style="color: white; text-shadow: 2px 2px 4px black;">🎯 Applications Disponibles</h2>
+    
+    <div class="apps-grid">
+        <!-- Calendrier de l'Avent - Enigmes -->
+        <div>
+            <p style="color: white;">Le premier calendrier est pour les aventuriers avides d'aventure et d'énigmes en tout genre, 2 énigmes par semaine à résoudre.</p>
+            <a style="position:relative;" href="{% url 'avent2024:avent2024' %}" class="tile">
+                <img src="/static/avent2024/images/bouton_enigme.png" height="100%" width="100%">
+                <p style="position:absolute;">🧩 Enigmes<br>(Niveau intermédiaire)</p>
+            </a>
+        </div>
 
+        <!-- Calendrier de l'Avent - Devinettes -->
+        <div>
+            <p style="color: white;">Le deuxième calendrier est une suite de devinettes imagées où il faudra retrouver un artiste, une chanson, un film, etc... Une énigme chaque jour !</p>
+            <a style="position:relative;" href="{% url 'avent2024:avent2024_devinette' %}" class="tile">
+                <img src="/static/avent2024/images/bouton_devinette.png" height="100%" width="100%">
+                <p style="position:absolute;">🎭 Devinettes <br> (Niveau facile)</p>
+            </a>
+        </div>
+
+        <!-- Bibliothèque -->
+        <div>
+            <p style="color: white;">Gestion de bibliothèque scolaire avec scanner de codes-barres et recherche automatique des livres.</p>
+            <a href="{% url 'biblio:book_list' %}" class="tile biblio-tile">
+                <p>📚 Bibliothèque<br>(Gestion de livres)</p>
+            </a>
+        </div>
+
+        <!-- Analyse d'Échecs -->
+        <div>
+            <p style="color: white;">Analysez vos parties d'échecs Chess.com et visualisez vos erreurs sur un échiquier interactif.</p>
+            <a href="{% url 'chessTrainer:chess_analysis' %}" class="tile chess-tile">
+                <p>♟️ Analyse d'Échecs<br>(Chess.com)</p>
+            </a>
+        </div>
+
+        <!-- Max Challenge -->
+        <div>
+            <p style="color: white;">Jeu de devinettes en ASCII Art pour 2 équipes. Révélez progressivement les photos mystères !</p>
+            <a href="{% url 'max_challenge:index' %}" class="tile" style="background-color: #6f42c1;">
+                <p>🎯 Max Challenge<br>(Jeu d'équipes)</p>
+            </a>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 15px; background-color: rgba(0,0,0,0.3); border-radius: 10px;">
+        <p style="color: white; font-size: 0.9em;">
+            <strong>🚀 Nouvelles fonctionnalités :</strong><br>
+            • 📊 Analyse automatique des parties d'échecs<br>
+            • 📱 Scanner de codes-barres pour la bibliothèque<br>
+            • 🔍 Recherche automatique de métadonnées de livres
+        </p>
     </div>
 </div>
 

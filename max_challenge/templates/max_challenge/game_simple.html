@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ game.name }} - Max Challenge</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .team-section {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .team-a {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .team-b {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        
+        .team-name {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .team-score {
+            font-size: 4em;
+            font-weight: 900;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 20px 40px;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .ascii-display {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 8px;
+            line-height: 1;
+            padding: 10px;
+            border-radius: 10px;
+            white-space: pre;
+            overflow: hidden;
+            margin: 10px 0;
+            max-width: 100%;
+            max-height: 300px;
+        }
+        
+        .photo-revealed {
+            max-width: 250px;
+            max-height: 300px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .definition-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .definition-card {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+        }
+        
+        .definition-text {
+            font-size: 1.3em;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .definition-word {
+            font-size: 2em;
+            font-weight: bold;
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+        
+        .hidden-chars {
+            color: #555;
+        }
+        
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            min-height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Indicateur de mise à jour -->
+    <div class="refresh-indicator">
+        <i class="bi bi-arrow-clockwise"></i>
+        Mise à jour automatique
+    </div>
+
+    <div class="container-fluid p-3">
+        <!-- Titre du jeu -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-center text-white">
+                    <i class="bi bi-trophy-fill text-warning"></i>
+                    {{ game.name }}
+                </h1>
+            </div>
+        </div>
+
+        <!-- Équipes et scores -->
+        <div class="row g-3 mb-4">
+            <!-- Équipe A -->
+            <div class="col-lg-5">
+                <div class="game-card team-section team-a">
+                    <div class="status-indicator" id="teamAStatus"></div>
+                    
+                    <div class="team-name">{{ game.team_a_name }}</div>
+                    <div class="team-score" id="teamAScore">{{ game.team_a_score }}</div>
+                    
+                    {% if team_a_photo_url %}
+                        <img src="{{ team_a_photo_url }}" class="photo-revealed" alt="Photo {{ game.team_a_name }}">
+                    {% elif team_a_ascii %}
+                        <div class="ascii-display">{{ team_a_ascii }}</div>
+                    {% else %}
+                        <div class="ascii-display">En attente...</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Séparateur VS -->
+            <div class="col-lg-2">
+                <div class="vs-divider">
+                    <div class="text-center">
+                        <i class="bi bi-lightning-charge-fill"></i><br>
+                        <span style="font-size: 0.6em;">VS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Équipe B -->
+            <div class="col-lg-5">
+                <div class="game-card team-section team-b">
+                    <div class="status-indicator" id="teamBStatus"></div>
+                    
+                    <div class="team-name">{{ game.team_b_name }}</div>
+                    <div class="team-score" id="teamBScore">{{ game.team_b_score }}</div>
+                    
+                    {% if team_b_photo_url %}
+                        <img src="{{ team_b_photo_url }}" class="photo-revealed" alt="Photo {{ game.team_b_name }}">
+                    {% elif team_b_ascii %}
+                        <div class="ascii-display">{{ team_b_ascii }}</div>
+                    {% else %}
+                        <div class="ascii-display">En attente...</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section définition -->
+        {% if game.current_definition %}
+        <div class="row">
+            <div class="col-12">
+                <div class="game-card definition-section p-4">
+                    <div class="definition-card p-4">
+                        <h3 class="text-center mb-4">
+                            <i class="bi bi-question-circle-fill text-primary"></i>
+                            Devine le mot !
+                        </h3>
+                        
+                        <div class="definition-word" id="definitionWord">{{ game.current_definition.word }}</div>
+                        
+                        <div class="definition-text text-center" id="definitionText">
+                            {{ definition_display|safe|default:"Définition en cours de révélation..." }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let gameId = {{ game.id }};
+        let refreshInterval;
+        
+        function updateGameState() {
+            fetch(`/max_challenge/api/game_state/${gameId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Mettre à jour les scores
+                    document.getElementById('teamAScore').textContent = data.team_a_score;
+                    document.getElementById('teamBScore').textContent = data.team_b_score;
+                    
+                    // Mettre à jour les ASCII arts ou photos
+                    updateTeamDisplay('A', data);
+                    updateTeamDisplay('B', data);
+                    
+                    // Mettre à jour la définition
+                    if (data.definition_display) {
+                        const defText = document.getElementById('definitionText');
+                        if (defText) {
+                            defText.innerHTML = data.definition_display;
+                        }
+                    }
+                    
+                    // Indicateurs de statut
+                    updateStatusIndicators();
+                })
+                .catch(error => {
+                    console.log('Erreur lors de la mise à jour:', error);
+                });
+        }
+        
+        function updateTeamDisplay(team, data) {
+            const teamSection = document.querySelector(team === 'A' ? '.team-a' : '.team-b');
+            const photoUrl = team === 'A' ? data.team_a_photo_url : data.team_b_photo_url;
+            const asciiData = team === 'A' ? data.team_a_ascii : data.team_b_ascii;
+            
+            // Chercher le container d'affichage
+            let displayContainer = teamSection.querySelector('.ascii-display, .photo-revealed');
+            
+            if (photoUrl) {
+                // Remplacer par la photo
+                if (!displayContainer || !displayContainer.classList.contains('photo-revealed')) {
+                    const newImg = document.createElement('img');
+                    newImg.className = 'photo-revealed';
+                    newImg.src = photoUrl;
+                    newImg.alt = `Photo équipe ${team}`;
+                    
+                    if (displayContainer) {
+                        displayContainer.replaceWith(newImg);
+                    }
+                }
+            } else if (asciiData) {
+                // Mettre à jour l'ASCII
+                if (!displayContainer || !displayContainer.classList.contains('ascii-display')) {
+                    const newDiv = document.createElement('div');
+                    newDiv.className = 'ascii-display';
+                    
+                    if (displayContainer) {
+                        displayContainer.replaceWith(newDiv);
+                    }
+                    displayContainer = newDiv;
+                }
+                displayContainer.textContent = asciiData;
+            }
+        }
+        
+        function updateStatusIndicators() {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                indicator.style.background = '#28a745';
+            });
+        }
+        
+        function startAutoRefresh() {
+            // Mettre à jour immédiatement
+            updateGameState();
+            
+            // Puis toutes les 3 secondes
+            refreshInterval = setInterval(updateGameState, 3000);
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+        
+        // Démarrer le rafraîchissement automatique
+        document.addEventListener('DOMContentLoaded', function() {
+            startAutoRefresh();
+        });
+        
+        // Arrêter le rafraîchissement quand on quitte la page
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+        
+        // Gestion de la visibilité de la page pour économiser les ressources
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>
