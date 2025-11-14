@@ -1,0 +1,180 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+
+{% block title %}Devinette {{ devinette.id }} - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'avent2025/css/modern-enigme.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="enigme-container fade-in">
+    <!-- En-tête de la devinette -->
+    <div class="enigme-header devinette-header">
+        <div class="enigme-number devinette-number">Devinette #{{ devinette.id }}</div>
+        <h1>{{ devinette.titre }}</h1>
+    </div>
+
+    <!-- Messages de validation -->
+    {% if user_reponse == 'OK' %}
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">🎉</div>
+            <h2>Devinette {{ old_devinette_id }} validée !</h2>
+            <p>Bien joué ! Vous avez trouvé la bonne réponse !</p>
+            {% if image_reponse %}
+            <div class="success-image">
+                <img src="/static/avent2025/images/gagne/{{ image_reponse }}" alt="Succès">
+            </div>
+            {% endif %}
+            <a href="{% url 'avent2025:display_devinette' %}" class="enigme-submit success-btn">
+                ➡️ Passer à la devinette {{ devinette.id }}
+            </a>
+        </div>
+    </div>
+    {% elif user_reponse == 'KO' %}
+    <div class="error-container">
+        <div class="error-card">
+            <div class="error-icon">😕</div>
+            <h2>Raté !</h2>
+            <p>Ce n'est pas la bonne réponse, mais ne vous découragez pas !</p>
+            {% if image_reponse %}
+            <div class="error-image">
+                <img src="/static/avent2025/images/perdu/{{ image_reponse }}" alt="Erreur">
+            </div>
+            {% endif %}
+            <a href="{% url 'avent2025:display_devinette' %}" class="enigme-submit retry-btn">
+                🔄 Réessayer
+            </a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Carte principale de la devinette -->
+    {% if devinette.is_dispo or user.is_superuser %}
+    <div class="enigme-card">
+        <div class="enigme-content">
+            <!-- Texte de la devinette -->
+            <div class="enigme-text">
+                {{ devinette.texte|safe }}
+            </div>
+
+            <!-- Image de la devinette si disponible -->
+            {% if devinette.image_name %}
+            <div class="enigme-image-container">
+                <a href="/media/{{ devinette.image_name }}" target="_blank">
+                    <img src="/media/{{ devinette.image_name }}" alt="Image de la devinette" class="enigme-image">
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Formulaire de réponse -->
+            <div class="enigme-form">
+                <form method="post" action="{% url 'avent2025:validate_devinette' %}">
+                    {% csrf_token %}
+                    <label for="reponse">💭 Votre réponse :</label>
+                    <div class="enigme-input-group">
+                        <input 
+                            type="text" 
+                            id="reponse" 
+                            name="reponse" 
+                            class="enigme-input" 
+                            placeholder="Entrez votre réponse..."
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="submit" class="enigme-submit">
+                            ✓ Valider
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Section des indices -->
+            {% if indices %}
+            <div class="indices-section" id="indices">
+                <div class="indices-header">
+                    <h3>💡 Indices disponibles</h3>
+                    <span class="indices-count">{{ indices|length }} indice{{ indices|length|pluralize }}</span>
+                </div>
+
+                {% for indice in indices %}
+                <div class="indice-card">
+                    <div class="indice-header">
+                        <div class="indice-title-section">
+                            <span class="indice-number">Indice #{{ indice.numero }}</span>
+                            <span class="indice-badges">
+                                <span class="indice-cost-badge" title="Coût en points">
+                                    💰 {{ indice.cout }} pt{{ indice.cout|pluralize }}
+                                </span>
+                                {% if indice.categorie == 'ME' %}
+                                <span class="indice-category-badge category-mecanique" title="Mécanique">
+                                    🔧 Mécanique
+                                </span>
+                                {% elif indice.categorie == 'RE' %}
+                                <span class="indice-category-badge category-reponse" title="Réponse attendue">
+                                    💡 Réponse
+                                </span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if indice not in indices_reveles %}
+                        <form method="post" action="{% url 'avent2025:reveler_indice_devinette' %}" style="margin: 0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="indice_id" value="{{ indice.id }}">
+                            <button type="submit" class="indice-reveal-btn">
+                                🔓 Révéler (-{{ indice.cout }} pt{{ indice.cout|pluralize }})
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    
+                    {% if indice in indices_reveles %}
+                    <div class="indice-content">
+                        {% if indice.texte %}
+                            <p>{{ indice.texte|safe }}</p>
+                        {% endif %}
+                        {% if indice.image %}
+                            <img src="/media/{{ indice.image }}" alt="Image de l'indice" class="indice-image">
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="indice-hidden">
+                        🔒 Cet indice est verrouillé. Cliquez sur "Révéler l'indice" pour le débloquer.
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Devinette pas encore disponible -->
+    <div class="waiting-card">
+        <div class="waiting-icon">🔒</div>
+        <h2>Devinette verrouillée</h2>
+        <p>Cette devinette sera disponible le <strong>{{ devinette.date_dispo|date:"d/m/Y" }}</strong></p>
+        <a href="{% url 'avent2025:home' %}" class="enigme-submit">
+            🏠 Retour à l'accueil
+        </a>
+    </div>
+    {% endif %}
+
+    {% endif %}
+
+    <!-- Boutons de navigation -->
+    <div class="enigme-navigation">
+        <a href="{% url 'avent2025:home' %}" class="nav-btn">
+            ← Retour à l'accueil
+        </a>
+        {% if user.userprofile_2025.currentDevinette < 25 %}
+        <a href="{% url 'avent2025:display_devinette' %}" class="nav-btn">
+            Devinette actuelle →
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

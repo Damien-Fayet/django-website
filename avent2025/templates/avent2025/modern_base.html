@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Calendrier de l'Avent 2025{% endblock %}</title>
+    
+    <!-- Styles modernes -->
+    <link rel="stylesheet" href="{% static 'avent2025/css/modern-base.css' %}">
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
+</head>
+
+<body>
+    <!-- Navigation -->
+    {% block navbar %}
+    <div class="nav-bar-container">
+        <nav class="nav-bar">
+            {% if user.is_authenticated %}
+                <!-- Bouton hamburger (mobile uniquement) -->
+                <button class="hamburger" id="hamburger" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Menu navigation -->
+                <div class="nav-bar-menu" id="navMenu">
+                    <div class="nav-bar-left">
+                        <a href="{% url 'avent2025:home' %}">🎄 Avent 2025</a>
+                        <a href="{% url 'avent2025:classement' %}">🏆 Classement</a>
+                        {% if user.userprofile_2025.currentEnigma > 0 %}
+                            <a href="{% url 'avent2025:display_enigme' %}" class="badge">Énigme {{ user.userprofile_2025.currentEnigma }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- User info - toujours visible -->
+                <div class="nav-bar-user">
+                    <span class="user-greeting">👋 {{ user.username }}</span>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout">
+                            <span class="btn-logout-text">Déconnexion</span>
+                            <span class="btn-logout-icon">🚪</span>
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <!-- Bouton hamburger (mobile uniquement) -->
+                <button class="hamburger" id="hamburger" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Menu navigation -->
+                <div class="nav-bar-menu" id="navMenu">
+                    <div class="nav-bar-right">
+                        <a href="{% url 'login' %}">Se connecter</a>
+                        <a href="{% url 'signup' %}">Créer un compte</a>
+                    </div>
+                </div>
+            {% endif %}
+        </nav>
+    </div>
+    {% endblock %}
+
+    <!-- Contenu principal -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer optionnel -->
+    {% block footer %}
+    <footer style="text-align: center; padding: 2rem; color: var(--text-light); margin-top: 4rem;">
+        <p>🎄 Calendrier de l'Avent 2025 - Bonne chance dans vos énigmes ! - Damien Fayet - Contactez-moi</p>
+    </footer>
+    {% endblock %}
+
+    <!-- Scripts -->
+    <script>
+        // Menu hamburger
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.getElementById('hamburger');
+            const navMenu = document.getElementById('navMenu');
+            
+            if (hamburger && navMenu) {
+                hamburger.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                });
+                
+                // Fermer le menu quand on clique sur un lien
+                const navLinks = navMenu.querySelectorAll('a');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        hamburger.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    });
+                });
+                
+                // Fermer le menu quand on clique en dehors
+                document.addEventListener('click', function(event) {
+                    if (!hamburger.contains(event.target) && !navMenu.contains(event.target)) {
+                        hamburger.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

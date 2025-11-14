@@ -1,0 +1,61 @@
+.btn-reveal{
+    width:40%;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #2881a7;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    margin: 10px auto; /* Centrer le conteneur */
+
+}
+
+
+.btn-reveal:hover {
+    background-color: #213b88;
+}
+
+
+.indices-display{
+    margin : 30px auto;
+    border: 1px solid black;
+    border-radius: 20px;
+    width: 80%;
+}
+.indices-display h2{
+    text-decoration: underline;
+}
+
+.indice-cost-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.indice-category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.category-mecanique {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.category-reponse {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}

@@ -9,13 +9,12 @@ from .forms import UserRegisterForm
 
 class SignUpView(CreateView):
     form_class = UserRegisterForm
-    success_url = reverse_lazy("home")
-    template_name = "registration/signup.html"
+    success_url = reverse_lazy("avent2025:home")  # Redirige vers la page d'accueil du calendrier après inscription
+    template_name = "registration/modern_signup.html"
     
     def form_valid(self, form):
         valid = super(SignUpView, self).form_valid(form)
         password = form.cleaned_data.get('password1')
-        #user = authenticate( password=password)
         user = form.save()
         login(self.request, user)
         return valid

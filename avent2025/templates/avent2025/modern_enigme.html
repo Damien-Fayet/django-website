@@ -1,0 +1,161 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+{% load customfilters2025 %}
+
+{% block title %}Énigme {{ enigme.id }} - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'avent2025/css/modern-enigme.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="enigme-container fade-in">
+    <!-- En-tête de l'énigme -->
+    <div class="enigme-header">
+        <div class="enigme-number">Énigme #{{ enigme.id }}</div>
+        <h1>{{ enigme.titre }}</h1>
+    </div>
+
+    <!-- Carte principale de l'énigme -->
+    <div class="enigme-card">
+        <div class="enigme-content">
+            <!-- Texte de l'énigme -->
+            <div class="enigme-text">
+                {{ enigme.texte|linebreaks }}
+            </div>
+
+            <!-- Image de l'énigme si disponible -->
+            {% if enigme.image_name %}
+            <div class="enigme-image-container">
+                <img src="{{ enigme.image_name.url }}" alt="Image de l'énigme" class="enigme-image">
+            </div>
+            {% endif %}
+
+            <!-- Formulaire de réponse -->
+            <div class="enigme-form">
+                <form method="post" action="{% url 'avent2025:validate_enigme' %}">
+                    {% csrf_token %}
+                    <label for="user_reponse">💭 Votre réponse :</label>
+                    <div class="enigme-input-group">
+                        <input 
+                            type="text" 
+                            id="user_reponse" 
+                            name="user_reponse" 
+                            class="enigme-input" 
+                            placeholder="Entrez votre réponse..."
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="submit" class="enigme-submit">
+                            ✓ Valider
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Feedback de la réponse précédente -->
+                {% if user_reponse %}
+                    {% if user_reponse|lower == enigme.reponse|lower %}
+                    <div class="enigme-feedback success">
+                        <span>✅</span>
+                        <span>Bravo ! Vous avez trouvé la bonne réponse !</span>
+                    </div>
+                    {% else %}
+                    <div class="enigme-feedback error">
+                        <span>❌</span>
+                        <span>Ce n'est pas la bonne réponse. Réessayez !</span>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Section des indices -->
+            {% if indices %}
+            <div class="indices-section" id="indices">
+                <div class="indices-header">
+                    <h3>💡 Indices disponibles</h3>
+                    <span class="indices-count">{{ indices|length }} indice{{ indices|length|pluralize }}</span>
+                </div>
+
+                {% for indice in indices %}
+                <div class="indice-card">
+                    <div class="indice-header">
+                        <div class="indice-title-section">
+                            <span class="indice-number">Indice #{{ indice.numero }}</span>
+                            <span class="indice-badges">
+                                <span class="indice-cost-badge" title="Coût en points">
+                                    💰 {{ indice.cout }} pt{{ indice.cout|pluralize }}
+                                </span>
+                                {% if indice.categorie == 'ME' %}
+                                <span class="indice-category-badge category-mecanique" title="Mécanique">
+                                    🔧 Mécanique
+                                </span>
+                                {% elif indice.categorie == 'RE' %}
+                                <span class="indice-category-badge category-reponse" title="Réponse attendue">
+                                    💡 Réponse
+                                </span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if indice not in indices_reveles %}
+                        <form method="post" action="{% url 'avent2025:reveler_indice' %}" style="margin: 0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="indice_id" value="{{ indice.id }}">
+                            <button type="submit" class="indice-reveal-btn">
+                                🔓 Révéler (-{{ indice.cout }} pt{{ indice.cout|pluralize }})
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    
+                    {% if indice in indices_reveles %}
+                    <div class="indice-content">
+                        {% if indice.texte %}
+                            <p>{{ indice.texte }}</p>
+                        {% endif %}
+                        {% if indice.image %}
+                            <img src="{{ indice.image.url }}" alt="Image de l'indice" class="indice-image">
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="indice-hidden">
+                        🔒 Cet indice est verrouillé. Cliquez sur "Révéler l'indice" pour le débloquer.
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Progression et stats -->
+        <div class="enigme-progress">
+            <div class="progress-info">
+                <div class="progress-item">
+                    <span class="progress-label">Votre score</span>
+                    <span class="progress-value">{{ user.userprofile_2025.score }}</span>
+                </div>
+                <div class="progress-item">
+                    <span class="progress-label">Erreurs</span>
+                    <span class="progress-value">{{ user.userprofile_2025.erreurEnigma }}</span>
+                </div>
+                <div class="progress-item">
+                    <span class="progress-label">Indices révélés</span>
+                    <span class="progress-value">{{ indices_reveles|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="enigme-navigation">
+        <a href="{% url 'avent2025:home' %}" class="nav-btn nav-btn-previous">
+            ← Retour à l'accueil
+        </a>
+        <a href="{% url 'avent2025:classement' %}" class="nav-btn nav-btn-next">
+            Voir le classement →
+        </a>
+    </div>
+</div>
+
+{% endblock %}

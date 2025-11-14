@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Calendrier de l'Avent 2025</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'avent2025/css/modern-base.css' %}">
+    <link rel="stylesheet" href="{% static 'avent2025/css/modern-auth.css' %}">
+</head>
+<body>
+    <!-- Navigation simple -->
+    <nav class="nav-bar-container">
+        <div class="nav-bar nav-bar-welcome">
+            <div class="nav-bar-logo">
+                <a href="{% url 'home' %}">🎄 Calendrier de l'Avent 2025</a>
+            </div>
+            <div class="nav-bar-actions">
+                <a href="{% url 'login' %}" class="btn-nav btn-nav-secondary">Se connecter</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Formulaire d'inscription -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-icon">✨</div>
+                    <h1 class="auth-title">Rejoignez l'aventure !</h1>
+                    <p class="auth-subtitle">Créez votre compte en quelques secondes</p>
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-error">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-content">
+                        <strong>Erreur lors de l'inscription</strong>
+                        {% for field in form %}
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            👤 {{ form.username.label }}
+                        </label>
+                        <input 
+                            type="text" 
+                            name="{{ form.username.name }}" 
+                            id="{{ form.username.id_for_label }}"
+                            class="form-input {% if form.username.errors %}form-input-error{% endif %}"
+                            placeholder="Choisissez votre nom d'utilisateur"
+                            required
+                            autofocus
+                            value="{{ form.username.value|default:'' }}"
+                        >
+                        {% if form.username.help_text %}
+                        <p class="form-help">{{ form.username.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label">
+                            🔒 Mot de passe
+                        </label>
+                        <input 
+                            type="password" 
+                            name="{{ form.password1.name }}" 
+                            id="{{ form.password1.id_for_label }}"
+                            class="form-input {% if form.password1.errors %}form-input-error{% endif %}"
+                            placeholder="Choisissez un mot de passe sécurisé"
+                            required
+                        >
+                        {% if form.password1.help_text %}
+                        <p class="form-help">{{ form.password1.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label">
+                            🔒 Confirmation du mot de passe
+                        </label>
+                        <input 
+                            type="password" 
+                            name="{{ form.password2.name }}" 
+                            id="{{ form.password2.id_for_label }}"
+                            class="form-input {% if form.password2.errors %}form-input-error{% endif %}"
+                            placeholder="Confirmez votre mot de passe"
+                            required
+                        >
+                        {% if form.password2.help_text %}
+                        <p class="form-help">{{ form.password2.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-notice">
+                        <div class="form-notice-icon">ℹ️</div>
+                        <div class="form-notice-text">
+                            En créant un compte, vous acceptez de participer au calendrier de l'Avent 2025. 
+                            Vos données ne seront utilisées que dans le cadre de ce jeu.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <span class="btn-submit-icon">🚀</span>
+                        <span class="btn-submit-text">Créer mon compte</span>
+                    </button>
+                </form>
+
+                <div class="auth-divider">
+                    <span>ou</span>
+                </div>
+
+                <div class="auth-footer">
+                    <p class="auth-footer-text">
+                        Vous avez déjà un compte ?
+                    </p>
+                    <a href="{% url 'login' %}" class="btn-secondary">
+                        🎮 Se connecter
+                    </a>
+                </div>
+            </div>
+
+            <!-- Info complémentaire -->
+            <div class="auth-info">
+                <div class="auth-info-card">
+                    <div class="auth-info-icon">🎯</div>
+                    <div class="auth-info-content">
+                        <h3>Pourquoi s'inscrire ?</h3>
+                        <ul>
+                            <li>✅ Accès à toutes les énigmes et devinettes</li>
+                            <li>✅ Suivi de votre progression</li>
+                            <li>✅ Classement en temps réel</li>
+                            <li>✅ Système d'indices intelligent</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-welcome">
+        <p>🎄 Calendrier de l'Avent 2025 🎄</p>
+    </footer>
+</body>
+</html>

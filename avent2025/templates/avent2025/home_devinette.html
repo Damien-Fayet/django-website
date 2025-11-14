@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+{% extends "avent2025/base_avent.html" %}
+
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil 2024</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@200..800&display=swap" rel="stylesheet">
+    <style></style>
+</head>
+<body>
+    <header>
+        <h1>Bienvenue dans votre aventure 2024</h1>
+    </header>
+    {% block navbar %}
+    {% with current_devinette=user.current_devinette %}
+            {{ block.super }}
+        {% endwith%}
+    {% endblock %}
+    {% block content %}
+        {% if user.is_authenticated %}
+        <div class="story-container">
+            <div class="center-content">
+            {% if current_devinette > 1%}  
+                <div class="egypte-bouton">
+                    <a href="{% url 'avent2025:display_devinette' %}" class="tile">
+                        <img src="/static/avent2025/images/bouton_devi.png" height="100%" width="25%"/>
+                        <div class="centered">Continuer à la devinette {{current_devinette}}</div>
+                    </a>
+                </div>
+            {% endif %}
+            </div>
+            <p>Bienvenue sur la partie devinettes du calendrier de l'avent 2024 ! 
+                <br>
+            </p>
+            <p>
+                Dans ce calendrier de l'avent, il vous sera proposé une série de 24 images. Ces images représentent soit un film, soit une chanson soit une personnalité.
+                <br>
+                Il ne vous sera pas forcément dit ce qu'il faut trouver, ce sera à vous de deviner. Des indices seront là pour vous aider également si vous bloquez.
+            </p>
+            <p><br/>
+                Prêt à relever le challenge ? Alors allons-y !
+            </p>
+            <div class="center-content">
+                {% if not current_devinette or current_devinette < 2%}  
+                    <!--<a href="{% url 'avent2025:start_devinette' %}" class="btn">Commencer l'aventure</a>-->
+                    <div class="egypte-bouton">
+                        <a href="{% url 'avent2025:start_devinette' %}" class="tile">
+                            <img src="/static/avent2025/images/bouton_devi.png" height="100%" width="125"/>
+                            <div class="centered">Commencer les devinettes</div>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="egypte-bouton">
+                        <a href="{% url 'avent2025:display_devinette' %}" class="tile">
+                            <img src="/static/avent2025/images/bouton_devi.png" height="100%" width="25%"/>
+                            <div class="centered">Continuer à la devinette {{current_devinette}}</div>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+            <p>Connecte toi !</p>
+            <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Créer un nouveau compte</a>
+        {% endif %}
+    
+    
+    {% endblock %}
+</body>
+</html>

@@ -372,10 +372,11 @@
             }, 3000);
         }
         
-        // Actualisation automatique toutes les 30 secondes
-        setInterval(() => {
-            refreshPreview();
-        }, 30000);
+        // Actualisation automatique désactivée pour éviter la pollution des logs
+        // Pour rafraîchir manuellement, utilisez le bouton "Actualiser l'aperçu"
+        // setInterval(() => {
+        //     refreshPreview();
+        // }, 30000);
     </script>
 </body>
 </html>

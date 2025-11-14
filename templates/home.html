@@ -1,132 +1,448 @@
 <!-- templates/home.html -->
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Accueil - Les Ressources de Damien{% endblock %}
 
 {% block content %}
 
 <style>
-    .tiles-container {
-        display: block;
-        justify-content: space-around;
-        margin: 0 auto;
-        margin-top: 20px;
-        text-align: center;
-        width: 80%;
-        background-color: rgba(255, 255, 255, 0.4); /* Optionnel : ajouter un fond blanc légèrement transparent */
-        padding: 20px; /* Ajouter du padding pour un meilleur rendu */
-        border-radius: 10px; /* Coins arrondis */
-        align-items: center;
-    }
-    .tiles-container {
-        font-size: 1.2em;
+    :root {
+        --primary-color: #2563eb;
+        --primary-dark: #1e40af;
+        --secondary-color: #10b981;
+        --accent-color: #f59e0b;
+        --purple-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --pink-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --text-color: #1f2937;
+        --text-light: #6b7280;
+        --card-bg: #ffffff;
+        --border-color: #e5e7eb;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    .tile {
-        width: 230px;
-        height: 180px;
-        display: flex;
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .main-container {
+        max-width: 1280px;
         margin: 0 auto;
-        margin-bottom: 20px;
-        align-items: center;
-        justify-content: center;
-        background-color: #007bff;
+        padding: 2rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        text-align: center;
         color: white;
-        text-align: center;
-        text-decoration: none;
-        border-radius: 10px;
-        transition: background-color 0.3s ease;
-    }
-    .tile:hover {
-        background-color: #0056b3;
-    }
-    .tile p{
-        color: aliceblue;
-        text-shadow: 1px 1px 2px black, 0 0 0.5em black, 0 0 0.8em black;
-        vertical-align: bottom;
-        
-    }
-    .tiles-container img{
-        border-radius: 10px; 
+        padding: 3rem 2rem;
+        margin-bottom: 3rem;
     }
 
-    .chess-tile {
-        background-color: #8B4513;
-    }
-    .chess-tile:hover {
-        background-color: #654321;
-    }
-
-    .biblio-tile {
-        background-color: #17a2b8;
-    }
-    .biblio-tile:hover {
-        background-color: #138496;
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
     }
 
+    .hero-section p {
+        font-size: 1.25rem;
+        opacity: 0.95;
+        margin-bottom: 2rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Cards Grid */
     .apps-grid {
         display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .app-card {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .app-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+
+    .app-card-header {
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .app-card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(10%, 10%); }
+    }
+
+    .avent2024-enigmes .app-card-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    }
+
+    .avent2024-devinettes .app-card-header {
+        background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+    }
+
+    .avent2025-enigmes .app-card-header {
+        background: var(--purple-gradient);
+    }
+
+    .avent2025-devinettes .app-card-header {
+        background: var(--pink-gradient);
+    }
+
+    .biblio .app-card-header {
+        background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    }
+
+    .chess .app-card-header {
+        background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+    }
+
+    .max-challenge .app-card-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+    }
+
+    .app-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .app-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .app-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .app-card-body {
+        padding: 2rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .app-description {
+        color: var(--text-light);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        flex-grow: 1;
+    }
+
+    .app-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        background: var(--primary-color);
+        color: white;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        gap: 0.5rem;
+    }
+
+    .app-link:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .new-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #ef4444;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        z-index: 2;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    /* Features Section */
+    .features-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1rem;
+        padding: 3rem 2rem;
+        margin-top: 3rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .features-section h2 {
+        text-align: center;
+        color: var(--text-color);
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .features-grid {
+        display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin: 20px 0;
+        gap: 2rem;
+    }
+
+    .feature-item {
+        text-align: center;
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-title {
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .feature-text {
+        color: var(--text-light);
+        font-size: 0.95rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+
+        .apps-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .main-container {
+            padding: 1rem;
+        }
+    }
+
+    /* Masquer la bannière du base.html sur la page d'accueil */
+    .login-title {
+        display: none !important;
     }
 </style>
 
-<div class="tiles-container">
-    
-    <h2 style="color: white; text-shadow: 2px 2px 4px black;">🎯 Applications Disponibles</h2>
-    
+<div class="main-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>🎯 Les Ressources de Damien</h1>
+        <p>Découvrez une collection d'applications web interactives : énigmes, devinettes, gestion de bibliothèque et analyse d'échecs</p>
+    </div>
+
+    <!-- Applications Grid -->
     <div class="apps-grid">
-        <!-- Calendrier de l'Avent - Enigmes -->
-        <div>
-            <p style="color: white;">Le premier calendrier est pour les aventuriers avides d'aventure et d'énigmes en tout genre, 2 énigmes par semaine à résoudre.</p>
-            <a style="position:relative;" href="{% url 'avent2024:avent2024' %}" class="tile">
-                <img src="/static/avent2024/images/bouton_enigme.png" height="100%" width="100%">
-                <p style="position:absolute;">🧩 Enigmes<br>(Niveau intermédiaire)</p>
-            </a>
+        <!-- Calendrier de l'Avent 2025 - Enigmes -->
+        <div class="app-card avent2025-enigmes">
+            <span class="new-badge">🎄 Nouveau 2025</span>
+            <div class="app-card-header">
+                <div class="app-icon">🧩</div>
+                <div class="app-title">Énigmes 2025</div>
+                <div class="app-badge">Niveau intermédiaire</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    Calendrier de l'Avent 2025 ! Résolvez des énigmes variées et stimulantes tout au long du mois de décembre. Logique, observation et créativité seront vos meilleurs alliés.
+                </p>
+                <a href="{% url 'avent2025:avent2025' %}" class="app-link">
+                    Commencer l'aventure →
+                </a>
+            </div>
         </div>
 
-        <!-- Calendrier de l'Avent - Devinettes -->
-        <div>
-            <p style="color: white;">Le deuxième calendrier est une suite de devinettes imagées où il faudra retrouver un artiste, une chanson, un film, etc... Une énigme chaque jour !</p>
-            <a style="position:relative;" href="{% url 'avent2024:avent2024_devinette' %}" class="tile">
-                <img src="/static/avent2024/images/bouton_devinette.png" height="100%" width="100%">
-                <p style="position:absolute;">🎭 Devinettes <br> (Niveau facile)</p>
-            </a>
+        <!-- Calendrier de l'Avent 2025 - Devinettes -->
+        <div class="app-card avent2025-devinettes">
+            <span class="new-badge">🎄 Nouveau 2025</span>
+            <div class="app-card-header">
+                <div class="app-icon">🎭</div>
+                <div class="app-title">Devinettes 2025</div>
+                <div class="app-badge">Niveau facile</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    Devinettes imagées du calendrier de l'Avent 2025 ! Retrouvez artistes, chansons, films... Une devinette chaque jour pour tester votre culture générale.
+                </p>
+                <a href="{% url 'avent2025:avent2025_devinette' %}" class="app-link">
+                    Découvrir les devinettes →
+                </a>
+            </div>
+        </div>
+
+        <!-- Calendrier de l'Avent 2024 - Enigmes -->
+        <div class="app-card avent2024-enigmes">
+            <div class="app-card-header">
+                <div class="app-icon">🧩</div>
+                <div class="app-title">Énigmes 2024</div>
+                <div class="app-badge">Archives 2024</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    L'édition 2024 du calendrier de l'Avent avec son thème égyptien. Revivez l'aventure de Gabin et Louis à travers les pyramides mystérieuses.
+                </p>
+                <a href="{% url 'avent2024:avent2024' %}" class="app-link">
+                    Accéder aux énigmes 2024 →
+                </a>
+            </div>
+        </div>
+
+        <!-- Calendrier de l'Avent 2024 - Devinettes -->
+        <div class="app-card avent2024-devinettes">
+            <div class="app-card-header">
+                <div class="app-icon">�</div>
+                <div class="app-title">Devinettes 2024</div>
+                <div class="app-badge">Archives 2024</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    Les devinettes de l'édition 2024. Une collection de défis visuels et culturels pour toute la famille.
+                </p>
+                <a href="{% url 'avent2024:avent2024_devinette' %}" class="app-link">
+                    Voir les devinettes 2024 →
+                </a>
+            </div>
         </div>
 
         <!-- Bibliothèque -->
-        <div>
-            <p style="color: white;">Gestion de bibliothèque scolaire avec scanner de codes-barres et recherche automatique des livres.</p>
-            <a href="{% url 'biblio:book_list' %}" class="tile biblio-tile">
-                <p>📚 Bibliothèque<br>(Gestion de livres)</p>
-            </a>
+        <div class="app-card biblio">
+            <div class="app-card-header">
+                <div class="app-icon">📚</div>
+                <div class="app-title">Bibliothèque</div>
+                <div class="app-badge">Gestion scolaire</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    Système complet de gestion de bibliothèque scolaire. Scanner de codes-barres, recherche automatique de métadonnées, gestion des emprunts.
+                </p>
+                <a href="{% url 'biblio:book_list' %}" class="app-link">
+                    Accéder à la bibliothèque →
+                </a>
+            </div>
         </div>
 
         <!-- Analyse d'Échecs -->
-        <div>
-            <p style="color: white;">Analysez vos parties d'échecs Chess.com et visualisez vos erreurs sur un échiquier interactif.</p>
-            <a href="{% url 'chessTrainer:chess_analysis' %}" class="tile chess-tile">
-                <p>♟️ Analyse d'Échecs<br>(Chess.com)</p>
-            </a>
+        <div class="app-card chess">
+            <div class="app-card-header">
+                <div class="app-icon">♟️</div>
+                <div class="app-title">Analyse d'Échecs</div>
+                <div class="app-badge">Chess.com</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    Analysez vos parties Chess.com avec Stockfish. Visualisez vos erreurs sur un échiquier interactif et progressez dans votre jeu.
+                </p>
+                <a href="{% url 'chessTrainer:chess_analysis' %}" class="app-link">
+                    Analyser une partie →
+                </a>
+            </div>
         </div>
 
         <!-- Max Challenge -->
-        <div>
-            <p style="color: white;">Jeu de devinettes en ASCII Art pour 2 équipes. Révélez progressivement les photos mystères !</p>
-            <a href="{% url 'max_challenge:index' %}" class="tile" style="background-color: #6f42c1;">
-                <p>🎯 Max Challenge<br>(Jeu d'équipes)</p>
-            </a>
+        <div class="app-card max-challenge">
+            <div class="app-card-header">
+                <div class="app-icon">🎯</div>
+                <div class="app-title">Max Challenge</div>
+                <div class="app-badge">Jeu d'équipes</div>
+            </div>
+            <div class="app-card-body">
+                <p class="app-description">
+                    Jeu de devinettes en ASCII Art pour 2 équipes. Révélez progressivement les photos mystères et soyez les premiers à deviner !
+                </p>
+                <a href="{% url 'max_challenge:index' %}" class="app-link">
+                    Jouer au Max Challenge →
+                </a>
+            </div>
         </div>
     </div>
 
-    <div style="margin-top: 30px; padding: 15px; background-color: rgba(0,0,0,0.3); border-radius: 10px;">
-        <p style="color: white; font-size: 0.9em;">
-            <strong>🚀 Nouvelles fonctionnalités :</strong><br>
-            • 📊 Analyse automatique des parties d'échecs<br>
-            • 📱 Scanner de codes-barres pour la bibliothèque<br>
-            • 🔍 Recherche automatique de métadonnées de livres
-        </p>
+    <!-- Features Section -->
+    <div class="features-section">
+        <h2>🚀 Des applications web modernes</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Rapide & Réactif</div>
+                <p class="feature-text">
+                    Interface moderne et fluide pour une expérience utilisateur optimale
+                </p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">100% Responsive</div>
+                <p class="feature-text">
+                    Toutes les applications sont optimisées pour mobile, tablette et desktop
+                </p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-title">Sécurisé</div>
+                <p class="feature-text">
+                    Vos données sont protégées avec des systèmes d'authentification robustes
+                </p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🆓</div>
+                <div class="feature-title">Gratuit</div>
+                <p class="feature-text">
+                    Accès libre et gratuit à toutes les fonctionnalités
+                </p>
+            </div>
+        </div>
     </div>
 </div>
 

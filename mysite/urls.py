@@ -19,17 +19,19 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.views.generic.base import TemplateView
+from avent2025.views import public_home
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("sudoku/", include("sudoku.urls")),
     path("avent/", include("avent2024.urls")),  # Nouveau chemin pour avent
+    path("avent2025/", include("avent2025.urls")),  # Nouveau chemin pour avent 2025
     path("biblio/", include("biblio.urls")),    # Nouveau chemin pour biblio
     path("chessTrainer/", include("chessTrainer.urls")),      # Nouveau chemin pour chessTrainer
     path("max_challenge/", include("max_challenge.urls")),    # Nouveau chemin pour max_challenge
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
-    path("", TemplateView.as_view(template_name="home.html"), name="home"),
+    path("", public_home, name="home"),  # Page d'accueil publique
 ]
 
 if settings.DEBUG:

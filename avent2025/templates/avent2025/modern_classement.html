@@ -1,0 +1,135 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+{% load customfilters2025 %}
+
+{% block title %}Classement - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'avent2025/css/modern-classement.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="classement-container fade-in">
+    <!-- En-tête -->
+    <div class="classement-header">
+        <h1>🏆 Classement Général 2025</h1>
+        <p>Découvrez qui mène la course dans le calendrier de l'Avent !</p>
+    </div>
+
+    <!-- Statistiques globales -->
+    <div class="stats-overview">
+        <div class="stat-overview-card">
+            <div class="stat-overview-icon">👥</div>
+            <div class="stat-overview-value">{{ users|length }}</div>
+            <div class="stat-overview-label">Participants</div>
+        </div>
+        <div class="stat-overview-card">
+            <div class="stat-overview-icon">🧩</div>
+            <div class="stat-overview-value">{{ total_enigmes }}</div>
+            <div class="stat-overview-label">Énigmes</div>
+        </div>
+        <div class="stat-overview-card">
+            <div class="stat-overview-icon">🎭</div>
+            <div class="stat-overview-value">{{ total_devinettes }}</div>
+            <div class="stat-overview-label">Devinettes</div>
+        </div>
+        <div class="stat-overview-card">
+            <div class="stat-overview-icon">📊</div>
+            <div class="stat-overview-value">{{ avg_score|floatformat:0 }}</div>
+            <div class="stat-overview-label">Score moyen</div>
+        </div>
+    </div>
+
+    <!-- Podium (Top 3) -->
+    {% if users|length >= 3 %}
+    <div class="podium-section">
+        {% for user in users|slice:":3" %}
+        <div class="podium-card rank-{{ forloop.counter }}">
+            <div class="podium-medal">
+                {% if forloop.counter == 1 %}🥇
+                {% elif forloop.counter == 2 %}🥈
+                {% else %}🥉{% endif %}
+            </div>
+            <div class="podium-rank">#{{ forloop.counter }}</div>
+            <div class="podium-username">{{ user.username }}</div>
+            <div class="podium-stats">
+                <div class="podium-stat">
+                    <span class="podium-stat-label">💯 Score</span>
+                    <span class="podium-stat-value">{{ scores|get_item:user.id }}</span>
+                </div>
+                <div class="podium-stat">
+                    <span class="podium-stat-label">🧩 Énigmes</span>
+                    <span class="podium-stat-value">{{ nb_enigmes|get_item:user.id }}/8</span>
+                </div>
+                <div class="podium-stat">
+                    <span class="podium-stat-label">🎭 Devinettes</span>
+                    <span class="podium-stat-value">{{ nb_devinettes|get_item:user.id }}/24</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Table complète du classement -->
+    <div class="classement-table-container">
+        <h2 class="table-title">📋 Classement complet</h2>
+        <table class="classement-table">
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Participant</th>
+                    <th>💯 Score</th>
+                    <th>🧩 Énigmes</th>
+                    <th>🎭 Devinettes</th>
+                    <th>❌ Erreurs</th>
+                    <th>💡 Indices</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr {% if user == request.user %}class="current-user"{% endif %}>
+                    <td class="rank-cell">
+                        <span class="rank-badge {% if forloop.counter <= 3 %}top-3{% endif %}">
+                            {% if forloop.counter == 1 %}🥇
+                            {% elif forloop.counter == 2 %}🥈
+                            {% elif forloop.counter == 3 %}🥉
+                            {% else %}{{ forloop.counter }}{% endif %}
+                        </span>
+                    </td>
+                    <td class="username-cell">
+                        <strong>{{ user.username }}</strong>
+                        {% if user == request.user %}<span class="badge-you">Vous</span>{% endif %}
+                    </td>
+                    <td class="score-cell"><strong>{{ scores|get_item:user.id }}</strong></td>
+                    <td class="enigmes-cell">{{ nb_enigmes|get_item:user.id }}/8</td>
+                    <td class="devinettes-cell">{{ nb_devinettes|get_item:user.id }}/24</td>
+                    <td class="erreurs-cell">{{ nb_erreurs|get_item:user.id }}</td>
+                    <td class="indices-cell">{{ nb_indice_enigme|get_item:user.id }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty-state">
+                        <div class="empty-icon">🎄</div>
+                        <div>Aucun participant pour le moment.</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem;">Soyez le premier à commencer l'aventure !</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Retour à l'accueil -->
+    <div class="actions-footer">
+        <a href="{% url 'avent2025:home' %}" class="btn btn-secondary">
+            ← Retour à l'accueil
+        </a>
+        <a href="{% url 'avent2025:display_enigme' %}" class="btn btn-primary">
+            Continuer l'aventure →
+        </a>
+    </div>
+</div>
+
+{% endblock %}

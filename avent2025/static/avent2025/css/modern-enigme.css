@@ -1,0 +1,517 @@
+/* ===================================
+   AVENT 2025 - Styles pour les Énigmes
+   =================================== */
+
+/* Container de l'énigme */
+.enigme-container {
+    max-width: 900px;
+    margin: 2rem auto;
+}
+
+/* En-tête de l'énigme */
+.enigme-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.enigme-header h1 {
+    color: white;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.enigme-number {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* Carte de l'énigme */
+.enigme-card {
+    background: var(--card-bg);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.enigme-content {
+    padding: 2rem;
+}
+
+.enigme-text {
+    color: var(--text-color);
+    line-height: 1.8;
+    font-size: 1.05rem;
+    margin-bottom: 2rem;
+    text-align: justify;
+}
+
+/* Image de l'énigme */
+.enigme-image-container {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+.enigme-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+/* Formulaire de réponse */
+.enigme-form {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+.enigme-form label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+    font-size: 1.05rem;
+}
+
+.enigme-input-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.enigme-input {
+    flex: 1;
+    padding: 0.875rem 1.25rem;
+    font-size: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.enigme-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.enigme-submit {
+    padding: 0.875rem 2rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.enigme-submit:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Feedback de réponse */
+.enigme-feedback {
+    margin-top: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.enigme-feedback.success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.enigme-feedback.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+/* Section des indices */
+.indices-section {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+.indices-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.indices-header h3 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.indices-count {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Carte d'indice */
+.indice-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.indice-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.indice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.indice-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.indice-number {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1.05rem;
+}
+
+.indice-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.indice-cost-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.indice-category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.category-mecanique {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.category-reponse {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.indice-reveal-btn {
+    padding: 0.5rem 1rem;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.indice-reveal-btn:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+}
+
+.indice-content {
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.indice-image {
+    max-width: 100%;
+    margin-top: 1rem;
+    border-radius: var(--radius-md);
+}
+
+.indice-hidden {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-light);
+    font-style: italic;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: var(--radius-md);
+}
+
+/* Progression */
+.enigme-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    margin-top: 2rem;
+}
+
+.progress-info {
+    display: flex;
+    gap: 2rem;
+}
+
+.progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.progress-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.progress-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Navigation entre énigmes */
+.enigme-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.nav-btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.nav-btn-previous {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+}
+
+.nav-btn-previous:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.nav-btn-next {
+    background: var(--primary-color);
+    color: white;
+}
+
+.nav-btn-next:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .enigme-container {
+        margin: 1rem;
+    }
+    
+    .enigme-header {
+        padding: 2rem 1.5rem;
+    }
+    
+    .enigme-content {
+        padding: 1.5rem;
+    }
+    
+    .enigme-input-group {
+        flex-direction: column;
+    }
+    
+    .enigme-navigation {
+        flex-direction: column;
+    }
+    
+    .progress-info {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+/* ===================================
+   Styles spécifiques pour les Devinettes
+   =================================== */
+
+/* En-tête devinette avec couleur différente */
+.devinette-header {
+    background: linear-gradient(135deg, #f5576c 0%, #c92a3e 100%);
+}
+
+.devinette-number {
+    opacity: 0.95;
+}
+
+/* Cartes de succès/erreur */
+.success-container,
+.error-container {
+    max-width: 700px;
+    margin: 2rem auto;
+}
+
+.success-card,
+.error-card {
+    background: var(--card-bg);
+    padding: 3rem 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+}
+
+.success-card {
+    border-top: 5px solid var(--secondary-color);
+}
+
+.error-card {
+    border-top: 5px solid #ef4444;
+}
+
+.success-icon,
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.success-card h2 {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+.error-card h2 {
+    color: #ef4444;
+    margin-bottom: 1rem;
+}
+
+.success-image,
+.error-image {
+    margin: 2rem 0;
+}
+
+.success-image img,
+.error-image img {
+    max-width: 60%;
+    height: auto;
+    border-radius: var(--radius-md);
+}
+
+.success-btn {
+    background: var(--secondary-color);
+}
+
+.success-btn:hover {
+    background: #059669;
+}
+
+.retry-btn {
+    background: #ef4444;
+}
+
+.retry-btn:hover {
+    background: #dc2626;
+}
+
+/* Carte d'attente */
+.waiting-card {
+    background: var(--card-bg);
+    padding: 3rem 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.waiting-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.waiting-card h2 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.waiting-card p {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+}
+
+/* Responsive pour les devinettes */
+@media (max-width: 768px) {
+    .success-card,
+    .error-card,
+    .waiting-card {
+        padding: 2rem 1.5rem;
+    }
+    
+    .success-icon,
+    .error-icon,
+    .waiting-icon {
+        font-size: 3rem;
+    }
+    
+    .success-image img,
+    .error-image img {
+        max-width: 80%;
+    }
+}

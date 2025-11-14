@@ -1,0 +1,197 @@
+body {
+    background: url("/static/avent2024/images/wallpaper.png") no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+}
+.nav-bar-container {
+    width: 75%;
+    margin: 0 auto; /* Centrer le conteneur */
+    padding: 5px; /* Ajouter du padding pour un meilleur rendu */
+    border-radius: 5px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre pour un effet de profondeur */
+}
+.nav-bar {
+    background-color: rgba(128, 128, 128, 0.6); /* Fond gris légèrement transparent */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 15px; /* Coins arrondis */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Ombre pour un effet de profondeur */
+    padding: 10px;
+    margin : 10px;
+}
+
+.nav-bar a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 1.3em;
+}
+
+.nav-bar a:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Changement de couleur au survol */
+}
+
+.nav-bar-left{
+    text-align: left;
+    font-size: 1.0em;
+}
+.nav-bar-right{
+    text-align: right;
+    color: aliceblue;
+    font-size : 1.0em;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
+}
+.nav-bar-right #user_info{
+    color: aliceblue;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
+}
+.story-container {
+    width: 90%;
+    margin: 0 auto; /* Centrer le conteneur */
+    background-color: rgba(255, 255, 255, 0.4); /* Optionnel : ajouter un fond blanc légèrement transparent */
+    padding: 20px; /* Ajouter du padding pour un meilleur rendu */
+    border-radius: 10px; /* Coins arrondis */
+    align-items: center;
+}
+.story-container a{
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 1.3em;
+}
+.story-container p {
+    font-family: "Changa", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: normal;
+}
+
+.center-content {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.center-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px; /* Optionnel : ajouter des coins arrondis à l'image */
+}
+
+.egypte-bouton{
+    position: relative;
+    text-align: center;
+}
+.egypte-bouton .centered{
+    position: absolute;
+    white-space: wrap;
+    max-width: 150px;
+    font-size: 1.4em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-shadow: 1px 1px 2px red, 0 0 1em white, 0 0 0.3em white;
+}
+.egypte-bouton img{
+    box-shadow: 5px 8px 2px 1px rgb(97, 97, 97);
+}
+.egypte-bouton .btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-image: url("/static/avent2024/images/bouton_egypte.png");
+    
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+.center-content-old .btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #28a745;
+    opacity: 0.6;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.center-content .btn:hover {
+    background-color: #218838;
+}
+
+.detail-enigme{
+    margin: 0 auto; /* Centrer le conteneur */    
+    text-align: center;
+}
+
+header {
+    background-color: #4CAF50;
+    border-radius: 8px; /* Coins arrondis */
+    color: white;
+    text-align: center;
+    width: 60%;
+    margin: 0 auto; /* Centrer le conteneur */
+}
+
+.enigme-form {
+    display: flex;
+    flex-direction: column;
+    width:40%;
+    gap: 15px; /* Espacement entre les éléments du formulaire */
+    margin: 0 auto; /* Centrer le conteneur */
+}
+
+.form-group {
+    width : 80%;
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto; /* Centrer le conteneur */
+}
+
+.form-control {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.btn-submit {
+    width:40%;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #2881a7;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    margin: 0 auto; /* Centrer le conteneur */
+}
+
+
+.btn-submit:hover {
+    background-color: #213b88;
+}
+
+
+.image-apercu {
+    border-radius: 10px; /* Optionnel : ajouter des coins arrondis à l'image */
+    cursor: pointer; /* Changer le curseur pour indiquer que l'image est cliquable */
+}

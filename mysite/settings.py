@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['*','damienf.pythonanywhere.com']
 
 INSTALLED_APPS = [
     "avent2024.apps.Avent2024Config",
+    "avent2025.apps.Avent2025Config",
     "sudoku.apps.SudokuConfig",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -95,8 +96,8 @@ AUTH_PASSWORD_VALIDATORS = [
     
 ]
 
-LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "home"  # new
+LOGIN_REDIRECT_URL = "avent2025:home"
+LOGOUT_REDIRECT_URL = "home"  # Page d'accueil publique
 INTERNAL_IPS = [
     # ...
     "127.0.0.1",
@@ -140,3 +141,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Configuration du logging pour réduire la verbosité des requêtes AJAX répétitives
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'skip_max_challenge_api': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: '/max_challenge/api/' not in record.getMessage()
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'filters': ['skip_max_challenge_api'],
+        },
+    },
+    'loggers': {
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

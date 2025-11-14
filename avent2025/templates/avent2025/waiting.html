@@ -1,0 +1,231 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+
+{% block title %}{{ message }} - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<style>
+    .waiting-container {
+        max-width: 800px;
+        margin: 4rem auto;
+        text-align: center;
+        animation: fadeIn 0.6s ease-in;
+    }
+
+    .waiting-icon {
+        font-size: 8rem;
+        margin-bottom: 2rem;
+        animation: bounce 2s infinite;
+    }
+
+    .waiting-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 1.5rem;
+    }
+
+    .waiting-description {
+        font-size: 1.25rem;
+        color: var(--text-light);
+        margin-bottom: 3rem;
+        line-height: 1.8;
+    }
+
+    .waiting-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 3rem;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 2rem;
+    }
+
+    .waiting-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-waiting {
+        padding: 1rem 2.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary-waiting {
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        color: white;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary-waiting:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        color: white;
+    }
+
+    .btn-secondary-waiting {
+        background: var(--card-bg);
+        color: var(--text);
+        border: 2px solid var(--border);
+    }
+
+    .btn-secondary-waiting:hover {
+        background: var(--hover-bg);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .completion-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .info-box {
+        background: rgba(99, 102, 241, 0.1);
+        border-left: 4px solid var(--primary);
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        margin-top: 2rem;
+        text-align: left;
+    }
+
+    .info-box h3 {
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .info-box p {
+        color: var(--text-light);
+        margin: 0;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .waiting-container {
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .waiting-icon {
+            font-size: 5rem;
+        }
+
+        .waiting-title {
+            font-size: 1.8rem;
+        }
+
+        .waiting-description {
+            font-size: 1rem;
+        }
+
+        .waiting-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .btn-waiting {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="waiting-container">
+    <div class="waiting-card">
+        {% if is_complete %}
+            <div class="completion-badge">
+                🎉 Félicitations !
+            </div>
+        {% endif %}
+
+        <div class="waiting-icon">
+            {% if is_complete %}
+                🏆
+            {% elif content_type == 'énigmes' or content_type == 'énigme' %}
+                🎄
+            {% elif content_type == 'devinettes' or content_type == 'devinette' %}
+                🤔
+            {% else %}
+                ⏳
+            {% endif %}
+        </div>
+
+        <h1 class="waiting-title">{{ message }}</h1>
+        <p class="waiting-description">{{ description }}</p>
+
+        <div class="waiting-actions">
+            {% if show_start_button %}
+                <a href="{% url 'avent2025:start_adventure' %}" class="btn-waiting btn-primary-waiting">
+                    🚀 Démarrer l'aventure
+                </a>
+            {% endif %}
+
+            <a href="{% url 'avent2025:home' %}" class="btn-waiting {% if show_start_button %}btn-secondary-waiting{% else %}btn-primary-waiting{% endif %}">
+                🏠 Retour à l'accueil
+            </a>
+
+            {% if is_complete %}
+                <a href="{% url 'avent2025:classement' %}" class="btn-waiting btn-primary-waiting">
+                    🏆 Voir le classement
+                </a>
+            {% endif %}
+        </div>
+
+        {% if not is_complete and not show_start_button %}
+            <div class="info-box">
+                <h3>💡 En attendant...</h3>
+                <p>
+                    Profitez-en pour consulter le classement, partager votre progression avec vos amis,
+                    ou explorer les autres sections du site !
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if is_complete %}
+        <div class="info-box" style="text-align: center;">
+            <h3>🎁 Merci d'avoir participé !</h3>
+            <p>
+                Vous avez brillamment résolu toutes les énigmes disponibles. 
+                Restez connecté pour ne manquer aucune nouvelle énigme du calendrier de l'Avent 2025 !
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

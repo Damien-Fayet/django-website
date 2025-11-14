@@ -1,0 +1,358 @@
+/* ===================================
+   AVENT 2025 - Classement moderne
+   =================================== */
+
+.classement-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.classement-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.classement-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.classement-header p {
+    color: var(--text-light);
+    font-size: 1.125rem;
+}
+
+/* Stats Overview */
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-overview-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+}
+
+.stat-overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-overview-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-overview-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-overview-label {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Podium */
+.podium-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    align-items: end;
+}
+
+.podium-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.podium-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.podium-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.podium-card.rank-1 {
+    order: 2;
+}
+
+.podium-card.rank-1::before {
+    background: linear-gradient(90deg, #ffd700, #ffed4e);
+}
+
+.podium-card.rank-2 {
+    order: 1;
+}
+
+.podium-card.rank-2::before {
+    background: linear-gradient(90deg, #c0c0c0, #e8e8e8);
+}
+
+.podium-card.rank-3 {
+    order: 3;
+}
+
+.podium-card.rank-3::before {
+    background: linear-gradient(90deg, #cd7f32, #e8a96c);
+}
+
+.podium-medal {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.podium-rank {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.rank-1 .podium-rank {
+    color: #ffd700;
+}
+
+.rank-2 .podium-rank {
+    color: #c0c0c0;
+}
+
+.rank-3 .podium-rank {
+    color: #cd7f32;
+}
+
+.podium-username {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.podium-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.podium-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: var(--radius-sm);
+}
+
+.podium-stat-label {
+    font-size: 0.85rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.podium-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Table de classement */
+.classement-table-container {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.table-title {
+    padding: 1.5rem;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.classement-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.classement-table thead {
+    background: var(--bg-color);
+}
+
+.classement-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.classement-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+.classement-table tbody tr:hover {
+    background: var(--bg-color);
+}
+
+.classement-table tbody tr.current-user {
+    background: rgba(37, 99, 235, 0.05);
+    font-weight: 600;
+}
+
+.classement-table td {
+    padding: 1.25rem 1.5rem;
+    color: var(--text-color);
+}
+
+.rank-cell {
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.rank-badge.top-3 {
+    font-size: 1.25rem;
+}
+
+.username-cell {
+    font-weight: 500;
+}
+
+.score-cell {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.125rem;
+}
+
+.enigmes-cell,
+.devinettes-cell,
+.erreurs-cell,
+.indices-cell {
+    color: var(--text-light);
+}
+
+.badge-you {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-light);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.actions-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .podium-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .podium-card {
+        order: initial !important;
+    }
+    
+    .classement-table {
+        font-size: 0.875rem;
+    }
+    
+    .classement-table th,
+    .classement-table td {
+        padding: 0.75rem 1rem;
+    }
+    
+    .classement-table th:nth-child(n+4),
+    .classement-table td:nth-child(n+4) {
+        display: none;
+    }
+}

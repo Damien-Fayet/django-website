@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+{% extends "avent2025/base_avent.html" %}
+{% block content %}
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toutes les énigmes - Avent 2024</title>
+    {% comment %} <link rel="stylesheet" href="{% static 'css/styles.css' %}"> {% endcomment %}
+    <link rel="stylesheet" href="/static/avent2025/css/enigme.css">
+    <style>
+        
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+    
+    <div class="story-container">
+        <div style="text-align:center;"> 
+            <h2><a href="./#Enigmes"> Aller aux Enigmes </a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="./#Devinettes"> Aller aux Devinettes </a></h2>
+            <h2></h2>
+        </div>
+        <div class="detail-enigme">
+        <h1 id="Enigmes">Enigmes </h1>
+        {% for enigme  in enigmes  %}
+
+            <header>
+                <h2>Enigme n° {{ enigme.id }} : {{ enigme.titre }}</h2>
+            </header>
+            {% if enigme.is_dispo or user.is_superuser %}
+                <p>{{ enigme.texte|safe }}</p>
+                <a href="/media/{{ enigme.image_name }}" target="_blank">
+                    <img src="/media/{{ enigme.image_name }}" width = "40%" />
+                </a>
+                
+                <div class="indices-display">
+                    <h2> Indices :</h2>
+                    {% for indice  in indices_reveles  %}
+                        {% if indice.enigme.id == enigme.id %}
+                            <h3>Indice n°{{indice.numero}}</h3>
+                            {% if indice.texte %}
+                                <p> {{indice.texte|safe}}</p>
+                            {% endif %}
+                            {% if indice.image %}
+                                <img src="/media/{{indice.image}}" width = "20%" alt="image de Indice {{indice.numero}}" />
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+            
+
+        <h1 id="Devinettes"> Devinettes </h1>
+        {% for devinette  in devinettes  %}
+
+            <header>
+                <h2>Devinette n° {{ devinette.id }} : {{ devinette.titre }}</h2>
+            </header>
+            {% if devinette.is_dispo or user.is_superuser %}
+                <p>{{ devinette.texte|safe }}</p>
+                <a href="/media/{{ devinette.image_name }}" target="_blank">
+                    <img src="/media/{{ devinette.image_name }}" width = "40%" />
+                </a>
+                <div class="indices-display">
+                    <h2> Indices :</h2>
+                    {% for indice  in indices_reveles_devi  %}
+                        {% if indice.enigme.id == devinette.id %}
+                            <h3>Indice n°{{indice.numero}}</h3>
+                            {% if indice.texte %}
+                                <p> {{indice.texte|safe}}</p>
+                            {% endif %}
+                            {% if indice.image %}
+                                <img src="/media/{{indice.image}}" width = "20%" alt="image de Indice {{indice.numero}}" />
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        </div>
+    {% else %}
+        <p>Connecte toi !</p>
+        <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Créer un nouveau compte</a>
+    {% endif %}
+    </div>
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,45 @@
+<!-- templates/base.html -->
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+{% load static %}
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Les ressources de Damien{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'avent2025/css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'avent2025/css/classement.css' %}">
+</head>
+
+<body>
+  <main>
+    {% block navbar %}
+    <div class="nav-bar-container">
+      <nav class="nav-bar">                
+        {% if user.is_authenticated %}
+        <div class="nav-bar-left"> 
+          <a href="{% url 'home' %}">Accueil</a>
+          <a href="{% url 'avent2025:classement' %}">Classement</a>
+          <a href="{% url 'avent2025:all_enigmes' %}">Anciennes énigmes</a>
+          {% if current_enigma > 0 %}
+          <a href="/avent2025">Enigme {{ current_enigma }}</a> 
+          {% endif %}
+        </div>  
+        <div class="nav-bar-right"> Bienvenue {{ user.username }} !
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Déconnecter</button>
+        </form> 
+        
+        {% else %}
+          <p>Connecte toi !</p>
+          <a href="{% url 'login' %}">Se connecter</a> ou <a href="{% url 'signup' %}">Créer un nouveau compte</a>
+        {% endif %}
+      </nav>
+    </div>
+    {% endblock %}
+    {% block content %}
+    {% endblock %}
+  </main>
+</body>
+
+</html>

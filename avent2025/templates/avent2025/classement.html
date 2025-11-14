@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+{% extends "avent2025/base_avent.html" %}
+
+{% load static %}
+{% load customfilters2025 %}
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil 2024</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@200..800&display=swap" rel="stylesheet">
+    <style>
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Classement 2024</h1>
+    </header>
+    {% block navbar %}
+    {% with current_enigma=user.current_enigma %}
+            {{ block.super }}
+        {% endwith%}
+    {% endblock %}
+    {% block content %}
+    <div class="story-container">
+        <div class="links"><a href="./#total">Total</a><a href="./#enigmes">Enigmes</a><a href="./#devinettes">Devinettes</a></div>
+        <div class="classement">
+            <table class="classement-table" id="total">
+                <caption>
+                    <h1>Classement Total 2024</h1>
+                </caption>
+                <tr>
+                    <th>#</th>
+                    <th>Joueur</th>
+                    <th>Enigme</th>
+                    <th>Devinette</th>
+                    <th>Erreurs<br/> Enigmes</th>
+                    <th>Erreurs<br/> Devinettes</th>
+                    <th>Score Enigmes</th>
+                    <th>Score Devinettes</th>
+                    <th>Total</th>
+                </tr>
+            
+            {% for user in users %}
+                {% if not user.is_superuser%}
+                    <tr>
+                        <td> {{ forloop.counter }}</td>
+                        <td>
+                            {% if forloop.counter == 1%}
+                                &#129351;
+                            {% endif %}
+                            {% if forloop.counter == 2%}
+                                &#129352;
+                            {% endif %}
+                            {% if forloop.counter == 3%}
+                                &#129353;
+                            {% endif %}
+                            {{user.username}}
+                        </td>
+                        
+                        <td>{{user.userprofile.currentEnigma}}</td>
+                        <td>{{user.userprofile.currentDevinette}}</td>
+                        <td>{{user.userprofile.erreurEnigma}}</td>
+                        <td>{{user.userprofile.erreurDevinette}}</td>
+                        <td>{{enigme_score|get_by_index:user.id}}</td>
+                        <td>{{devinette_score|get_by_index:user.id}}</td>
+                        <td>{{total|get_by_index:user.id}}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </table>
+            <table class="classement-table" id="enigmes">
+                <caption>
+                    <h1>Classement Enigmes 2024</h1>
+                </caption>
+                <tr>
+                    <th>#</th>
+                    <th>Joueur</th>
+                    <th>Enigme</th>
+                    <th>Indices</th>
+                    <th>Erreurs Enigmes</th>
+                    <th>Total Enigmes</th>
+                </tr>
+            
+            {% for user in users_enigme %}
+                {% if not user.is_superuser%}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if forloop.counter == 1%}
+                                &#129351;
+                            {% endif %}
+                            {% if forloop.counter == 2%}
+                                &#129352;
+                            {% endif %}
+                            {% if forloop.counter == 3%}
+                                &#129353;
+                            {% endif %}
+                            {{user.username}}
+                        </td>
+                        <td>{{user.userprofile.currentEnigma}}</td>
+                        <td>{{nb_indice_enigme|get_by_index:user.id}} (moy: {{moy_indices_enigme|get_by_index:user.id}})</td>
+                        <td>{{user.userprofile.erreurEnigma}}</td>
+                        <td>{{enigme_score|get_by_index:user.id}}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </table>
+            <table class="classement-table" id="devinettes">
+                <caption>
+                    <h1>Classement Devinettes 2024</h1>
+                </caption>
+                <tr>
+                    <th> # </th>
+                    <th>Joueur</th>
+                    <th>Devinette</th>
+                    <th>Indices</th>
+                    <th>Erreurs</th>
+                    <th>Total Devinette</th>
+                </tr>
+            
+            {% for user in users_devinette %}
+                {% if not user.is_superuser%}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if forloop.counter == 1%}
+                            &#129351;
+                            {% endif %}
+                            {% if forloop.counter == 2%}
+                                &#129352;
+                            {% endif %}
+                            {% if forloop.counter == 3%}
+                                &#129353;
+                            {% endif %}
+                            {{user.username}}
+                        </td>
+                        <td>{{user.userprofile.currentDevinette}}</td>
+                        <td>{{nb_indice_devinette|get_by_index:user.id}} (moy: {{moy_indices_devinette|get_by_index:user.id}})</td>
+                        <td>{{user.userprofile.erreurDevinette}}</td>
+                        <td>{{devinette_score|get_by_index:user.id}}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>

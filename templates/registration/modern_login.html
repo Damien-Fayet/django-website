@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Calendrier de l'Avent 2025</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'avent2025/css/modern-base.css' %}">
+    <link rel="stylesheet" href="{% static 'avent2025/css/modern-auth.css' %}">
+</head>
+<body>
+    <!-- Navigation simple -->
+    <nav class="nav-bar-container">
+        <div class="nav-bar nav-bar-welcome">
+            <div class="nav-bar-logo">
+                <a href="{% url 'home' %}">🎄 Calendrier de l'Avent 2025</a>
+            </div>
+            <div class="nav-bar-actions">
+                <a href="{% url 'signup' %}" class="btn-nav btn-nav-primary">S'inscrire</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Formulaire de connexion -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-icon">🎮</div>
+                    <h1 class="auth-title">Bon retour parmi nous !</h1>
+                    <p class="auth-subtitle">Connectez-vous pour continuer votre aventure</p>
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-error">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-content">
+                        <strong>Erreur de connexion</strong>
+                        <p>Nom d'utilisateur ou mot de passe incorrect. Veuillez réessayer.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="id_username" class="form-label">
+                            👤 Nom d'utilisateur
+                        </label>
+                        <input 
+                            type="text" 
+                            name="username" 
+                            id="id_username"
+                            class="form-input"
+                            placeholder="Votre nom d'utilisateur"
+                            required
+                            autofocus
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password" class="form-label">
+                            🔒 Mot de passe
+                        </label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="id_password"
+                            class="form-input"
+                            placeholder="Votre mot de passe"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <span class="btn-submit-icon">🚀</span>
+                        <span class="btn-submit-text">Se connecter</span>
+                    </button>
+                </form>
+
+                <div class="auth-divider">
+                    <span>ou</span>
+                </div>
+
+                <div class="auth-footer">
+                    <p class="auth-footer-text">
+                        Nouveau dans l'aventure ?
+                    </p>
+                    <a href="{% url 'signup' %}" class="btn-secondary">
+                        ✨ Créer un compte gratuitement
+                    </a>
+                </div>
+            </div>
+
+            <!-- Info complémentaire -->
+            <div class="auth-info">
+                <div class="auth-info-card">
+                    <div class="auth-info-icon">💡</div>
+                    <div class="auth-info-content">
+                        <h3>Astuce du jour</h3>
+                        <p>Résolvez les énigmes sans utiliser d'indices pour maximiser votre score !</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-welcome">
+        <p>🎄 Calendrier de l'Avent 2025 🎄</p>
+    </footer>
+</body>
+</html>
