@@ -68,6 +68,12 @@
         <a href="{% url 'avent2025:classement' %}" class="hero-btn hero-btn-secondary">
             🏆 Voir le classement
         </a>
+        
+        {% if user.userprofile_2025.is_family %}
+        <a href="{% url 'avent2025:leaderboard' %}?filter=family" class="hero-btn hero-btn-family">
+            👨‍👩‍👧‍👦 Classement Famille
+        </a>
+        {% endif %}
     </div>
     
     <!-- Progression visuelle -->

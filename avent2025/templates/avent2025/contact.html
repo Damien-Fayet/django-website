@@ -1,0 +1,230 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+
+{% block title %}Contactez-moi - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<style>
+.contact-container {
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.contact-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.contact-header h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.contact-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.contact-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 2.5rem;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.contact-input,
+.contact-textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: var(--transition);
+    background: white;
+}
+
+.contact-input:focus,
+.contact-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.contact-textarea {
+    resize: vertical;
+    min-height: 150px;
+}
+
+.form-errors {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    color: #c33;
+    font-size: 0.9rem;
+}
+
+.form-errors ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.submit-btn {
+    background: var(--primary-color);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.submit-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.contact-info {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--primary-light);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
+}
+
+.contact-info h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.contact-info p {
+    margin: 0.5rem 0 0 0;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .contact-header h1 {
+        font-size: 2rem;
+    }
+    
+    .contact-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contact-container fade-in">
+    <div class="contact-header">
+        <h1>✉️ Contactez-moi</h1>
+        <p>Une question, une suggestion ou un bug à signaler ? N'hésitez pas !</p>
+    </div>
+
+    <div class="contact-card">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1.5rem; padding: 1rem; border-radius: var(--radius-md); 
+                    {% if message.tags == 'success' %}background: #d4edda; border: 1px solid #c3e6cb; color: #155724;{% endif %}
+                    {% if message.tags == 'error' %}background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="contact-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div class="form-errors">
+                        {{ form.name.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="form-errors">
+                        {{ form.email.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+                {{ form.subject }}
+                {% if form.subject.errors %}
+                    <div class="form-errors">
+                        {{ form.subject.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+                {{ form.message }}
+                {% if form.message.errors %}
+                    <div class="form-errors">
+                        {{ form.message.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="submit-btn">
+                📨 Envoyer le message
+            </button>
+        </form>
+
+        <div class="contact-info">
+            <h3>💡 Informations</h3>
+            <p>
+                Je réponds généralement dans les 24-48 heures. 
+                Votre adresse email ne sera utilisée que pour vous répondre et ne sera jamais partagée.
+            </p>
+            <p style="margin-top: 0.75rem;">
+                <strong>Temps de réponse moyen :</strong> 24 heures<br>
+                <strong>Types de messages :</strong> Questions, suggestions, bugs, feedback
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -121,6 +121,20 @@
     background: rgba(255, 255, 255, 0.1);
 }
 
+.hero-btn-family {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+    color: #764ba2;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.hero-btn-family:hover {
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.95) 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
 /* Progression dans le hero */
 .hero-progress {
     margin-top: 1.75rem;

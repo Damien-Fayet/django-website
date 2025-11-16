@@ -2,6 +2,26 @@
    AVENT 2025 - Styles pour les Énigmes
    =================================== */
 
+/* Message d'avertissement pour admin */
+.admin-warning {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 6px rgba(255, 152, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
 /* Container de l'énigme */
 .enigme-container {
     max-width: 900px;

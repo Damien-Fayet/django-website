@@ -1,0 +1,348 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+
+{% block title %}Classement - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Styles du classement */
+.leaderboard-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.leaderboard-header h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.leaderboard-filters {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-btn:hover {
+    background: var(--primary-light);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.leaderboard-stats {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-card .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.leaderboard-table {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.leaderboard-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table th {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.leaderboard-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.leaderboard-table tr:last-child td {
+    border-bottom: none;
+}
+
+.leaderboard-table tr:hover {
+    background: var(--primary-light);
+}
+
+.leaderboard-table tr.current-user {
+    background: rgba(102, 126, 234, 0.1);
+    font-weight: 600;
+}
+
+.leaderboard-table tr.current-user:hover {
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.rank-1 {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #000;
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+    color: #000;
+    box-shadow: 0 4px 8px rgba(192, 192, 192, 0.4);
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%);
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(205, 127, 50, 0.4);
+}
+
+.rank-other {
+    background: var(--border-color);
+    color: var(--text-muted);
+}
+
+.family-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.family-quick-filter {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-md);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.family-quick-filter-text {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+}
+
+.family-quick-filter-text .icon {
+    font-size: 1.5rem;
+}
+
+.family-quick-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--primary-color);
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.family-quick-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.score-cell {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .leaderboard-table {
+        overflow-x: auto;
+    }
+    
+    .leaderboard-table table {
+        min-width: 600px;
+    }
+    
+    .leaderboard-header h1 {
+        font-size: 1.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="leaderboard-container fade-in">
+    <!-- En-tête -->
+    <div class="leaderboard-header">
+        <h1>🏆 Classement</h1>
+        <p>Découvrez les meilleurs joueurs du Calendrier de l'Avent 2025</p>
+    </div>
+
+    <!-- Accès rapide famille (visible uniquement pour les membres de la famille) -->
+    {% if current_user_is_family and filter_type != 'family' %}
+    <div class="family-quick-filter">
+        <div class="family-quick-filter-text">
+            <span class="icon">👨‍👩‍👧‍👦</span>
+            <span>Vous êtes membre de la famille ! Voir uniquement votre classement familial ?</span>
+        </div>
+        <a href="?filter=family" class="family-quick-btn">
+            🎯 Classement Famille
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Filtres -->
+    <div class="leaderboard-filters">
+        <a href="?filter=all" class="filter-btn {% if filter_type == 'all' %}active{% endif %}">
+            👥 Tous ({{ total_users }})
+        </a>
+        <a href="?filter=family" class="filter-btn {% if filter_type == 'family' %}active{% endif %}">
+            👨‍👩‍👧‍👦 Famille ({{ family_count }})
+        </a>
+        <a href="?filter=public" class="filter-btn {% if filter_type == 'public' %}active{% endif %}">
+            🌍 Public ({{ public_count }})
+        </a>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="leaderboard-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-label">Joueurs</div>
+        </div>
+        {% if filter_type == 'family' %}
+        <div class="stat-card">
+            <div class="stat-value">{{ family_count }}</div>
+            <div class="stat-label">Membres famille</div>
+        </div>
+        {% elif filter_type == 'public' %}
+        <div class="stat-card">
+            <div class="stat-value">{{ public_count }}</div>
+            <div class="stat-label">Joueurs public</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tableau du classement -->
+    {% if leaderboard %}
+    <div class="leaderboard-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Joueur</th>
+                    <th>Énigmes</th>
+                    <th>Devinettes</th>
+                    <th>Erreurs</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr {% if entry.is_current_user %}class="current-user"{% endif %}>
+                    <td>
+                        <span class="rank-badge rank-{% if entry.rank <= 3 %}{{ entry.rank }}{% else %}other{% endif %}">
+                            {{ entry.rank }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ entry.username }}
+                        {% if entry.is_family %}
+                            <span class="family-badge">👨‍👩‍👧‍👦 Famille</span>
+                        {% endif %}
+                        {% if entry.is_current_user %}
+                            <span style="color: var(--primary-color);">⬅️ Vous</span>
+                        {% endif %}
+                    </td>
+                    <td>✅ {{ entry.enigmes_resolues }}/8</td>
+                    <td>🎯 {{ entry.devinettes_resolues }}/24</td>
+                    <td>❌ {{ entry.erreurs_enigmes }}E / {{ entry.erreurs_devinettes }}D</td>
+                    <td class="score-cell">{{ entry.score }} pts</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🎯</div>
+        <h3>Aucun joueur dans cette catégorie</h3>
+        <p>Soyez le premier à vous lancer dans l'aventure !</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

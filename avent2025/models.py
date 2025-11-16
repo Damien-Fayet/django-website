@@ -16,6 +16,7 @@ class UserProfile(models.Model):
     score = models.IntegerField(default=0)
     indices_enigme_reveles = models.CharField(validators=[int_list_validator()], default="", max_length=200, blank=True)
     indices_devinette_reveles = models.CharField(validators=[int_list_validator()],default="", max_length=200, blank=True)
+    is_family = models.BooleanField(default=False, verbose_name="Membre de la famille", help_text="Cochez pour marquer cet utilisateur comme membre de la famille")
     
     def __str__(self):
         return f"{self.user} Enigme {self.currentEnigma}, Devinette {self.currentDevinette}"

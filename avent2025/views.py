@@ -10,11 +10,94 @@ from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail, BadHeaderError
 import unidecode
+import re
+from datetime import datetime, timezone
+from .forms import ContactForm
+
+
+def is_access_allowed(user):
+    """
+    Vérifie si l'utilisateur peut accéder aux énigmes/devinettes.
+    Accès autorisé si:
+    - L'utilisateur est super admin (superuser)
+    - OU la date est >= 01/12/2025
+    """
+    # Super admin a toujours accès
+    if user.is_superuser:
+        return True
+    
+    # Vérifier la date (01 décembre 2025 à 00:00:00)
+    release_date = datetime(2025, 12, 1, 0, 0, 0, tzinfo=timezone.utc)
+    current_date = datetime.now(timezone.utc)
+    
+    return current_date >= release_date
+
+
+def normalize_answer(answer):
+    """
+    Normalise une réponse en supprimant les variations courantes:
+    - Articles définis/indéfinis (le, la, les, l', un, une, des)
+    - Espaces multiples
+    - Accents (via unidecode)
+    - Pluriels (s, x à la fin)
+    - Casse
+    """
+    if not answer:
+        return ""
+    
+    # Convertir en minuscules et supprimer les accents
+    normalized = answer.lower()
+    normalized = unidecode.unidecode(normalized)
+    
+    # Supprimer les articles en début de chaîne (avec ou sans apostrophe)
+    articles = [r"^les\s+", r"^le\s+", r"^la\s+", r"^l'", r"^un\s+", r"^une\s+", r"^des\s+"]
+    for article in articles:
+        normalized = re.sub(article, "", normalized)
+    
+    # Supprimer tous les espaces et caractères non-alphanumériques
+    normalized = re.sub(r'[^a-z0-9]', '', normalized)
+    
+    # Supprimer le 's' ou 'x' final pour gérer les pluriels
+    normalized = re.sub(r'[sx]$', '', normalized)
+    
+    return normalized
+
+
+def check_answer(user_answer, expected_answers):
+    """
+    Vérifie si la réponse utilisateur correspond à l'une des réponses attendues.
+    Compare les versions normalisées ET les versions originales nettoyées.
+    """
+    # Normalisation complète (articles, pluriels, etc.)
+    normalized_user = normalize_answer(user_answer)
+    
+    for expected in expected_answers:
+        # Normalisation complète
+        normalized_expected = normalize_answer(expected)
+        if normalized_user == normalized_expected:
+            return True
+        
+        # Aussi vérifier la correspondance exacte sans articles mais avec pluriels
+        simple_user = unidecode.unidecode(''.join(user_answer.split()).lower())
+        simple_expected = unidecode.unidecode(''.join(expected.split()).lower())
+        if simple_user == simple_expected:
+            return True
+    
+    return False
 
         
 @login_required
 def home(request):
+    # Vérifier l'accès avant le 01/12/2025
+    if not is_access_allowed(request.user):
+        return render(request, 'avent2025/waiting.html', {
+            'content_type': 'énigmes',
+            'message': '🎄 Le Calendrier de l\'Avent 2025 ouvre le 1er décembre !',
+            'description': 'Les énigmes seront disponibles à partir du 1er décembre 2025. Revenez à cette date pour commencer l\'aventure !'
+        })
+    
     # Garantir que l'utilisateur a un profil
     profile = get_or_create_profile(request.user)
     
@@ -42,6 +125,14 @@ def public_home(request):
 
 @login_required
 def home_devinette(request):
+    # Vérifier l'accès avant le 01/12/2025
+    if not is_access_allowed(request.user):
+        return render(request, 'avent2025/waiting.html', {
+            'content_type': 'devinettes',
+            'message': '🎄 Le Calendrier de l\'Avent 2025 ouvre le 1er décembre !',
+            'description': 'Les devinettes seront disponibles à partir du 1er décembre 2025. Revenez à cette date pour commencer l\'aventure !'
+        })
+    
     # Garantir que l'utilisateur a un profil
     profile = get_or_create_profile(request.user)
     
@@ -51,6 +142,14 @@ def home_devinette(request):
 
 @login_required
 def start_adventure(request):
+    # Vérifier l'accès avant le 01/12/2025
+    if not is_access_allowed(request.user):
+        return render(request, 'avent2025/waiting.html', {
+            'content_type': 'énigmes',
+            'message': '🎄 Le Calendrier de l\'Avent 2025 ouvre le 1er décembre !',
+            'description': 'Les énigmes seront disponibles à partir du 1er décembre 2025. Revenez à cette date pour commencer l\'aventure !'
+        })
+    
     # Vérifier qu'il existe au moins une énigme
     if not Enigme.objects.exists():
         return render(request, 'avent2025/waiting.html', {
@@ -78,6 +177,14 @@ def start_adventure(request):
 
 @login_required
 def start_devinette(request):
+    # Vérifier l'accès avant le 01/12/2025
+    if not is_access_allowed(request.user):
+        return render(request, 'avent2025/waiting.html', {
+            'content_type': 'devinettes',
+            'message': '🎄 Le Calendrier de l\'Avent 2025 ouvre le 1er décembre !',
+            'description': 'Les devinettes seront disponibles à partir du 1er décembre 2025. Revenez à cette date pour commencer l\'aventure !'
+        })
+    
     # Vérifier qu'il existe au moins une devinette
     if not Devinette.objects.exists():
         return render(request, 'avent2025/waiting.html', {
@@ -141,6 +248,22 @@ def display_enigme(request, enigme_id=None, reponse=None):
             'is_complete': True
         })
     
+    # Vérifier la date de disponibilité (sauf pour super utilisateurs)
+    is_superuser = request.user.is_superuser
+    date_warning = None
+    if not current_enigma.is_dispo:
+        if is_superuser:
+            # Super utilisateur : accès autorisé avec message d'avertissement
+            date_warning = f"⚠️ MODE ADMIN : Cette énigme sera disponible le {current_enigma.date_dispo.strftime('%d/%m/%Y')}"
+        else:
+            # Utilisateur normal : accès bloqué
+            return render(request, 'avent2025/waiting.html', {
+                'content_type': 'énigme',
+                'message': 'Énigme pas encore disponible',
+                'description': f'Cette énigme sera disponible le {current_enigma.date_dispo.strftime("%d/%m/%Y")}. Revenez à cette date pour la découvrir !',
+                'show_start_button': False
+            })
+    
     # Récupérer tous les indices de cette énigme
     indices = Indice.objects.filter(enigme=current_enigma)
     
@@ -159,6 +282,7 @@ def display_enigme(request, enigme_id=None, reponse=None):
         'indices': indices,
         'indices_reveles': indices_reveles,
         'indices_hidden': indices_hidden,
+        'date_warning': date_warning,
     })
   
 @login_required
@@ -191,6 +315,22 @@ def display_devinette(request, devinette_id=None, reponse=None):
     # Récupérer la devinette
     current_devinette = get_object_or_404(Devinette, id=devinette_id)
     
+    # Vérifier la date de disponibilité (sauf pour super utilisateurs)
+    is_superuser = request.user.is_superuser
+    date_warning = None
+    if not current_devinette.is_dispo:
+        if is_superuser:
+            # Super utilisateur : accès autorisé avec message d'avertissement
+            date_warning = f"⚠️ MODE ADMIN : Cette devinette sera disponible le {current_devinette.date_dispo.strftime('%d/%m/%Y')}"
+        else:
+            # Utilisateur normal : accès bloqué
+            return render(request, 'avent2025/waiting.html', {
+                'content_type': 'devinette',
+                'message': 'Devinette pas encore disponible',
+                'description': f'Cette devinette sera disponible le {current_devinette.date_dispo.strftime("%d/%m/%Y")}. Revenez à cette date pour la découvrir !',
+                'show_start_button': False
+            })
+    
     # Récupérer tous les indices de cette devinette
     indices = IndiceDevinette.objects.filter(enigme=current_devinette)
     
@@ -208,8 +348,9 @@ def display_devinette(request, devinette_id=None, reponse=None):
         'devinette' : current_devinette,
         'user_reponse' : reponse,
         'indices' : indices,
-        'indices_reveles': indices_reveles,
-        'indices_hidden': indices_hidden,
+        'indices_reveles' : indices_reveles,
+        'indices_hidden' : indices_hidden,
+        'date_warning': date_warning,
     })
       
 @login_required
@@ -238,16 +379,10 @@ def validate_enigme(request):
             messages.error(request, "Veuillez entrer une réponse")
             return redirect('avent2025:display_enigme')
         
-        clean_reponse = ''.join(reponse.split()).lower()
-        clean_reponse = unidecode.unidecode(clean_reponse)
+        # Utiliser la fonction de validation robuste
+        reponses_possibles = [r.strip() for r in current_enigma.reponse.split(",")]
         
-        # Normaliser également les réponses attendues pour comparaison insensible à la casse
-        reponses_possibles = [
-            unidecode.unidecode(''.join(r.split()).lower()) 
-            for r in current_enigma.reponse.split(",")
-        ]
-        
-        if clean_reponse in reponses_possibles:
+        if check_answer(reponse, reponses_possibles):
             messages.success(request, "Bonne reponse")
             user_profile.currentEnigma += 1
             current_enigma = get_object_or_404(Enigme, id=user_profile.currentEnigma)
@@ -287,28 +422,31 @@ def validate_devinette(request):
             messages.error(request, "Veuillez entrer une réponse")
             return redirect('avent2025:display_devinette')
         
-        clean_reponse = ''.join(reponse.split()).lower()
-        clean_reponse = unidecode.unidecode(clean_reponse)
+        # Utiliser la fonction de validation robuste
+        reponses_possibles = [r.strip() for r in current_devinette.reponse.split(",")]
         
-        # Normaliser également les réponses attendues pour comparaison insensible à la casse
-        reponses_possibles = [
-            unidecode.unidecode(''.join(r.split()).lower()) 
-            for r in current_devinette.reponse.split(",")
-        ]
-        
-        if clean_reponse in reponses_possibles:
-            messages.success(request, "Bonne reponse")
+        if check_answer(reponse, reponses_possibles):
+            messages.success(request, "Bonne réponse !")
             user_profile.currentDevinette += 1
-            current_devinette = get_object_or_404(Devinette, id=user_profile.currentDevinette)
             user_profile.save()
-            image_id = random.randint(1, 13)
-            return render(request, 'avent2025/modern_devinette.html',  {
-                'reponse_devinette' : current_devinette.reponse,
-                'devinette' : current_devinette,
-                'user_reponse' : 'OK',
-                'old_devinette_id' : current_devinette.id -1,
-                'image_reponse' : f"gagne{image_id}.gif"
-            })
+            
+            # Vérifier si une devinette suivante existe
+            next_devinette = Devinette.objects.filter(id=user_profile.currentDevinette).first()
+            
+            if next_devinette:
+                # Il y a une devinette suivante
+                image_id = random.randint(1, 13)
+                return render(request, 'avent2025/modern_devinette.html',  {
+                    'reponse_devinette' : next_devinette.reponse,
+                    'devinette' : next_devinette,
+                    'user_reponse' : 'OK',
+                    'old_devinette_id' : next_devinette.id - 1,
+                    'image_reponse' : f"gagne{image_id}.gif"
+                })
+            else:
+                # Toutes les devinettes sont terminées
+                messages.success(request, "🎉 Félicitations ! Vous avez terminé toutes les devinettes !")
+                return redirect('avent2025:home_devinette')
         else:
             image_id = random.randint(1, 24)
             user_profile.erreurDevinette += 1
@@ -483,3 +621,53 @@ def all_enigmes(request):
         'indices_reveles_devi': indices_reveles_devi,
         'indices_hidden_devi': indices_hidden_devi,
     })
+
+
+def contact(request):
+    """Vue pour le formulaire de contact"""
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            email = form.cleaned_data['email']
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            
+            # Construire le message email
+            email_subject = f"[Calendrier Avent 2025] {subject}"
+            email_body = f"""
+Nouveau message de contact depuis le Calendrier de l'Avent 2025
+
+Nom: {name}
+Email: {email}
+Sujet: {subject}
+
+Message:
+{message}
+
+---
+Ce message a été envoyé depuis le formulaire de contact du site.
+Pour répondre, utilisez l'adresse: {email}
+            """
+            
+            try:
+                # Envoyer l'email
+                send_mail(
+                    email_subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,  # Expéditeur
+                    ['fayet.damien63@gmail.com'],  # Destinataire
+                    fail_silently=False,
+                    reply_to=[email]  # Email de réponse
+                )
+                messages.success(request, '✅ Votre message a été envoyé avec succès ! Je vous répondrai dès que possible.')
+                return redirect('avent2025:contact')
+            except BadHeaderError:
+                messages.error(request, '❌ Erreur: en-tête email invalide.')
+            except Exception as e:
+                messages.error(request, f'❌ Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer plus tard.')
+                # En développement, vous pouvez afficher l'erreur : messages.error(request, f'Erreur: {str(e)}')
+    else:
+        form = ContactForm()
+    
+    return render(request, 'avent2025/contact.html', {'form': form})

@@ -11,6 +11,13 @@
 {% block content %}
 
 <div class="enigme-container fade-in">
+    <!-- Message d'avertissement pour super admin -->
+    {% if date_warning %}
+    <div class="admin-warning">
+        {{ date_warning }}
+    </div>
+    {% endif %}
+
     <!-- En-tête de l'énigme -->
     <div class="enigme-header">
         <div class="enigme-number">Énigme #{{ enigme.id }}</div>

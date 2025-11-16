@@ -137,6 +137,21 @@ body {
     background-color: rgba(37, 99, 235, 0.05);
 }
 
+/* Lien spécial pour la famille */
+.nav-bar a.family-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+}
+
+.nav-bar a.family-link:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
 .nav-bar button {
     background: var(--primary-color);
     color: white;

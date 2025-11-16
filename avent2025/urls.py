@@ -1,6 +1,8 @@
 from django.urls import path
 
 from . import views
+from .views_leaderboard import leaderboard
+
 app_name = "avent2025"
 
 urlpatterns = [
@@ -21,7 +23,9 @@ urlpatterns = [
     path('reveler_indice/', views.reveler_indice, name='reveler_indice'),
     path('reveler_indice_devinette/', views.reveler_indice_devinette, name='reveler_indice_devinette'),
     path('classement/', views.classement, name='classement'),
+    path('leaderboard/', leaderboard, name='leaderboard'),  # Nouveau classement avec filtres
     path('all_enigmes/', views.all_enigmes, name='all_enigmes'),
+    path('contact/', views.contact, name='contact'),  # Formulaire de contact
     
     
     

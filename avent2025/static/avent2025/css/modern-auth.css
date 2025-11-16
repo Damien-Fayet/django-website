@@ -108,7 +108,7 @@
     font-size: 1.25rem;
     line-height: 1.8;
     margin-bottom: 2rem;
-    opacity: 0.95;
+    color: #ffffff;
 }
 
 .hero-cta {
@@ -160,7 +160,7 @@
 
 .hero-note {
     font-size: 0.95rem;
-    opacity: 0.85;
+    color: #ffffff;
     display: flex;
     gap: 1rem;
 }
