@@ -65,21 +65,23 @@
 
 .stat-card {
     background: var(--card-bg);
-    padding: 1rem 1.5rem;
+    padding: 0.6rem 1rem;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     text-align: center;
+    min-width: 100px;
 }
 
 .stat-card .stat-value {
-    font-size: 2rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--primary-color);
 }
 
 .stat-card .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
+    margin-top: 0.1rem;
 }
 
 .leaderboard-table {
@@ -168,6 +170,149 @@
     color: white;
 }
 
+/* Podium */
+.podium-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem auto 3rem;
+    max-width: 800px;
+    padding: 0 1rem;
+}
+
+.podium-place {
+    flex: 1;
+    text-align: center;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.podium-place:hover {
+    transform: translateY(-5px);
+}
+
+.podium-place-1 {
+    order: 2;
+}
+
+.podium-place-2 {
+    order: 1;
+}
+
+.podium-place-3 {
+    order: 3;
+}
+
+.podium-medal {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+    animation: bounce-medal 2s ease-in-out infinite;
+}
+
+.podium-place-1 .podium-medal {
+    font-size: 4.5rem;
+    animation-delay: 0s;
+}
+
+.podium-place-2 .podium-medal {
+    animation-delay: 0.2s;
+}
+
+.podium-place-3 .podium-medal {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce-medal {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.podium-rank {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.podium-player {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.podium-place-1 .podium-player {
+    font-size: 1.4rem;
+}
+
+.podium-score {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+
+.podium-place-1 .podium-score {
+    font-size: 1.8rem;
+    color: #ffd700;
+}
+
+.podium-place-2 .podium-score {
+    color: #c0c0c0;
+}
+
+.podium-place-3 .podium-score {
+    color: #cd7f32;
+}
+
+.podium-box {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 1.5rem 1rem 1rem;
+    position: relative;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.podium-place-1 .podium-box {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    height: 200px;
+    box-shadow: 0 -6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.podium-place-2 .podium-box {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+    height: 160px;
+    box-shadow: 0 -4px 15px rgba(192, 192, 192, 0.4);
+}
+
+.podium-place-3 .podium-box {
+    background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%);
+    height: 130px;
+    box-shadow: 0 -4px 15px rgba(205, 127, 50, 0.4);
+}
+
+.podium-stats {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.5rem;
+}
+
+.podium-place-1 .podium-stats,
+.podium-place-2 .podium-stats,
+.podium-place-3 .podium-stats {
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: 600;
+}
+
 .family-quick-filter {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -240,6 +385,37 @@
     .leaderboard-header h1 {
         font-size: 1.8rem;
     }
+    
+    .podium-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .podium-place {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .podium-place-1,
+    .podium-place-2,
+    .podium-place-3 {
+        order: initial;
+    }
+    
+    .podium-place-1 .podium-box,
+    .podium-place-2 .podium-box,
+    .podium-place-3 .podium-box {
+        height: auto;
+        min-height: 150px;
+    }
+    
+    .stat-card {
+        min-width: 80px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.2rem;
+    }
 }
 </style>
 {% endblock %}
@@ -296,6 +472,32 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Podium (Top 3) -->
+    {% if leaderboard and leaderboard|length >= 3 %}
+    <div class="podium-container">
+        {% for entry in leaderboard|slice:":3" %}
+        <div class="podium-place podium-place-{{ entry.rank }}">
+            <div class="podium-medal">
+                {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% endif %}
+            </div>
+            <div class="podium-box">
+                <div class="podium-rank">{{ entry.rank }}{% if entry.rank == 1 %}er{% else %}ème{% endif %}</div>
+                <div class="podium-player">
+                    {{ entry.username }}
+                    {% if entry.is_family %}
+                        <span class="family-badge">👨‍👩‍👧‍👦</span>
+                    {% endif %}
+                </div>
+                <div class="podium-score">{{ entry.score }} pts</div>
+                <div class="podium-stats">
+                    ✅ {{ entry.enigmes_resolues }}/8 | 🎯 {{ entry.devinettes_resolues }}/24
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Tableau du classement -->
     {% if leaderboard %}

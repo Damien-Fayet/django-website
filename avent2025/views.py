@@ -136,9 +136,25 @@ def home_devinette(request):
     # Garantir que l'utilisateur a un profil
     profile = get_or_create_profile(request.user)
     
-    current_devinette = profile.currentDevinette
-    #if current_enigma == 0:
-    return render(request, 'avent2025/home_devinette.html', {"current_devinette": current_devinette})
+    current_devinette_id = profile.currentDevinette
+    
+    # Vérifier si toutes les devinettes sont terminées
+    if current_devinette_id > 0:
+        try:
+            current_devinette = Devinette.objects.get(id=current_devinette_id)
+        except Devinette.DoesNotExist:
+            # Toutes les devinettes sont terminées
+            return redirect('avent2025:devinettes_completees')
+    
+    return render(request, 'avent2025/home_devinette.html', {"current_devinette": current_devinette_id})
+
+@login_required
+def devinettes_completees(request):
+    """Page affichée quand l'utilisateur a terminé toutes les devinettes disponibles"""
+    from datetime import datetime
+    return render(request, 'avent2025/devinettes_completees.html', {
+        'current_date': datetime.now()
+    })
 
 @login_required
 def start_adventure(request):
@@ -312,8 +328,12 @@ def display_devinette(request, devinette_id=None, reponse=None):
                 'show_start_button': False
             })
     
-    # Récupérer la devinette
-    current_devinette = get_object_or_404(Devinette, id=devinette_id)
+    # Vérifier si la devinette existe (cas où toutes les devinettes sont terminées)
+    try:
+        current_devinette = Devinette.objects.get(id=devinette_id)
+    except Devinette.DoesNotExist:
+        # Toutes les devinettes sont terminées
+        return redirect('avent2025:devinettes_completees')
     
     # Vérifier la date de disponibilité (sauf pour super utilisateurs)
     is_superuser = request.user.is_superuser
@@ -445,8 +465,7 @@ def validate_devinette(request):
                 })
             else:
                 # Toutes les devinettes sont terminées
-                messages.success(request, "🎉 Félicitations ! Vous avez terminé toutes les devinettes !")
-                return redirect('avent2025:home_devinette')
+                return redirect('avent2025:devinettes_completees')
         else:
             image_id = random.randint(1, 24)
             user_profile.erreurDevinette += 1

@@ -1,0 +1,115 @@
+{% extends 'avent2025/modern_base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+    <div style="max-width: 700px; text-align: center; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1)); border-radius: 20px; padding: 3rem; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+        
+        <!-- Emoji animé -->
+        <div style="font-size: 120px; margin-bottom: 1.5rem; animation: bounce 2s infinite;">
+            🎉
+        </div>
+
+        <!-- Titre principal -->
+        <h1 style="font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem;">
+            Félicitations Champion ! 🏆
+        </h1>
+
+        <!-- Message humoristique -->
+        <p style="font-size: 1.3rem; color: #4b5563; margin-bottom: 2rem; font-weight: 500;">
+            Vous avez résolu <strong>toutes</strong> les devinettes disponibles !
+        </p>
+
+        <div style="background: white; border-radius: 15px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <p style="font-size: 1.1rem; color: #6b7280; margin-bottom: 1rem;">
+                🎄 Mais... nous sommes encore le <strong>{{ current_date|date:"d/m/Y" }}</strong> !
+            </p>
+            <p style="font-size: 1.5rem; color: #8b5cf6; font-weight: 700; margin-bottom: 0.5rem;">
+                La prochaine devinette n'est pas encore disponible ! 📅
+            </p>
+            <p style="font-size: 1rem; color: #9ca3af; font-style: italic;">
+                Patience... Le Père Noël prépare de nouvelles énigmes ! 🎅
+            </p>
+        </div>
+
+        <!-- Citations humoristiques -->
+        <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1)); border-left: 4px solid #ec4899; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
+            <p style="font-size: 1rem; color: #374151; font-style: italic; margin-bottom: 0.5rem;">
+                "La patience est la clé de la joie."
+            </p>
+            <p style="font-size: 0.9rem; color: #6b7280;">
+                - Proverbe du calendrier de l'avent 🎁
+            </p>
+        </div>
+
+        <!-- Statistiques -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #10b981;">{{ user.userprofile_2025.currentDevinette|add:"-1" }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280;">Devinettes résolues</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❌</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #ef4444;">{{ user.userprofile_2025.erreurDevinette }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280;">Erreurs</div>
+            </div>
+        </div>
+
+        <!-- Messages encourageants -->
+        <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+            <p style="font-size: 1rem; color: #4b5563; line-height: 1.6;">
+                En attendant, pourquoi ne pas tenter les <strong>énigmes</strong> ? 🧩<br>
+                Ou consulter le <strong>classement</strong> pour voir votre position ? 📊
+            </p>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'avent2025:modern_home' %}" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 1rem 2rem; border-radius: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); transition: all 0.3s; display: inline-block;">
+                🏠 Retour à l'accueil
+            </a>
+            <a href="{% url 'avent2025:leaderboard' %}" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white; padding: 1rem 2rem; border-radius: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); transition: all 0.3s; display: inline-block;">
+                📊 Voir le classement
+            </a>
+        </div>
+
+        <!-- Message footer humoristique -->
+        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed #e5e7eb;">
+            <p style="font-size: 0.95rem; color: #9ca3af; font-style: italic;">
+                💡 Astuce : Revenez demain pour découvrir la prochaine devinette !
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4) !important;
+    }
+
+    @media (max-width: 640px) {
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+        
+        h1 {
+            font-size: 2rem !important;
+        }
+        
+        div[style*="font-size: 120px"] {
+            font-size: 80px !important;
+        }
+    }
+</style>
+{% endblock %}
