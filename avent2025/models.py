@@ -19,6 +19,28 @@ class UserProfile(models.Model):
     
     def __str__(self):
         return f"{self.user} Enigme {self.currentEnigma}, Devinette {self.currentDevinette}"
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Crée automatiquement un UserProfile quand un User est créé"""
+    if created:
+        UserProfile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Sauvegarde le UserProfile quand le User est sauvegardé"""
+    if hasattr(instance, 'userprofile_2025'):
+        instance.userprofile_2025.save()
+
+
+def get_or_create_profile(user):
+    """Fonction utilitaire pour garantir qu'un UserProfile existe"""
+    if not hasattr(user, 'userprofile_2025'):
+        UserProfile.objects.create(user=user)
+    return user.userprofile_2025
+
     
 class Enigme(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -116,12 +138,3 @@ class IndiceDevinette(models.Model):
     
     def __str__(self):
         return f"Indice #{self.numero} ({self.get_categorie_display()}) - {self.cout}pt : {self.enigme}"
-    
-@receiver(post_save, sender=User)
-def create_user_profile_2025(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-        
-@receiver(post_save, sender=User)
-def save_user_profile_2025(sender, instance, **kwargs):
-    instance.userprofile_2025.save()

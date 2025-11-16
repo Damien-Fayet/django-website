@@ -6,20 +6,19 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.urls import reverse
-from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette
+from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get_or_create_profile
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 import unidecode
-from avent2025.models import UserProfile
 
         
 @login_required
 def home(request):
-    if not hasattr(request.user, 'userprofile_2025'):
-        UserProfile.objects.create(user=request.user)
+    # Garantir que l'utilisateur a un profil
+    profile = get_or_create_profile(request.user)
     
-    current_enigma = request.user.userprofile_2025.currentEnigma
+    current_enigma = profile.currentEnigma
     
     # Calculer le nombre d'énigmes résolues et le pourcentage
     enigmes_resolues = max(0, current_enigma - 1) if current_enigma > 0 else 0
@@ -43,10 +42,10 @@ def public_home(request):
 
 @login_required
 def home_devinette(request):
-    if not hasattr(request.user, 'userprofile_2025'):
-        UserProfile.objects.create(user=request.user)
+    # Garantir que l'utilisateur a un profil
+    profile = get_or_create_profile(request.user)
     
-    current_devinette = request.user.userprofile_2025.currentDevinette
+    current_devinette = profile.currentDevinette
     #if current_enigma == 0:
     return render(request, 'avent2025/home_devinette.html', {"current_devinette": current_devinette})
 
@@ -60,8 +59,8 @@ def start_adventure(request):
             'description': 'Le calendrier de l\'Avent 2025 débutera prochainement. Restez connecté pour découvrir les énigmes passionnantes qui vous attendent.'
         })
     
-    # Mettre à jour la valeur de currentEnigma à 1
-    user_profile = request.user.userprofile_2025
+    # Garantir que l'utilisateur a un profil et mettre à jour la valeur de currentEnigma à 1
+    user_profile = get_or_create_profile(request.user)
     user_profile.currentEnigma = 1
     user_profile.save()
     
@@ -87,8 +86,8 @@ def start_devinette(request):
             'description': 'Les devinettes du calendrier de l\'Avent 2025 seront disponibles prochainement. Revenez bientôt pour tester vos connaissances.'
         })
     
-    # Mettre à jour la valeur de currentDevinette à 1
-    user_profile = request.user.userprofile_2025
+    # Garantir que l'utilisateur a un profil et mettre à jour la valeur de currentDevinette à 1
+    user_profile = get_or_create_profile(request.user)
     user_profile.currentDevinette = 1
     user_profile.save()
     
@@ -105,10 +104,12 @@ def start_devinette(request):
     return redirect('avent2025:display_devinette')
 
 @login_required
-@login_required
 def display_enigme(request, enigme_id=None, reponse=None):
+    # Garantir que l'utilisateur a un profil
+    profile = get_or_create_profile(request.user)
+    
     # Vérifier que l'utilisateur a commencé l'aventure
-    if request.user.userprofile_2025.currentEnigma == 0:
+    if profile.currentEnigma == 0:
         return render(request, 'avent2025/waiting.html', {
             'content_type': 'énigme',
             'message': 'Commencez votre aventure !',
@@ -118,10 +119,10 @@ def display_enigme(request, enigme_id=None, reponse=None):
     
     # Si aucun ID spécifié, utiliser l'énigme actuelle
     if enigme_id is None:
-        enigme_id = request.user.userprofile_2025.currentEnigma
+        enigme_id = profile.currentEnigma
     else:
         # Vérifier que l'énigme demandée est accessible (débloquée)
-        if enigme_id > request.user.userprofile_2025.currentEnigma:
+        if enigme_id > profile.currentEnigma:
             return render(request, 'avent2025/waiting.html', {
                 'content_type': 'énigme',
                 'message': 'Énigme non accessible',
@@ -145,8 +146,8 @@ def display_enigme(request, enigme_id=None, reponse=None):
     
     # Lister les indices révélés
     indice_reveles_list = []
-    if request.user.userprofile_2025.indices_enigme_reveles:
-        indice_reveles_list = [int(x) for x in request.user.userprofile_2025.indices_enigme_reveles.split(",")]
+    if profile.indices_enigme_reveles:
+        indice_reveles_list = [int(x) for x in profile.indices_enigme_reveles.split(",")]
     
     indices_reveles = indices.filter(id__in=indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
@@ -162,8 +163,11 @@ def display_enigme(request, enigme_id=None, reponse=None):
   
 @login_required
 def display_devinette(request, devinette_id=None, reponse=None):
+    # Garantir que l'utilisateur a un profil
+    profile = get_or_create_profile(request.user)
+    
     # Vérifier que l'utilisateur a commencé les devinettes
-    if request.user.userprofile_2025.currentDevinette == 0:
+    if profile.currentDevinette == 0:
         return render(request, 'avent2025/waiting.html', {
             'content_type': 'devinette',
             'message': 'Commencez les devinettes !',
@@ -173,10 +177,10 @@ def display_devinette(request, devinette_id=None, reponse=None):
     
     # Si aucun ID spécifié, utiliser la devinette actuelle
     if devinette_id is None:
-        devinette_id = request.user.userprofile_2025.currentDevinette
+        devinette_id = profile.currentDevinette
     else:
         # Vérifier que la devinette demandée est accessible (débloquée)
-        if devinette_id > request.user.userprofile_2025.currentDevinette:
+        if devinette_id > profile.currentDevinette:
             return render(request, 'avent2025/waiting.html', {
                 'content_type': 'devinette',
                 'message': 'Devinette non accessible',
@@ -193,8 +197,8 @@ def display_devinette(request, devinette_id=None, reponse=None):
     
     # Lister les indice revelés
     indice_reveles_list = []
-    if request.user.userprofile_2025.indices_devinette_reveles:
-        indice_reveles_list = [int(x) for x in request.user.userprofile_2025.indices_devinette_reveles.split(",")]
+    if profile.indices_devinette_reveles:
+        indice_reveles_list = [int(x) for x in profile.indices_devinette_reveles.split(",")]
     
     
     indices_reveles = indices.filter(id__in= indice_reveles_list)
@@ -210,7 +214,9 @@ def display_devinette(request, devinette_id=None, reponse=None):
       
 @login_required
 def error_enigme(request):
-    current_enigma = get_object_or_404(Enigme, id=request.user.userprofile_2025.currentEnigma)
+    # Garantir que l'utilisateur a un profil
+    profile = get_or_create_profile(request.user)
+    current_enigma = get_object_or_404(Enigme, id=profile.currentEnigma)
     
     return render(request, 'avent2025/enigme.html',  {
         'reponse_enigme' : current_enigma.reponse,
@@ -221,7 +227,8 @@ def error_enigme(request):
 @login_required
 def validate_enigme(request):
     if request.method == "POST":
-        user_profile = request.user.userprofile_2025
+        # Garantir que l'utilisateur a un profil
+        user_profile = get_or_create_profile(request.user)
         current_enigma_number = user_profile.currentEnigma
         current_enigma = get_object_or_404(Enigme, id=current_enigma_number)
         reponse = request.POST.get("user_reponse")  # Correspond au nom du champ dans modern_enigme.html
@@ -269,7 +276,8 @@ def validate_enigme(request):
 @login_required
 def validate_devinette(request):
     if request.method == "POST":
-        user_profile = request.user.userprofile_2025
+        # Garantir que l'utilisateur a un profil
+        user_profile = get_or_create_profile(request.user)
         current_devinette_number = user_profile.currentDevinette
         current_devinette = get_object_or_404(Devinette, id=current_devinette_number)
         reponse = request.POST.get("reponse")
@@ -341,7 +349,8 @@ def register(request):
 def reveler_indice(request):
     indice_id = int(request.POST.get("indice_id"))
     indice = get_object_or_404(Indice, id=indice_id)
-    user_profile = request.user.userprofile_2025
+    # Garantir que l'utilisateur a un profil
+    user_profile = get_or_create_profile(request.user)
     if len(user_profile.indices_enigme_reveles)>0:
         tmp_list = user_profile.indices_enigme_reveles.split(",")
     else: 
@@ -358,7 +367,8 @@ def reveler_indice(request):
 def reveler_indice_devinette(request):
     indice_id = int(request.POST.get("indice_id"))
     indice = get_object_or_404(IndiceDevinette, id=indice_id)
-    user_profile = request.user.userprofile_2025
+    # Garantir que l'utilisateur a un profil
+    user_profile = get_or_create_profile(request.user)
     if len(user_profile.indices_devinette_reveles)>0:
         tmp_list = user_profile.indices_devinette_reveles.split(",")
     else: 
