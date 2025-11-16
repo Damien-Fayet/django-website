@@ -9,7 +9,7 @@
 
 .classement-header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 }
 
 .classement-header h1 {
@@ -20,6 +20,41 @@
 .classement-header p {
     color: var(--text-light);
     font-size: 1.125rem;
+}
+
+/* Filtres */
+.leaderboard-filters {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-btn:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-md);
 }
 
 /* Stats Overview */
@@ -334,14 +369,64 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    /* Podium compact pour mobile */
     .podium-section {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
     }
     
     .podium-card {
         order: initial !important;
+        padding: 1rem;
     }
     
+    .podium-medal {
+        font-size: 2rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .podium-rank {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .podium-username {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .podium-stats {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 0.5rem;
+    }
+    
+    .podium-stat {
+        padding: 0.25rem;
+        min-width: auto;
+    }
+    
+    .podium-stat-label {
+        font-size: 0.7rem;
+    }
+    
+    .podium-stat-value {
+        font-size: 0.9rem;
+    }
+    
+    /* Filtres sur mobile */
+    .leaderboard-filters {
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Tableau sur mobile */
     .classement-table {
         font-size: 0.875rem;
     }

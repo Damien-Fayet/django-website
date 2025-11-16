@@ -3,34 +3,63 @@ Vue pour afficher les classements (famille et public)
 """
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from avent2025.models import UserProfile, get_or_create_profile
+from avent2025.models import UserProfile, get_or_create_profile, ScoreConfig
 from django.db.models import F, Case, When, IntegerField
 
 
 @login_required
 def leaderboard(request):
-    """Affiche le classement avec filtrage famille/public"""
+    """Affiche le classement avec filtrage famille/public et type (général, énigmes, devinettes)"""
+    
+    # Récupérer la configuration des scores
+    score_config = ScoreConfig.get_config()
     
     # Récupérer le profil de l'utilisateur actuel
     current_profile = get_or_create_profile(request.user)
     
     # Déterminer quel classement afficher par défaut
     filter_type = request.GET.get('filter', 'all')  # all, family, public
+    score_type = request.GET.get('type', 'general')  # general, enigmes, devinettes
     
-    # Calculer le score pour tous les profils
-    # Score = (enigmes résolues * 100) - (erreurs énigmes * 10) + (devinettes résolues * 10) - (erreurs devinettes * 2)
-    all_profiles = UserProfile.objects.select_related('user').annotate(
-        calculated_score=Case(
-            When(currentEnigma__gt=0, then=(
-                (F('currentEnigma') - 1) * 100 - 
-                F('erreurEnigma') * 10 +
-                (F('currentDevinette') - 1) * 10 -
-                F('erreurDevinette') * 2
-            )),
-            default=0,
-            output_field=IntegerField()
+    # Calculer le score selon le type demandé
+    if score_type == 'enigmes':
+        # Score uniquement basé sur les énigmes
+        all_profiles = UserProfile.objects.select_related('user').annotate(
+            calculated_score=Case(
+                When(currentEnigma__gt=0, then=(
+                    (F('currentEnigma') - 1) * score_config.points_enigme_resolue - 
+                    F('erreurEnigma') * score_config.malus_erreur_enigme
+                )),
+                default=0,
+                output_field=IntegerField()
+            )
         )
-    )
+    elif score_type == 'devinettes':
+        # Score uniquement basé sur les devinettes
+        all_profiles = UserProfile.objects.select_related('user').annotate(
+            calculated_score=Case(
+                When(currentDevinette__gt=0, then=(
+                    (F('currentDevinette') - 1) * score_config.points_devinette_resolue -
+                    F('erreurDevinette') * score_config.malus_erreur_devinette
+                )),
+                default=0,
+                output_field=IntegerField()
+            )
+        )
+    else:  # general
+        # Score global (énigmes + devinettes)
+        all_profiles = UserProfile.objects.select_related('user').annotate(
+            calculated_score=Case(
+                When(currentEnigma__gt=0, then=(
+                    (F('currentEnigma') - 1) * score_config.points_enigme_resolue - 
+                    F('erreurEnigma') * score_config.malus_erreur_enigme +
+                    (F('currentDevinette') - 1) * score_config.points_devinette_resolue -
+                    F('erreurDevinette') * score_config.malus_erreur_devinette
+                )),
+                default=0,
+                output_field=IntegerField()
+            )
+        )
     
     # Filtrer selon le type demandé
     if filter_type == 'family':
@@ -67,6 +96,7 @@ def leaderboard(request):
     context = {
         'leaderboard': leaderboard_data,
         'filter_type': filter_type,
+        'score_type': score_type,
         'current_user_is_family': current_profile.is_family,
         'total_users': total_users,
         'family_count': family_count,

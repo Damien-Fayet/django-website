@@ -424,8 +424,16 @@
 <div class="leaderboard-container fade-in">
     <!-- En-tête -->
     <div class="leaderboard-header">
-        <h1>🏆 Classement</h1>
-        <p>Découvrez les meilleurs joueurs du Calendrier de l'Avent 2025</p>
+        <h1>🏆 Classement {% if score_type == 'enigmes' %}Énigmes{% elif score_type == 'devinettes' %}Devinettes{% else %}Général{% endif %}</h1>
+        <p>
+            {% if score_type == 'enigmes' %}
+                Classement basé uniquement sur les énigmes principales
+            {% elif score_type == 'devinettes' %}
+                Classement basé uniquement sur les devinettes quotidiennes
+            {% else %}
+                Découvrez les meilleurs joueurs du Calendrier de l'Avent 2025
+            {% endif %}
+        </p>
     </div>
 
     <!-- Accès rapide famille (visible uniquement pour les membres de la famille) -->
@@ -435,7 +443,7 @@
             <span class="icon">👨‍👩‍👧‍👦</span>
             <span>Vous êtes membre de la famille ! Voir uniquement votre classement familial ?</span>
         </div>
-        <a href="?filter=family" class="family-quick-btn">
+        <a href="?filter=family&type={{ score_type }}" class="family-quick-btn">
             🎯 Classement Famille
         </a>
     </div>
@@ -443,14 +451,27 @@
 
     <!-- Filtres -->
     <div class="leaderboard-filters">
-        <a href="?filter=all" class="filter-btn {% if filter_type == 'all' %}active{% endif %}">
+        <a href="?filter=all&type={{ score_type }}" class="filter-btn {% if filter_type == 'all' %}active{% endif %}">
             👥 Tous ({{ total_users }})
         </a>
-        <a href="?filter=family" class="filter-btn {% if filter_type == 'family' %}active{% endif %}">
+        <a href="?filter=family&type={{ score_type }}" class="filter-btn {% if filter_type == 'family' %}active{% endif %}">
             👨‍👩‍👧‍👦 Famille ({{ family_count }})
         </a>
-        <a href="?filter=public" class="filter-btn {% if filter_type == 'public' %}active{% endif %}">
+        <a href="?filter=public&type={{ score_type }}" class="filter-btn {% if filter_type == 'public' %}active{% endif %}">
             🌍 Public ({{ public_count }})
+        </a>
+    </div>
+
+    <!-- Filtres de type de classement -->
+    <div class="leaderboard-filters">
+        <a href="?filter={{ filter_type }}&type=general" class="filter-btn {% if score_type == 'general' %}active{% endif %}">
+            🏆 Classement Général
+        </a>
+        <a href="?filter={{ filter_type }}&type=enigmes" class="filter-btn {% if score_type == 'enigmes' %}active{% endif %}">
+            🧩 Classement Énigmes
+        </a>
+        <a href="?filter={{ filter_type }}&type=devinettes" class="filter-btn {% if score_type == 'devinettes' %}active{% endif %}">
+            🎭 Classement Devinettes
         </a>
     </div>
 

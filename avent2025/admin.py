@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from avent2025.models import UserProfile, Enigme, Devinette, Indice, IndiceDevinette
+from avent2025.models import UserProfile, Enigme, Devinette, Indice, IndiceDevinette, ScoreConfig
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 
@@ -70,3 +70,26 @@ class IndiceDevinetteAdmin(admin.ModelAdmin):
             return obj.texte[:50] + '...' if len(obj.texte) > 50 else obj.texte
         return '(image uniquement)'
     get_texte_court.short_description = 'Texte'
+
+
+# Configuration des scores
+@admin.register(ScoreConfig)
+class ScoreConfigAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('Points positifs', {
+            'fields': ('points_enigme_resolue', 'points_devinette_resolue'),
+            'description': 'Points gagnés lors de la résolution'
+        }),
+        ('Malus (points négatifs)', {
+            'fields': ('malus_erreur_enigme', 'malus_erreur_devinette'),
+            'description': 'Points perdus lors d\'erreurs'
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        # Ne permettre qu'une seule instance
+        return not ScoreConfig.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        # Ne pas permettre la suppression
+        return False

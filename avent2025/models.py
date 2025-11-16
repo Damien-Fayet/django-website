@@ -85,6 +85,53 @@ class Indice(models.Model):
     
     def __str__(self):
         return f"Indice #{self.numero} ({self.get_categorie_display()}) - {self.cout}pt : {self.enigme}"
+
+
+class ScoreConfig(models.Model):
+    """Configuration des points et malus pour le système de score"""
+    
+    # Points positifs
+    points_enigme_resolue = models.IntegerField(
+        default=100,
+        verbose_name="Points par énigme résolue",
+        help_text="Nombre de points gagnés pour chaque énigme résolue"
+    )
+    points_devinette_resolue = models.IntegerField(
+        default=10,
+        verbose_name="Points par devinette résolue",
+        help_text="Nombre de points gagnés pour chaque devinette résolue"
+    )
+    
+    # Malus
+    malus_erreur_enigme = models.IntegerField(
+        default=10,
+        verbose_name="Malus par erreur d'énigme",
+        help_text="Nombre de points perdus pour chaque mauvaise réponse à une énigme"
+    )
+    malus_erreur_devinette = models.IntegerField(
+        default=2,
+        verbose_name="Malus par erreur de devinette",
+        help_text="Nombre de points perdus pour chaque mauvaise réponse à une devinette"
+    )
+    
+    # Singleton pattern - une seule configuration
+    class Meta:
+        verbose_name = "Configuration des scores"
+        verbose_name_plural = "Configuration des scores"
+    
+    def __str__(self):
+        return "Configuration des scores"
+    
+    def save(self, *args, **kwargs):
+        """Assurer qu'il n'y a qu'une seule instance de configuration"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def get_config(cls):
+        """Récupérer la configuration (créer si n'existe pas)"""
+        config, created = cls.objects.get_or_create(pk=1)
+        return config
 class Devinette(models.Model):
     FILM = 'FI'
     CHANSON = 'CH'

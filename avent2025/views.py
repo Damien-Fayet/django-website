@@ -6,7 +6,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.urls import reverse
-from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get_or_create_profile
+from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get_or_create_profile, ScoreConfig
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -108,11 +108,18 @@ def home(request):
     total_enigmes = 8
     pourcentage = int((enigmes_resolues / total_enigmes) * 100) if enigmes_resolues > 0 else 0
     
+    # Récupérer la configuration des scores
+    score_config = ScoreConfig.get_config()
+    # Calcul du score maximum possible
+    max_score = 8 * score_config.points_enigme_resolue + 24 * score_config.points_devinette_resolue
+    
     context = {
         "current_enigma": current_enigma,
         "enigmes_resolues": enigmes_resolues,
         "total_enigmes": total_enigmes,
         "pourcentage": pourcentage,
+        "score_config": score_config,
+            "max_score": max_score,
     }
     
     return render(request, 'avent2025/modern_home.html', context)
@@ -540,6 +547,11 @@ def reveler_indice_devinette(request):
 def classement(request):
     
     User = get_user_model()
+    
+    # Récupérer les paramètres de filtrage
+    filter_type = request.GET.get('filter', 'all')  # all, family, public
+    score_type = request.GET.get('type', 'general')  # general, enigmes, devinettes
+    
     users = User.objects.all().exclude(is_superuser=True)
     enigme_score = {}
     devinette_score = {}
@@ -553,6 +565,12 @@ def classement(request):
     users_with_profile = []
     for u in users:
         if hasattr(u, 'userprofile_2025'):
+            # Appliquer le filtre famille/public
+            if filter_type == 'family' and not u.userprofile_2025.is_family:
+                continue
+            if filter_type == 'public' and u.userprofile_2025.is_family:
+                continue
+                
             users_with_profile.append(u)
             nb_indice_enigme[u.id] = 0 if u.userprofile_2025.indices_enigme_reveles=='' else len(u.userprofile_2025.indices_enigme_reveles.split(','))
             nb_indice_devinette[u.id] = 0 if u.userprofile_2025.indices_devinette_reveles=='' else len(u.userprofile_2025.indices_devinette_reveles.split(','))
@@ -563,7 +581,15 @@ def classement(request):
             total[u.id] = enigme_score[u.id] + devinette_score[u.id]
         
     users = users_with_profile
-    sorted_users = sorted(users, key=lambda item: total[item.id],reverse=True)
+    
+    # Trier selon le type de score demandé
+    if score_type == 'enigmes':
+        sorted_users = sorted(users, key=lambda item: enigme_score[item.id], reverse=True)
+    elif score_type == 'devinettes':
+        sorted_users = sorted(users, key=lambda item: devinette_score[item.id], reverse=True)
+    else:  # general
+        sorted_users = sorted(users, key=lambda item: total[item.id], reverse=True)
+    
     sorted_users_enigme = sorted(users, key=lambda item: enigme_score[item.id],reverse=True)
     sorted_users_devinette = sorted(users, key=lambda item: devinette_score[item.id],reverse=True)
     
@@ -575,6 +601,12 @@ def classement(request):
     total_enigmes = 8
     total_devinettes = 24
     avg_score = sum(scores.values()) / len(scores) if scores else 0
+    
+    # Compter les totaux pour les filtres
+    all_users = User.objects.all().exclude(is_superuser=True)
+    total_users = sum(1 for u in all_users if hasattr(u, 'userprofile_2025'))
+    family_count = sum(1 for u in all_users if hasattr(u, 'userprofile_2025') and u.userprofile_2025.is_family)
+    public_count = sum(1 for u in all_users if hasattr(u, 'userprofile_2025') and not u.userprofile_2025.is_family)
     
     return render(request, 'avent2025/modern_classement.html',  {
         'users' : sorted_users,
@@ -594,6 +626,11 @@ def classement(request):
         'total_enigmes': total_enigmes,
         'total_devinettes': total_devinettes,
         'avg_score': avg_score,
+        'filter_type': filter_type,
+        'score_type': score_type,
+        'total_users': total_users,
+        'family_count': family_count,
+        'public_count': public_count,
     })
     
 @login_required

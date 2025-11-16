@@ -13,8 +13,42 @@
 <div class="classement-container fade-in">
     <!-- En-tête -->
     <div class="classement-header">
-        <h1>🏆 Classement Général 2025</h1>
-        <p>Découvrez qui mène la course dans le calendrier de l'Avent !</p>
+        <h1>🏆 Classement {% if score_type == 'enigmes' %}Énigmes{% elif score_type == 'devinettes' %}Devinettes{% else %}Général{% endif %} 2025</h1>
+        <p>
+            {% if score_type == 'enigmes' %}
+                Classement basé uniquement sur les énigmes principales
+            {% elif score_type == 'devinettes' %}
+                Classement basé uniquement sur les devinettes quotidiennes
+            {% else %}
+                Découvrez qui mène la course dans le calendrier de l'Avent !
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Filtres -->
+    <div class="leaderboard-filters">
+        <a href="?filter=all&type={{ score_type }}" class="filter-btn {% if filter_type == 'all' %}active{% endif %}">
+            👥 Tous ({{ total_users }})
+        </a>
+        <a href="?filter=family&type={{ score_type }}" class="filter-btn {% if filter_type == 'family' %}active{% endif %}">
+            👨‍👩‍👧‍👦 Famille ({{ family_count }})
+        </a>
+        <a href="?filter=public&type={{ score_type }}" class="filter-btn {% if filter_type == 'public' %}active{% endif %}">
+            🌍 Public ({{ public_count }})
+        </a>
+    </div>
+
+    <!-- Filtres de type de classement -->
+    <div class="leaderboard-filters">
+        <a href="?filter={{ filter_type }}&type=general" class="filter-btn {% if score_type == 'general' %}active{% endif %}">
+            🏆 Classement Général
+        </a>
+        <a href="?filter={{ filter_type }}&type=enigmes" class="filter-btn {% if score_type == 'enigmes' %}active{% endif %}">
+            🧩 Classement Énigmes
+        </a>
+        <a href="?filter={{ filter_type }}&type=devinettes" class="filter-btn {% if score_type == 'devinettes' %}active{% endif %}">
+            🎭 Classement Devinettes
+        </a>
     </div>
 
     <!-- Statistiques globales -->

@@ -213,53 +213,29 @@
     </div>
 </section>
 
-<!-- Features -->
+<!-- Section Comment ça marche -->
 <section class="features-section">
-    <div class="section-title">
-        <h2>🎯 Comment ça marche ?</h2>
-        <p>Découvrez les fonctionnalités du calendrier de l'Avent 2025</p>
-    </div>
-    
+    <h2>🎯 Comment ça marche ?</h2>
     <div class="features-grid">
         <div class="feature-card">
-            <div class="feature-icon">🧩</div>
-            <h3 class="feature-title">Énigmes régulières</h3>
-            <p class="feature-description">
-                Résolvez des énigmes variées : logique, calcul, observation, culture générale... 
-                Chaque énigme est unique !
-            </p>
+            <div class="feature-icon">🎄</div>
+            <h3>Une aventure parsemée d'énigmes</h3>
+            <p>8 énigmes principales et 24 devinettes quotidiennes vous attendent. Résolvez-les pour progresser dans le calendrier et accumuler des points !</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">💡</div>
-            <h3 class="feature-title">Système d'indices</h3>
-            <p class="feature-description">
-                Bloqué sur une énigme ? Débloquez des indices pour vous aider, 
-                mais attention, ils affectent votre score !
-            </p>
+            <h3>Système d'indices intelligent</h3>
+            <p>Bloqué sur une énigme ? Utilisez les indices disponibles ! Attention, chaque indice a un coût en points (1-3 pts selon son utilité).</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">🏆</div>
-            <h3 class="feature-title">Classement en temps réel</h3>
-            <p class="feature-description">
-                Suivez votre progression et comparez-vous aux autres participants. 
-                Serez-vous sur le podium ?
-            </p>
+            <h3>Classement en temps réel</h3>
+            <p>Suivez votre progression et comparez-vous aux autres participants. Montez dans le classement en résolvant les défis avec le moins d'erreurs possible !</p>
         </div>
     </div>
 </section>
-
-<!-- CTA pour les devinettes si disponibles -->
-{% if user.userprofile_2025.currentDevinette == 0 %}
-<section class="cta-section">
-    <h2>🎭 Envie de plus ?</h2>
-    <p>Testez également les devinettes du calendrier de l'Avent 2025 ! Devinez la personnalité, le film ou la chanson cachée.</p>
-    <a href="{% url 'avent2025:start_devinette' %}" class="cta-button">
-        Découvrir les devinettes
-    </a>
-</section>
-{% endif %}
 
 <!-- Règles et système de points -->
 <section class="rules-section">
@@ -274,8 +250,8 @@
             <h3>Énigmes principales</h3>
             <div class="rule-details">
                 <p><strong>8 énigmes</strong> à résoudre au total</p>
-                <p class="points-info">💰 <strong>100 points</strong> par énigme résolue</p>
-                <p class="penalty-info">❌ <strong>-5 points</strong> par mauvaise réponse</p>
+                <p class="points-info">💰 <strong>{{ score_config.points_enigme_resolue }} points</strong> par énigme résolue</p>
+                <p class="penalty-info">❌ <strong>-{{ score_config.malus_erreur_enigme }} points</strong> par mauvaise réponse</p>
                 <p class="hint-info">💡 Les indices coûtent <strong>1 à 3 points</strong> selon leur utilité</p>
             </div>
         </div>
@@ -285,9 +261,9 @@
             <h3>Devinettes quotidiennes</h3>
             <div class="rule-details">
                 <p><strong>24 devinettes</strong> rapides et amusantes</p>
-                <p class="points-info">💰 <strong>50 points</strong> par devinette résolue</p>
-                <p class="penalty-info">❌ <strong>-5 points</strong> par mauvaise réponse</p>
-                <p class="hint-info">💡 Les indices coûtent <strong>1 à 3 points</strong></p>
+                <p class="points-info">💰 <strong>{{ score_config.points_devinette_resolue }} points</strong> par devinette résolue</p>
+                <p class="penalty-info">❌ <strong>-{{ score_config.malus_erreur_devinette }} points</strong> par mauvaise réponse</p>
+                <p class="hint-info">💡 Les indices coûtent <strong>3 points</strong></p>
             </div>
         </div>
         
@@ -297,12 +273,13 @@
             <div class="rule-details">
                 <p><strong>Score = Points gagnés - Pénalités</strong></p>
                 <ul class="score-breakdown">
-                    <li>✅ Points des énigmes résolues</li>
-                    <li>✅ Points des devinettes résolues</li>
-                    <li>➖ Erreurs × 5 points</li>
+                    <li>✅ Énigmes résolues × {{ score_config.points_enigme_resolue }} pts</li>
+                    <li>✅ Devinettes résolues × {{ score_config.points_devinette_resolue }} pts</li>
+                    <li>➖ Erreurs énigmes × {{ score_config.malus_erreur_enigme }} pts</li>
+                    <li>➖ Erreurs devinettes × {{ score_config.malus_erreur_devinette }} pts</li>
                     <li>➖ Indices utilisés (1-3 pts chacun)</li>
                 </ul>
-                <p class="max-score">🎯 <strong>Score maximum :</strong> 2000 points (8×100 + 24×50)</p>
+                <p class="max-score">🎯 <strong>Score maximum :</strong> {{ max_score }} points (8×{{ score_config.points_enigme_resolue }} + 24×{{ score_config.points_devinette_resolue }})</p>
             </div>
         </div>
         
@@ -347,43 +324,79 @@
     </div>
 </section>
 
+<!-- Section Comment ça marche (pour non connectés) -->
 <section class="features-section">
-    <div class="section-title">
-        <h2>🎯 Pourquoi participer ?</h2>
-    </div>
-    
+    <h2>🎯 Comment ça marche ?</h2>
     <div class="features-grid">
         <div class="feature-card">
-            <div class="feature-icon">🧩</div>
-            <h3 class="feature-title">Défis quotidiens</h3>
-            <p class="feature-description">
-                Des énigmes variées et stimulantes vous attendent chaque jour de décembre.
-            </p>
+            <div class="feature-icon">🎄</div>
+            <h3>Une aventure parsemée d'énigmes</h3>
+            <p>8 énigmes principales et 24 devinettes quotidiennes vous attendent. Résolvez-les pour progresser dans le calendrier et accumuler des points !</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">💡</div>
+            <h3>Système d'indices intelligent</h3>
+            <p>Bloqué sur une énigme ? Utilisez les indices disponibles ! Attention, chaque indice a un coût en points (1-3 pts selon son utilité).</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">🏆</div>
-            <h3 class="feature-title">Compétition amicale</h3>
-            <p class="feature-description">
-                Comparez votre score avec vos amis et grimpez dans le classement !
-            </p>
-        </div>
-        
-        <div class="feature-card">
-            <div class="feature-icon">🎁</div>
-            <h3 class="feature-title">Gratuit et amusant</h3>
-            <p class="feature-description">
-                Aucun engagement, juste le plaisir de résoudre des énigmes captivantes.
-            </p>
+            <h3>Classement en temps réel</h3>
+            <p>Suivez votre progression et comparez-vous aux autres participants. Montez dans le classement en résolvant les défis avec le moins d'erreurs possible !</p>
         </div>
     </div>
 </section>
 
+<!-- Règles pour non connectés -->
+<section class="rules-section">
+    <div class="rules-header">
+        <h2>📜 Règles du jeu et système de points</h2>
+        <p>Comprendre comment gagner des points et progresser dans le calendrier</p>
+    </div>
+    
+    <div class="rules-grid">
+        <div class="rule-card">
+            <div class="rule-icon">🧩</div>
+            <h3>Énigmes principales</h3>
+            <div class="rule-details">
+                <p><strong>8 énigmes</strong> à résoudre au total</p>
+                <p class="points-info">💰 <strong>{{ score_config.points_enigme_resolue }} points</strong> par énigme résolue</p>
+                <p class="penalty-info">❌ <strong>-{{ score_config.malus_erreur_enigme }} points</strong> par mauvaise réponse</p>
+                <p class="hint-info">💡 Les indices coûtent <strong>1 à 3 points</strong> selon leur utilité</p>
+            </div>
+        </div>
+        
+        <div class="rule-card">
+            <div class="rule-icon">🎭</div>
+            <h3>Devinettes quotidiennes</h3>
+            <div class="rule-details">
+                <p><strong>24 devinettes</strong> rapides et amusantes</p>
+                <p class="points-info">💰 <strong>{{ score_config.points_devinette_resolue }} points</strong> par devinette résolue</p>
+                <p class="penalty-info">❌ <strong>-{{ score_config.malus_erreur_devinette }} points</strong> par mauvaise réponse</p>
+                <p class="hint-info">💡 Les indices coûtent <strong>3 points</strong></p>
+            </div>
+        </div>
+        
+        <div class="rule-card rule-card-highlight">
+            <div class="rule-icon">🏆</div>
+            <h3>Calcul du score total</h3>
+            <div class="rule-details">
+                <p><strong>Score = Points gagnés - Pénalités</strong></p>
+                <ul class="score-breakdown">
+                    <li>✅ Énigmes résolues × {{ score_config.points_enigme_resolue }} pts</li>
+                    <li>✅ Devinettes résolues × {{ score_config.points_devinette_resolue }} pts</li>
+                    <li>➖ Erreurs énigmes × {{ score_config.malus_erreur_enigme }} pts</li>
+                    <li>➖ Erreurs devinettes × {{ score_config.malus_erreur_devinette }} pts</li>
+                    <li>➖ Indices utilisés (1-3 pts chacun)</li>
+                </ul>
+                <p class="max-score">🎯 <strong>Score maximum :</strong> {{ max_score }} points (8×{{ score_config.points_enigme_resolue }} + 24×{{ score_config.points_devinette_resolue }})</p>
+            </div>
+        </div>
+</section>
+
 {% endif %}
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
     // Compte à rebours jusqu'au 1er décembre 2025 à 00h01
     function initCountdown() {
