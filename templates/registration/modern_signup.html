@@ -75,6 +75,23 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            📧 {{ form.email.label }} <span class="form-label-optional">(facultatif)</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            name="{{ form.email.name }}" 
+                            id="{{ form.email.id_for_label }}"
+                            class="form-input {% if form.email.errors %}form-input-error{% endif %}"
+                            placeholder="votre.email@exemple.com"
+                            value="{{ form.email.value|default:'' }}"
+                        >
+                        {% if form.email.help_text %}
+                        <p class="form-help">{{ form.email.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
                         <label for="{{ form.password1.id_for_label }}" class="form-label">
                             🔒 Mot de passe
                         </label>

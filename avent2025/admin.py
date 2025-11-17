@@ -48,8 +48,8 @@ class DevinetteAdmin(admin.ModelAdmin):
 # Configuration pour les Indices d'énigmes
 @admin.register(Indice)
 class IndiceAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'enigme', 'categorie', 'cout', 'get_texte_court')
-    list_filter = ('enigme', 'categorie', 'cout')
+    list_display = ('numero', 'enigme', 'categorie', 'type_indice', 'cout', 'get_texte_court')
+    list_filter = ('enigme', 'categorie', 'type_indice', 'cout')
     ordering = ('enigme', 'numero')
     
     def get_texte_court(self, obj):
@@ -61,8 +61,8 @@ class IndiceAdmin(admin.ModelAdmin):
 # Configuration pour les Indices de devinettes
 @admin.register(IndiceDevinette)
 class IndiceDevinetteAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'enigme', 'categorie', 'cout', 'get_texte_court')  # Le champ s'appelle 'enigme' dans le modèle
-    list_filter = ('enigme', 'categorie', 'cout')
+    list_display = ('numero', 'enigme', 'categorie', 'type_indice', 'cout', 'get_texte_court')  # Le champ s'appelle 'enigme' dans le modèle
+    list_filter = ('enigme', 'categorie', 'type_indice', 'cout')
     ordering = ('enigme', 'numero')
     
     def get_texte_court(self, obj):

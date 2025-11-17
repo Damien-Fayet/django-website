@@ -34,6 +34,49 @@
                     Relevez 8 énigmes captivantes et 24 devinettes quotidiennes durant le mois de décembre. 
                     Testez votre logique, votre créativité et grimpez au sommet du classement !
                 </p>
+                
+                <!-- Compte à rebours -->
+                <div id="countdown-container-welcome" style="display: none; margin: 2rem 0;">
+                    <div class="countdown-wrapper">
+                        <div class="countdown-title-modern">
+                            <span class="countdown-emoji">🎄</span>
+                            <span>Ouverture dans</span>
+                            <span class="countdown-emoji">🎄</span>
+                        </div>
+                        <div class="countdown-grid">
+                            <div class="countdown-card">
+                                <div class="countdown-flip">
+                                    <div class="countdown-number" id="days-welcome">00</div>
+                                </div>
+                                <div class="countdown-label-modern">Jours</div>
+                            </div>
+                            <div class="countdown-card">
+                                <div class="countdown-flip">
+                                    <div class="countdown-number" id="hours-welcome">00</div>
+                                </div>
+                                <div class="countdown-label-modern">Heures</div>
+                            </div>
+                            <div class="countdown-card">
+                                <div class="countdown-flip">
+                                    <div class="countdown-number" id="minutes-welcome">00</div>
+                                </div>
+                                <div class="countdown-label-modern">Minutes</div>
+                            </div>
+                            <div class="countdown-card">
+                                <div class="countdown-flip">
+                                    <div class="countdown-number" id="seconds-welcome">00</div>
+                                </div>
+                                <div class="countdown-label-modern">Secondes</div>
+                            </div>
+                        </div>
+                        <div class="countdown-date-info">
+                            <span class="countdown-icon">🎁</span>
+                            Rendez-vous le <strong>1er décembre 2025</strong> à <strong>00h01</strong>
+                            <span class="countdown-icon">🎁</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="hero-cta">
                     <a href="{% url 'signup' %}" class="btn-cta btn-cta-primary">
                         🎮 Commencer l'aventure
@@ -148,27 +191,23 @@
     <!-- Scoring Section -->
     <section class="scoring-welcome">
         <div class="section-header">
-            <h2 class="section-title">⭐ Système de scoring</h2>
-            <p class="section-subtitle">Comprenez comment maximiser vos points</p>
+            <h2 class="section-title">⭐ Système de points</h2>
+            <p class="section-subtitle">Simple et efficace</p>
         </div>
         
         <div class="scoring-grid">
             <div class="scoring-card scoring-card-good">
-                <h3 class="scoring-title">✅ Points gagnés</h3>
-                <ul class="scoring-list">
-                    <li>🧩 <strong>Énigme résolue :</strong> +10 points</li>
-                    <li>🎭 <strong>Devinette résolue :</strong> +5 points</li>
-                    <li>⚡ <strong>Sans erreur :</strong> Bonus de rapidité</li>
-                </ul>
+                <h3 class="scoring-title">✅ Gagnez des points</h3>
+                <p class="scoring-simple">
+                    Résolvez les <strong>énigmes</strong> et les <strong>devinettes</strong> pour accumuler des points et grimper dans le classement !
+                </p>
             </div>
             
             <div class="scoring-card scoring-card-bad">
-                <h3 class="scoring-title">❌ Points perdus</h3>
-                <ul class="scoring-list">
-                    <li>💡 <strong>Indice révélé :</strong> -1 à -3 points</li>
-                    <li>🚫 <strong>Mauvaise réponse :</strong> -2 points</li>
-                    <li>⏱️ <strong>Temps écoulé :</strong> Opportunités manquées</li>
-                </ul>
+                <h3 class="scoring-title">❌ Perdez des points</h3>
+                <p class="scoring-simple">
+                    Attention aux <strong>mauvaises réponses</strong> et à l'utilisation des <strong>indices</strong> qui réduisent votre score.
+                </p>
             </div>
         </div>
 
@@ -180,7 +219,6 @@
             </div>
         </div>
     </section>
-
     <!-- CTA Final -->
     <section class="cta-final-welcome">
         <div class="cta-final-content">
@@ -204,5 +242,66 @@
     <footer class="footer-welcome">
         <p>🎄 Calendrier de l'Avent 2025 - Bonne chance à tous les participants ! 🎄</p>
     </footer>
+
+    <script>
+        // Compte à rebours jusqu'au 1er décembre 2025 à 00h01
+        function initCountdown() {
+            const countdownContainer = document.getElementById('countdown-container-welcome');
+            const targetDate = new Date('2025-12-01T00:01:00').getTime();
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = targetDate - now;
+                
+                // Si la date est passée, masquer le compte à rebours
+                if (distance < 0) {
+                    if (countdownContainer) {
+                        countdownContainer.style.display = 'none';
+                    }
+                    return;
+                }
+                
+                // Afficher le compte à rebours
+                if (countdownContainer) {
+                    countdownContainer.style.display = 'block';
+                }
+                
+                // Calculs
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                // Mise à jour de l'affichage avec padding zeros
+                const daysEl = document.getElementById('days-welcome');
+                const hoursEl = document.getElementById('hours-welcome');
+                const minutesEl = document.getElementById('minutes-welcome');
+                const secondsEl = document.getElementById('seconds-welcome');
+                
+                if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
+                if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+                if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
+                if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+            }
+            
+            // Mise à jour initiale
+            updateCountdown();
+            
+            // Mise à jour toutes les secondes
+            const intervalId = setInterval(updateCountdown, 1000);
+            
+            // Nettoyer l'intervalle quand on quitte la page
+            window.addEventListener('beforeunload', () => {
+                clearInterval(intervalId);
+            });
+        }
+        
+        // Démarrer le compte à rebours quand la page est chargée
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCountdown);
+        } else {
+            initCountdown();
+        }
+    </script>
 </body>
 </html>

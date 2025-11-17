@@ -1,5 +1,6 @@
 {% extends "avent2025/modern_base.html" %}
 {% load static %}
+{% load customfilters2025 %}
 
 {% block title %}Accueil - Calendrier de l'Avent 2025{% endblock %}
 
@@ -113,7 +114,7 @@
         </a>
         
         {% if user.userprofile_2025.is_family %}
-        <a href="{% url 'avent2025:leaderboard' %}?filter=family" class="hero-btn hero-btn-family">
+        <a href="{% url 'avent2025:classement' %}?filter=family" class="hero-btn hero-btn-family">
             👨‍👩‍👧‍👦 Classement Famille
         </a>
         {% endif %}
@@ -132,6 +133,8 @@
                                 <a href="{% url 'avent2025:display_enigme_id' enigma_num %}" class="progress-icon-link {% if enigma_num < user.userprofile_2025.currentEnigma %}completed{% elif enigma_num == user.userprofile_2025.currentEnigma %}current{% endif %}" title="Énigme {{ enigma_num }}{% if enigma_num < user.userprofile_2025.currentEnigma %} - Résolue - Cliquez pour revoir{% elif enigma_num == user.userprofile_2025.currentEnigma %} - En cours - Cliquez pour continuer{% endif %}">
                                     <span class="progress-icon">{% if enigma_num < user.userprofile_2025.currentEnigma %}✨{% else %}🔥{% endif %}</span>
                                 </a>
+                            {% elif enigmes_disponibles|get_item:enigma_num %}
+                                <span class="progress-icon available" title="Énigme {{ enigma_num }} - Disponible mais non commencée">🔓</span>
                             {% else %}
                                 <span class="progress-icon locked" title="Énigme {{ enigma_num }} - Bloquée">🔒</span>
                             {% endif %}
@@ -166,6 +169,8 @@
                                 <a href="{% url 'avent2025:display_devinette_id' devinette_num %}" class="progress-icon-link progress-icon-small current" title="Devinette {{ devinette_num }} - En cours - Cliquez pour continuer">
                                     <span class="progress-icon progress-icon-small">🔥</span>
                                 </a>
+                            {% elif devinettes_disponibles|get_item:devinette_num %}
+                                <span class="progress-icon progress-icon-small available" title="Devinette {{ devinette_num }} - Disponible mais non commencée">🔓</span>
                             {% else %}
                                 <span class="progress-icon progress-icon-small locked" title="Devinette {{ devinette_num }} - Bloquée">🔒</span>
                             {% endif %}

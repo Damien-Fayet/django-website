@@ -57,45 +57,25 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Stats Overview */
-.stats-overview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-}
-
-.stat-overview-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem;
+/* Stats Overview Compact */
+.stats-overview-compact {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
     border-radius: var(--radius-lg);
-    text-align: center;
-    box-shadow: var(--shadow-md);
-    transition: var(--transition);
 }
 
-.stat-overview-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
+.stat-compact {
+    font-size: 1.1rem;
+    color: var(--text-color);
 }
 
-.stat-overview-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.stat-overview-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-
-.stat-overview-label {
-    font-size: 0.95rem;
-    opacity: 0.9;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+.stat-compact strong {
+    color: var(--primary-color);
+    font-size: 1.3rem;
 }
 
 /* Podium */
@@ -158,63 +138,54 @@
 
 .podium-medal {
     font-size: 3rem;
-    margin-bottom: 1rem;
-}
-
-.podium-rank {
-    font-size: 2.5rem;
-    font-weight: 700;
     margin-bottom: 0.5rem;
 }
 
-.rank-1 .podium-rank {
-    color: #ffd700;
-}
-
-.rank-2 .podium-rank {
-    color: #c0c0c0;
-}
-
-.rank-3 .podium-rank {
-    color: #cd7f32;
-}
-
 .podium-username {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--text-color);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
-.podium-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1rem;
+.podium-score-main {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.podium-stat {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: var(--radius-sm);
+.rank-1 .podium-score-main {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.podium-stat-label {
+.rank-2 .podium-score-main {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.rank-3 .podium-score-main {
+    background: linear-gradient(135deg, #cd7f32, #e8a96c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.podium-stats-compact {
     font-size: 0.85rem;
-    color: var(--text);
+    color: var(--text-light);
     font-weight: 500;
 }
 
-.podium-stat-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--primary);
-}
 
-/* Table de classement */
 .classement-table-container {
     background: var(--card-bg);
     border-radius: var(--radius-lg);
@@ -369,6 +340,22 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    /* Stats compact sur mobile */
+    .stats-overview-compact {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+        padding: 0.75rem;
+    }
+    
+    .stat-compact {
+        font-size: 0.95rem;
+    }
+    
+    .stat-compact strong {
+        font-size: 1.1rem;
+    }
+    
     /* Podium compact pour mobile */
     .podium-section {
         grid-template-columns: 1fr;
@@ -386,33 +373,18 @@
         margin-bottom: 0.25rem;
     }
     
-    .podium-rank {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
     .podium-username {
-        font-size: 1rem;
+        font-size: 0.95rem;
         margin-bottom: 0.5rem;
     }
     
-    .podium-stats {
-        flex-direction: row;
-        justify-content: space-around;
-        gap: 0.5rem;
+    .podium-score-main {
+        font-size: 1.75rem;
+        margin-bottom: 0.25rem;
     }
     
-    .podium-stat {
-        padding: 0.25rem;
-        min-width: auto;
-    }
-    
-    .podium-stat-label {
-        font-size: 0.7rem;
-    }
-    
-    .podium-stat-value {
-        font-size: 0.9rem;
+    .podium-stats-compact {
+        font-size: 0.75rem;
     }
     
     /* Filtres sur mobile */

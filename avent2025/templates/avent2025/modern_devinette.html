@@ -107,12 +107,17 @@
                 </div>
 
                 {% for indice in indices %}
-                <div class="indice-card">
+                <div class="indice-card{% if indice.type_indice == 'LC' %} last-chance{% endif %}">
                     <div class="indice-header">
                         <div class="indice-title-section">
                             <span class="indice-number">Indice #{{ indice.numero }}</span>
                             <span class="indice-badges">
-                                <span class="indice-cost-badge" title="Coût en points">
+                                {% if indice.type_indice == 'LC' %}
+                                <span class="indice-last-chance-badge" title="Dernière chance - Coût plus élevé">
+                                    ⚠️ DERNIÈRE CHANCE
+                                </span>
+                                {% endif %}
+                                <span class="indice-cost-badge{% if indice.type_indice == 'LC' %} cost-high{% endif %}" title="Coût en points">
                                     💰 {{ indice.cout }} pt{{ indice.cout|pluralize }}
                                 </span>
                                 {% if indice.categorie == 'ME' %}

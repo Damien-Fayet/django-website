@@ -98,29 +98,54 @@ def home(request):
             'description': 'Les énigmes seront disponibles à partir du 1er décembre 2025. Revenez à cette date pour commencer l\'aventure !'
         })
     
-    # Garantir que l'utilisateur a un profil
-    profile = get_or_create_profile(request.user)
-    
-    current_enigma = profile.currentEnigma
-    
-    # Calculer le nombre d'énigmes résolues et le pourcentage
-    enigmes_resolues = max(0, current_enigma - 1) if current_enigma > 0 else 0
-    total_enigmes = 8
-    pourcentage = int((enigmes_resolues / total_enigmes) * 100) if enigmes_resolues > 0 else 0
-    
-    # Récupérer la configuration des scores
+    # Récupérer la configuration des scores (pour tous les utilisateurs)
     score_config = ScoreConfig.get_config()
     # Calcul du score maximum possible
     max_score = 8 * score_config.points_enigme_resolue + 24 * score_config.points_devinette_resolue
     
+    # Contexte de base (disponible pour tous)
     context = {
-        "current_enigma": current_enigma,
-        "enigmes_resolues": enigmes_resolues,
-        "total_enigmes": total_enigmes,
-        "pourcentage": pourcentage,
         "score_config": score_config,
-            "max_score": max_score,
+        "max_score": max_score,
     }
+    
+    # Ajouter les données utilisateur si connecté
+    if request.user.is_authenticated:
+        # Garantir que l'utilisateur a un profil
+        profile = get_or_create_profile(request.user)
+        
+        current_enigma = profile.currentEnigma
+        
+        # Calculer le nombre d'énigmes résolues et le pourcentage
+        enigmes_resolues = max(0, current_enigma - 1) if current_enigma > 0 else 0
+        total_enigmes = 8
+        pourcentage = int((enigmes_resolues / total_enigmes) * 100) if enigmes_resolues > 0 else 0
+        
+        # Récupérer les énigmes et devinettes pour vérifier leur disponibilité
+        enigmes_disponibles = {}
+        for i in range(1, 9):
+            try:
+                enigme = Enigme.objects.get(id=i)
+                enigmes_disponibles[i] = enigme.is_dispo
+            except Enigme.DoesNotExist:
+                enigmes_disponibles[i] = False
+        
+        devinettes_disponibles = {}
+        for i in range(1, 25):
+            try:
+                devinette = Devinette.objects.get(id=i)
+                devinettes_disponibles[i] = devinette.is_dispo
+            except Devinette.DoesNotExist:
+                devinettes_disponibles[i] = False
+        
+        context.update({
+            "current_enigma": current_enigma,
+            "enigmes_resolues": enigmes_resolues,
+            "total_enigmes": total_enigmes,
+            "pourcentage": pourcentage,
+            "enigmes_disponibles": enigmes_disponibles,
+            "devinettes_disponibles": devinettes_disponibles,
+        })
     
     return render(request, 'avent2025/modern_home.html', context)
 
@@ -128,7 +153,13 @@ def public_home(request):
     """Page d'accueil pour les utilisateurs non connectés"""
     if request.user.is_authenticated:
         return redirect('avent2025:home')
-    return render(request, 'modern_welcome.html')
+    
+    # Récupérer la configuration des scores pour affichage
+    score_config = ScoreConfig.get_config()
+    
+    return render(request, 'modern_welcome.html', {
+        'score_config': score_config,
+    })
 
 @login_required
 def home_devinette(request):

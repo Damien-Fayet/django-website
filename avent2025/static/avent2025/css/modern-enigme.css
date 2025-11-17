@@ -208,6 +208,49 @@
     box-shadow: var(--shadow-md);
 }
 
+/* Carte d'indice "Dernière chance" */
+.indice-card.last-chance {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(220, 38, 38, 0.05) 100%);
+    border: 2px solid #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), var(--shadow-sm);
+    animation: pulse-warning 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.indice-card.last-chance::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.3), var(--shadow-sm);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(239, 68, 68, 0.5), var(--shadow-md);
+    }
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    50%, 100% {
+        left: 100%;
+    }
+}
+
+.indice-card.last-chance:hover {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.5), var(--shadow-lg);
+}
+
 .indice-header {
     display: flex;
     justify-content: space-between;
@@ -245,6 +288,34 @@
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.3px;
+}
+
+.indice-cost-badge.cost-high {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    animation: pulse-cost 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-cost {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.indice-last-chance-badge {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .indice-category-badge {

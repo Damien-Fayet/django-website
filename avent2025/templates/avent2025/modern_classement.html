@@ -52,26 +52,12 @@
     </div>
 
     <!-- Statistiques globales -->
-    <div class="stats-overview">
-        <div class="stat-overview-card">
-            <div class="stat-overview-icon">👥</div>
-            <div class="stat-overview-value">{{ users|length }}</div>
-            <div class="stat-overview-label">Participants</div>
+    <div class="stats-overview-compact">
+        <div class="stat-compact">
+            👥 <strong>{{ users|length }}</strong> participants
         </div>
-        <div class="stat-overview-card">
-            <div class="stat-overview-icon">🧩</div>
-            <div class="stat-overview-value">{{ total_enigmes }}</div>
-            <div class="stat-overview-label">Énigmes</div>
-        </div>
-        <div class="stat-overview-card">
-            <div class="stat-overview-icon">🎭</div>
-            <div class="stat-overview-value">{{ total_devinettes }}</div>
-            <div class="stat-overview-label">Devinettes</div>
-        </div>
-        <div class="stat-overview-card">
-            <div class="stat-overview-icon">📊</div>
-            <div class="stat-overview-value">{{ avg_score|floatformat:0 }}</div>
-            <div class="stat-overview-label">Score moyen</div>
+        <div class="stat-compact">
+            📊 Score moyen : <strong>{{ avg_score|floatformat:0 }}</strong>
         </div>
     </div>
 
@@ -85,21 +71,10 @@
                 {% elif forloop.counter == 2 %}🥈
                 {% else %}🥉{% endif %}
             </div>
-            <div class="podium-rank">#{{ forloop.counter }}</div>
             <div class="podium-username">{{ user.username }}</div>
-            <div class="podium-stats">
-                <div class="podium-stat">
-                    <span class="podium-stat-label">💯 Score</span>
-                    <span class="podium-stat-value">{{ scores|get_item:user.id }}</span>
-                </div>
-                <div class="podium-stat">
-                    <span class="podium-stat-label">🧩 Énigmes</span>
-                    <span class="podium-stat-value">{{ nb_enigmes|get_item:user.id }}/8</span>
-                </div>
-                <div class="podium-stat">
-                    <span class="podium-stat-label">🎭 Devinettes</span>
-                    <span class="podium-stat-value">{{ nb_devinettes|get_item:user.id }}/24</span>
-                </div>
+            <div class="podium-score-main">{{ scores|get_item:user.id }}</div>
+            <div class="podium-stats-compact">
+                🧩 {{ nb_enigmes|get_item:user.id }}/8 • 🎭 {{ nb_devinettes|get_item:user.id }}/24
             </div>
         </div>
         {% endfor %}

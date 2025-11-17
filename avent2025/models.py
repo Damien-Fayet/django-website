@@ -64,6 +64,13 @@ class Indice(models.Model):
         (REPONSE, 'Réponse attendue'),
     ]
     
+    NORMAL = 'NO'
+    LAST_CHANCE = 'LC'
+    TYPE_INDICE = [
+        (NORMAL, 'Normal'),
+        (LAST_CHANCE, 'Last Chance'),
+    ]
+    
     enigme = models.ForeignKey(
         'Enigme',
         on_delete=models.CASCADE,
@@ -75,16 +82,27 @@ class Indice(models.Model):
         default=MECANIQUE,
         verbose_name='Catégorie'
     )
+    type_indice = models.CharField(
+        max_length=2,
+        choices=TYPE_INDICE,
+        default=NORMAL,
+        verbose_name='Type d\'indice',
+        help_text='Normal: disponible immédiatement | Last Chance: débloqué à l\'énigme suivante'
+    )
     cout = models.IntegerField(
         default=1,
-        choices=[(1, '1 point'), (2, '2 points'), (3, '3 points')],
+        choices=[(1, '1 point'), (2, '2 points'), (3, '3 points'), (5, '5 points'), (8, '8 points'), (10, '10 points')],
         verbose_name='Coût en points'
     )
     image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     texte = models.TextField(blank=True)
     
     def __str__(self):
-        return f"Indice #{self.numero} ({self.get_categorie_display()}) - {self.cout}pt : {self.enigme}"
+        type_str = " [LAST CHANCE]" if self.type_indice == self.LAST_CHANCE else ""
+        return f"Indice #{self.numero} ({self.get_categorie_display()}) - {self.cout}pt{type_str} : {self.enigme}"
+    
+    class Meta:
+        ordering = ['enigme', 'numero']
 
 
 class ScoreConfig(models.Model):
@@ -164,6 +182,13 @@ class IndiceDevinette(models.Model):
         (REPONSE, 'Réponse attendue'),
     ]
     
+    NORMAL = 'NO'
+    LAST_CHANCE = 'LC'
+    TYPE_INDICE = [
+        (NORMAL, 'Normal'),
+        (LAST_CHANCE, 'Last Chance'),
+    ]
+    
     # Note: Le champ s'appelle 'enigme' mais référence Devinette (hérité de avent2024)
     enigme = models.ForeignKey(
         'Devinette',
@@ -176,13 +201,24 @@ class IndiceDevinette(models.Model):
         default=MECANIQUE,
         verbose_name='Catégorie'
     )
+    type_indice = models.CharField(
+        max_length=2,
+        choices=TYPE_INDICE,
+        default=NORMAL,
+        verbose_name='Type d\'indice',
+        help_text='Normal: disponible immédiatement | Last Chance: débloqué à la devinette suivante'
+    )
     cout = models.IntegerField(
         default=1,
-        choices=[(1, '1 point'), (2, '2 points'), (3, '3 points')],
+        choices=[(1, '1 point'), (2, '2 points'), (3, '3 points'), (5, '5 points'), (8, '8 points'), (10, '10 points')],
         verbose_name='Coût en points'
     )
     image = models.ImageField(default="", blank=True, null=True, upload_to="uploads", height_field=None, width_field=None, max_length=None)
     texte = models.TextField(blank=True)
     
     def __str__(self):
-        return f"Indice #{self.numero} ({self.get_categorie_display()}) - {self.cout}pt : {self.enigme}"
+        type_str = " [LAST CHANCE]" if self.type_indice == self.LAST_CHANCE else ""
+        return f"Indice #{self.numero} ({self.get_categorie_display()}) - {self.cout}pt{type_str} : {self.enigme}"
+    
+    class Meta:
+        ordering = ['enigme', 'numero']

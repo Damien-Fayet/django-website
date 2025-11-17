@@ -21,10 +21,11 @@
 }
 
 .hero-section p {
-    color: rgba(255, 255, 255, 0.95);
+    color: white;
     font-size: 1.05rem;
     max-width: 700px;
     margin: 0 auto 1.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Compte à rebours moderne et stylé */
@@ -470,6 +471,22 @@
     opacity: 0.4;
     filter: grayscale(100%) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     cursor: not-allowed;
+}
+
+.progress-icon.available {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));
+    animation: glow-available 2s ease-in-out infinite;
+    cursor: default;
+}
+
+@keyframes glow-available {
+    0%, 100% {
+        filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));
+    }
+    50% {
+        filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1));
+    }
 }
 
 .progress-bar-mini {

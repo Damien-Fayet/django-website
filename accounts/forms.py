@@ -14,6 +14,16 @@ class UserRegisterForm(UserCreationForm):
         })
     )
     
+    email = forms.EmailField(
+        label='Email',
+        required=False,
+        help_text='Facultatif - Pour récupérer votre compte en cas d\'oubli de mot de passe.',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'votre.email@exemple.com (facultatif)'
+        })
+    )
+    
     password1 = forms.CharField(
         label='Mot de passe',
         required=True,
@@ -36,7 +46,7 @@ class UserRegisterForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ['username', 'password1', 'password2']
+        fields = ['username', 'email', 'password1', 'password2']
     
     def __init__(self, *args, **kwargs):
         super(UserRegisterForm, self).__init__(*args, **kwargs)
