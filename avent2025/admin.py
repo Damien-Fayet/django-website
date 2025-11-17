@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db import models
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from avent2025.models import UserProfile, Enigme, Devinette, Indice, IndiceDevinette, ScoreConfig
 from django.contrib.auth.models import User
@@ -32,6 +34,10 @@ class EnigmeAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_dispo'
     ordering = ('id',)
     
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
+    
     def nb_indices(self, obj):
         return Indice.objects.filter(enigme=obj).count()
     nb_indices.short_description = 'Nombre d\'indices'
@@ -44,6 +50,10 @@ class DevinetteAdmin(admin.ModelAdmin):
     search_fields = ('titre', 'texte', 'reponse')
     date_hierarchy = 'date_dispo'
     ordering = ('id',)
+    
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
 
 # Configuration pour les Indices d'énigmes
 @admin.register(Indice)
@@ -51,6 +61,10 @@ class IndiceAdmin(admin.ModelAdmin):
     list_display = ('numero', 'enigme', 'categorie', 'type_indice', 'cout', 'get_texte_court')
     list_filter = ('enigme', 'categorie', 'type_indice', 'cout')
     ordering = ('enigme', 'numero')
+    
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
     
     def get_texte_court(self, obj):
         if obj.texte:
@@ -64,6 +78,10 @@ class IndiceDevinetteAdmin(admin.ModelAdmin):
     list_display = ('numero', 'enigme', 'categorie', 'type_indice', 'cout', 'get_texte_court')  # Le champ s'appelle 'enigme' dans le modèle
     list_filter = ('enigme', 'categorie', 'type_indice', 'cout')
     ordering = ('enigme', 'numero')
+    
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
     
     def get_texte_court(self, obj):
         if obj.texte:

@@ -23,6 +23,7 @@ from avent2025.views import public_home
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("ckeditor5/", include('django_ckeditor_5.urls')),
     path("sudoku/", include("sudoku.urls")),
     path("avent/", include("avent2024.urls")),  # Nouveau chemin pour avent
     path("avent2025/", include("avent2025.urls")),  # Nouveau chemin pour avent 2025
