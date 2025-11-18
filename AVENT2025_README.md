@@ -1,4 +1,4 @@
-# Calendrier de l'Avent 2025 - Documentation
+# Calendrier de l'Avent 2025 - Documentation.
 
 ## 🎄 Présentation
 
