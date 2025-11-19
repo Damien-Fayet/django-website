@@ -38,6 +38,9 @@
                         {% if user.userprofile_2025.currentEnigma > 0 %}
                             <a href="{% url 'avent2025:display_enigme' %}" class="badge">Énigme {{ user.userprofile_2025.currentEnigma }}</a>
                         {% endif %}
+                        {% if user.is_superuser %}
+                            <a href="/admin/" class="admin-link" target="_blank">⚙️ Admin</a>
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -115,6 +118,111 @@
                     if (!hamburger.contains(event.target) && !navMenu.contains(event.target)) {
                         hamburger.classList.remove('active');
                         navMenu.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Image Lightbox avec zoom
+            const lightboxLinks = document.querySelectorAll('.image-lightbox');
+            if (lightboxLinks.length > 0) {
+                // Créer le conteneur de lightbox
+                const lightboxHTML = `
+                    <div id="lightbox" class="lightbox" style="display: none;">
+                        <span class="lightbox-close">&times;</span>
+                        <div class="lightbox-content">
+                            <img src="" alt="" class="lightbox-image">
+                            <div class="lightbox-controls">
+                                <button class="lightbox-zoom-in">🔍 Zoom +</button>
+                                <button class="lightbox-zoom-out">🔍 Zoom -</button>
+                                <button class="lightbox-reset">↺ Réinitialiser</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', lightboxHTML);
+                
+                const lightbox = document.getElementById('lightbox');
+                const lightboxImg = lightbox.querySelector('.lightbox-image');
+                const closeBtn = lightbox.querySelector('.lightbox-close');
+                const zoomInBtn = lightbox.querySelector('.lightbox-zoom-in');
+                const zoomOutBtn = lightbox.querySelector('.lightbox-zoom-out');
+                const resetBtn = lightbox.querySelector('.lightbox-reset');
+                
+                let currentScale = 1;
+                
+                // Ouvrir lightbox
+                lightboxLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        lightboxImg.src = this.href;
+                        lightbox.style.display = 'flex';
+                        currentScale = 1;
+                        lightboxImg.style.transform = `scale(${currentScale})`;
+                        document.body.style.overflow = 'hidden';
+                    });
+                });
+                
+                // Fermer lightbox
+                function closeLightbox() {
+                    lightbox.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    currentScale = 1;
+                }
+                
+                closeBtn.addEventListener('click', closeLightbox);
+                lightbox.addEventListener('click', function(e) {
+                    if (e.target === lightbox) {
+                        closeLightbox();
+                    }
+                });
+                
+                // Zoom
+                zoomInBtn.addEventListener('click', function() {
+                    currentScale = Math.min(currentScale + 0.25, 3);
+                    lightboxImg.style.transform = `scale(${currentScale})`;
+                });
+                
+                zoomOutBtn.addEventListener('click', function() {
+                    currentScale = Math.max(currentScale - 0.25, 0.5);
+                    lightboxImg.style.transform = `scale(${currentScale})`;
+                });
+                
+                resetBtn.addEventListener('click', function() {
+                    currentScale = 1;
+                    lightboxImg.style.transform = `scale(${currentScale})`;
+                });
+                
+                // Pinch to zoom sur mobile
+                let initialDistance = 0;
+                let initialScale = 1;
+                
+                lightboxImg.addEventListener('touchstart', function(e) {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        initialDistance = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        initialScale = currentScale;
+                    }
+                });
+                
+                lightboxImg.addEventListener('touchmove', function(e) {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        const distance = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        currentScale = Math.max(0.5, Math.min(3, initialScale * (distance / initialDistance)));
+                        lightboxImg.style.transform = `scale(${currentScale})`;
+                    }
+                });
+                
+                // ESC pour fermer
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && lightbox.style.display === 'flex') {
+                        closeLightbox();
                     }
                 });
             }

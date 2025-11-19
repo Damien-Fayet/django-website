@@ -70,8 +70,11 @@
             <!-- Image de la devinette si disponible -->
             {% if devinette.image_name %}
             <div class="enigme-image-container">
-                <a href="/media/{{ devinette.image_name }}" target="_blank">
+                <a href="/media/{{ devinette.image_name }}" class="image-lightbox" data-lightbox="devinette-image">
                     <img src="/media/{{ devinette.image_name }}" alt="Image de la devinette" class="enigme-image">
+                    <div class="image-zoom-hint">
+                        <span>🔍 Cliquer pour agrandir</span>
+                    </div>
                 </a>
             </div>
             {% endif %}
@@ -148,7 +151,14 @@
                             <p>{{ indice.texte|safe }}</p>
                         {% endif %}
                         {% if indice.image %}
-                            <img src="/media/{{ indice.image }}" alt="Image de l'indice" class="indice-image">
+                            <div class="enigme-image-container">
+                                <a href="/media/{{ indice.image }}" class="image-lightbox" data-lightbox="indice-image">
+                                    <img src="/media/{{ indice.image }}" alt="Image de l'indice" class="indice-image">
+                                    <div class="image-zoom-hint">
+                                        <span>🔍 Cliquer pour agrandir</span>
+                                    </div>
+                                </a>
+                            </div>
                         {% endif %}
                     </div>
                     {% else %}

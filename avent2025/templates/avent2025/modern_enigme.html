@@ -35,7 +35,12 @@
             <!-- Image de l'énigme si disponible -->
             {% if enigme.image_name %}
             <div class="enigme-image-container">
-                <img src="{{ enigme.image_name.url }}" alt="Image de l'énigme" class="enigme-image">
+                <a href="{{ enigme.image_name.url }}" class="image-lightbox" data-lightbox="enigme-image">
+                    <img src="{{ enigme.image_name.url }}" alt="Image de l'énigme" class="enigme-image">
+                    <div class="image-zoom-hint">
+                        <span>🔍 Cliquer pour agrandir</span>
+                    </div>
+                </a>
             </div>
             {% endif %}
 
@@ -123,10 +128,17 @@
                     {% if indice in indices_reveles %}
                     <div class="indice-content">
                         {% if indice.texte %}
-                            <p>{{ indice.texte }}</p>
+                            <p>{{ indice.texte|safe }}</p>
                         {% endif %}
                         {% if indice.image %}
-                            <img src="{{ indice.image.url }}" alt="Image de l'indice" class="indice-image">
+                            <div class="enigme-image-container">
+                                <a href="{{ indice.image.url }}" class="image-lightbox" data-lightbox="indice-image">
+                                    <img src="{{ indice.image.url }}" alt="Image de l'indice" class="indice-image">
+                                    <div class="image-zoom-hint">
+                                        <span>🔍 Cliquer pour agrandir</span>
+                                    </div>
+                                </a>
+                            </div>
                         {% endif %}
                     </div>
                     {% else %}

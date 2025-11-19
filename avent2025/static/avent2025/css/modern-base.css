@@ -152,6 +152,22 @@ body {
     box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
 }
 
+/* Lien Admin */
+.nav-bar a.admin-link {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-bar a.admin-link:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
 .nav-bar button {
     background: var(--primary-color);
     color: white;
@@ -380,30 +396,7 @@ select:focus {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .nav-bar {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .nav-bar-left,
-    .nav-bar-right {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    
-    main {
-        padding: 1rem;
-    }
-    
-    h1 {
-        font-size: 2rem;
-    }
-    
-    h2 {
-        font-size: 1.5rem;
-    }
-}
+/* Premier @media supprimé - sera géré dans le second @media plus complet */
 
 /* Utilitaires */
 .text-center {
@@ -475,24 +468,23 @@ select:focus {
     /* Afficher le hamburger */
     .hamburger {
         display: flex;
-        order: -1; /* Place le hamburger en premier */
-        margin-right: 0; /* Pas de marge à droite */
     }
     
-    /* Modifier la nav-bar pour aligner hamburger et user sur la même ligne */
+    /* Nav-bar : une seule ligne avec hamburger à gauche, user à droite */
     .nav-bar {
         padding: 0.75rem 1rem;
         position: relative;
+        flex-direction: row !important; /* Force la direction horizontale */
         flex-wrap: nowrap;
         gap: 0.75rem;
-        justify-content: flex-start; /* Aligne tout à gauche par défaut */
+        justify-content: space-between; /* Hamburger à gauche, user à droite */
+        align-items: center;
     }
     
-    /* Garder la section utilisateur visible et compacte */
+    /* Garder la section utilisateur visible et compacte à droite */
     .nav-bar-user {
         gap: 0.3rem;
-        margin-left: auto; /* Pousse la section user à droite */
-        order: 1; /* Place la section user après le hamburger */
+        flex-shrink: 0; /* Empêche la compression */
     }
     
     .user-greeting {
@@ -571,5 +563,161 @@ select:focus {
     
     h3 {
         font-size: 1.25rem;
+    }
+    
+    /* Ajustements de la barre de navigation pour les petits écrans */
+    .nav-bar-left,
+    .nav-bar-right {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+/* Lightbox pour zoom d'image */
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 3rem;
+    color: white;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.5);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.3s ease;
+    z-index: 10001;
+}
+
+.lightbox-close:hover {
+    background: rgba(239, 68, 68, 0.8);
+    transform: scale(1.1);
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lightbox-image {
+    max-width: 100%;
+    max-height: calc(90vh - 80px);
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    cursor: grab;
+    touch-action: none;
+}
+
+.lightbox-image:active {
+    cursor: grabbing;
+}
+
+.lightbox-controls {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.75rem 1rem;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+}
+
+.lightbox-controls button {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.lightbox-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Hint pour cliquer sur l'image */
+.image-zoom-hint {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+}
+
+.enigme-image-container {
+    position: relative;
+}
+
+.image-lightbox {
+    display: block;
+    cursor: zoom-in;
+    position: relative;
+}
+
+.image-lightbox:hover .image-zoom-hint {
+    opacity: 1;
+}
+
+/* Responsive mobile */
+@media (max-width: 768px) {
+    .lightbox {
+        padding: 1rem;
+    }
+    
+    .lightbox-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 40px;
+        height: 40px;
+        font-size: 2rem;
+    }
+    
+    .lightbox-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .lightbox-controls button {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .image-zoom-hint {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
     }
 }
