@@ -87,17 +87,62 @@ def check_answer(user_answer, expected_answers):
     
     return False
 
+
+def update_user_score(user_profile):
+    """
+    Calcule et met à jour le score total de l'utilisateur en fonction de sa progression.
+    Utilise ScoreConfig pour les points.
+    """
+    score_config = ScoreConfig.get_config()
+    
+    # Calculer le score des énigmes
+    enigmes_resolues = max(0, user_profile.currentEnigma - 1) if user_profile.currentEnigma > 0 else 0
+    score_enigmes = enigmes_resolues * score_config.points_enigme_resolue
+    malus_erreurs_enigmes = user_profile.erreurEnigma * score_config.malus_erreur_enigme
+    
+    # Calculer le coût des indices d'énigmes
+    cout_indices_enigmes = 0
+    if user_profile.indices_enigme_reveles:
+        indices_ids = [int(x) for x in user_profile.indices_enigme_reveles.split(",") if x]
+        for indice_id in indices_ids:
+            try:
+                indice = Indice.objects.get(id=indice_id)
+                cout_indices_enigmes += indice.cout
+            except Indice.DoesNotExist:
+                pass
+    
+    # Calculer le score des devinettes
+    devinettes_resolues = max(0, user_profile.currentDevinette - 1) if user_profile.currentDevinette > 0 else 0
+    score_devinettes = devinettes_resolues * score_config.points_devinette_resolue
+    malus_erreurs_devinettes = user_profile.erreurDevinette * score_config.malus_erreur_devinette
+    
+    # Calculer le coût des indices de devinettes
+    cout_indices_devinettes = 0
+    if user_profile.indices_devinette_reveles:
+        indices_ids = [int(x) for x in user_profile.indices_devinette_reveles.split(",") if x]
+        for indice_id in indices_ids:
+            try:
+                indice = IndiceDevinette.objects.get(id=indice_id)
+                cout_indices_devinettes += indice.cout
+            except IndiceDevinette.DoesNotExist:
+                pass
+    
+    # Score total
+    total_score = (
+        score_enigmes +
+        score_devinettes -
+        malus_erreurs_enigmes -
+        malus_erreurs_devinettes -
+        cout_indices_enigmes -
+        cout_indices_devinettes
+    )
+    
+    user_profile.score = max(0, total_score)  # Ne jamais avoir un score négatif
+    user_profile.save()
+
         
 @login_required
 def home(request):
-    # Vérifier l'accès avant le 01/12/2025
-    if not is_access_allowed(request.user):
-        return render(request, 'avent2025/waiting.html', {
-            'content_type': 'énigmes',
-            'message': '🎄 Le Calendrier de l\'Avent 2025 ouvre le 1er décembre !',
-            'description': 'Les énigmes seront disponibles à partir du 1er décembre 2025. Revenez à cette date pour commencer l\'aventure !'
-        })
-    
     # Récupérer la configuration des scores (pour tous les utilisateurs)
     score_config = ScoreConfig.get_config()
     # Calcul du score maximum possible
@@ -107,6 +152,7 @@ def home(request):
     context = {
         "score_config": score_config,
         "max_score": max_score,
+        "is_before_release": not is_access_allowed(request.user),  # Indicateur pour afficher le countdown
     }
     
     # Ajouter les données utilisateur si connecté
@@ -123,19 +169,25 @@ def home(request):
         
         # Récupérer les énigmes et devinettes pour vérifier leur disponibilité
         enigmes_disponibles = {}
+        enigmes_existent = {}
         for i in range(1, 9):
             try:
                 enigme = Enigme.objects.get(id=i)
+                enigmes_existent[i] = True
                 enigmes_disponibles[i] = enigme.is_dispo
             except Enigme.DoesNotExist:
+                enigmes_existent[i] = False
                 enigmes_disponibles[i] = False
         
         devinettes_disponibles = {}
+        devinettes_existent = {}
         for i in range(1, 25):
             try:
                 devinette = Devinette.objects.get(id=i)
+                devinettes_existent[i] = True
                 devinettes_disponibles[i] = devinette.is_dispo
             except Devinette.DoesNotExist:
+                devinettes_existent[i] = False
                 devinettes_disponibles[i] = False
         
         context.update({
@@ -144,7 +196,9 @@ def home(request):
             "total_enigmes": total_enigmes,
             "pourcentage": pourcentage,
             "enigmes_disponibles": enigmes_disponibles,
+            "enigmes_existent": enigmes_existent,
             "devinettes_disponibles": devinettes_disponibles,
+            "devinettes_existent": devinettes_existent,
         })
     
     return render(request, 'avent2025/modern_home.html', context)
@@ -443,10 +497,10 @@ def validate_enigme(request):
         if check_answer(reponse, reponses_possibles):
             messages.success(request, "Bonne reponse")
             user_profile.currentEnigma += 1
+            update_user_score(user_profile)  # Mettre à jour le score
             current_enigma = get_object_or_404(Enigme, id=user_profile.currentEnigma)
-            user_profile.save()
             image_id = random.randint(1, 13)
-            return render(request, 'avent2025/enigme.html',  {
+            return render(request, 'avent2025/modern_enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
                 'user_reponse' : 'OK',
@@ -456,8 +510,8 @@ def validate_enigme(request):
         else:
             image_id = random.randint(1, 24)
             user_profile.erreurEnigma += 1
-            user_profile.save()
-            return render(request, 'avent2025/enigme.html',  {
+            update_user_score(user_profile)  # Mettre à jour le score
+            return render(request, 'avent2025/modern_enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
                 'user_reponse' : 'KO',
@@ -486,7 +540,7 @@ def validate_devinette(request):
         if check_answer(reponse, reponses_possibles):
             messages.success(request, "Bonne réponse !")
             user_profile.currentDevinette += 1
-            user_profile.save()
+            update_user_score(user_profile)  # Mettre à jour le score
             
             # Vérifier si une devinette suivante existe
             next_devinette = Devinette.objects.filter(id=user_profile.currentDevinette).first()
@@ -507,7 +561,7 @@ def validate_devinette(request):
         else:
             image_id = random.randint(1, 24)
             user_profile.erreurDevinette += 1
-            user_profile.save()
+            update_user_score(user_profile)  # Mettre à jour le score
             return render(request, 'avent2025/modern_devinette.html',  {
                 'reponse_devinette' : current_devinette.reponse,
                 'devinette' : current_devinette,
@@ -552,8 +606,7 @@ def reveler_indice(request):
         tmp_list=[]
     tmp_list.append(str(indice.id))
     user_profile.indices_enigme_reveles = ",".join(tmp_list)
-        
-    user_profile.save()
+    update_user_score(user_profile)  # Mettre à jour le score
     
     return redirect(reverse('avent2025:display_enigme') + "#indices")
 
@@ -570,8 +623,8 @@ def reveler_indice_devinette(request):
         tmp_list=[]
     tmp_list.append(str(indice.id))
     user_profile.indices_devinette_reveles = ",".join(tmp_list)
-        
-    user_profile.save()
+    update_user_score(user_profile)  # Mettre à jour le score
+    
     return redirect(reverse('avent2025:display_devinette') + "#indices")
 
 
@@ -603,13 +656,51 @@ def classement(request):
                 continue
                 
             users_with_profile.append(u)
+            
+            # Calculer le nombre d'indices
             nb_indice_enigme[u.id] = 0 if u.userprofile_2025.indices_enigme_reveles=='' else len(u.userprofile_2025.indices_enigme_reveles.split(','))
             nb_indice_devinette[u.id] = 0 if u.userprofile_2025.indices_devinette_reveles=='' else len(u.userprofile_2025.indices_devinette_reveles.split(','))
-            enigme_score[u.id] = max(0,(max(1,u.userprofile_2025.currentEnigma) -1)*100 - u.userprofile_2025.erreurEnigma*5 - nb_indice_enigme[u.id])
-            devinette_score[u.id] = max(0,(max(1,u.userprofile_2025.currentDevinette) -1)*50 - u.userprofile_2025.erreurDevinette*5 - nb_indice_devinette[u.id])
-            moy_indices_enigme[u.id] = 0 if max(1,u.userprofile_2025.currentEnigma) -1 <= 0 else round(nb_indice_enigme[u.id] / (max(1,u.userprofile_2025.currentEnigma) -1),1)
-            moy_indices_devinette[u.id] = 0 if max(1,u.userprofile_2025.currentDevinette) -1 <= 0 else round(nb_indice_devinette[u.id] / (max(1,u.userprofile_2025.currentDevinette) -1),1)
-            total[u.id] = enigme_score[u.id] + devinette_score[u.id]
+            
+            # Utiliser ScoreConfig pour calculer les scores partiels (pour affichage)
+            score_config = ScoreConfig.get_config()
+            enigmes_resolues = max(0, u.userprofile_2025.currentEnigma - 1) if u.userprofile_2025.currentEnigma > 0 else 0
+            devinettes_resolues = max(0, u.userprofile_2025.currentDevinette - 1) if u.userprofile_2025.currentDevinette > 0 else 0
+            
+            # Calculer les coûts réels des indices
+            cout_indices_enigmes = 0
+            if u.userprofile_2025.indices_enigme_reveles:
+                for indice_id in u.userprofile_2025.indices_enigme_reveles.split(','):
+                    if indice_id:
+                        try:
+                            cout_indices_enigmes += Indice.objects.get(id=int(indice_id)).cout
+                        except:
+                            pass
+            
+            cout_indices_devinettes = 0
+            if u.userprofile_2025.indices_devinette_reveles:
+                for indice_id in u.userprofile_2025.indices_devinette_reveles.split(','):
+                    if indice_id:
+                        try:
+                            cout_indices_devinettes += IndiceDevinette.objects.get(id=int(indice_id)).cout
+                        except:
+                            pass
+            
+            enigme_score[u.id] = max(0, 
+                enigmes_resolues * score_config.points_enigme_resolue - 
+                u.userprofile_2025.erreurEnigma * score_config.malus_erreur_enigme - 
+                cout_indices_enigmes
+            )
+            devinette_score[u.id] = max(0,
+                devinettes_resolues * score_config.points_devinette_resolue - 
+                u.userprofile_2025.erreurDevinette * score_config.malus_erreur_devinette - 
+                cout_indices_devinettes
+            )
+            
+            moy_indices_enigme[u.id] = 0 if enigmes_resolues <= 0 else round(nb_indice_enigme[u.id] / enigmes_resolues, 1)
+            moy_indices_devinette[u.id] = 0 if devinettes_resolues <= 0 else round(nb_indice_devinette[u.id] / devinettes_resolues, 1)
+            
+            # Utiliser le score stocké dans le profil
+            total[u.id] = u.userprofile_2025.score
         
     users = users_with_profile
     

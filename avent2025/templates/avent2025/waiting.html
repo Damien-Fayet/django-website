@@ -115,6 +115,114 @@
         margin: 0;
     }
 
+    /* Styles pour le compte à rebours */
+    #countdown-container {
+        margin-bottom: 3rem;
+    }
+
+    .countdown-wrapper {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .countdown-sparkle {
+        font-size: 3rem;
+        text-align: center;
+        animation: sparkle 2s ease-in-out infinite;
+    }
+
+    .countdown-title-modern {
+        font-size: 1.8rem;
+        font-weight: 700;
+        text-align: center;
+        margin: 1rem 0 2rem;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .countdown-emoji {
+        display: inline-block;
+        animation: bounce 1.5s ease-in-out infinite;
+    }
+
+    .countdown-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .countdown-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 1.5rem 1rem;
+        text-align: center;
+        box-shadow: var(--shadow-md);
+        transition: transform 0.3s ease;
+    }
+
+    .countdown-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .countdown-flip {
+        perspective: 1000px;
+        margin-bottom: 0.5rem;
+    }
+
+    .countdown-number {
+        font-size: 3rem;
+        font-weight: 900;
+        color: var(--primary);
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .countdown-label-modern {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    @keyframes sparkle {
+        0%, 100% {
+            transform: scale(1) rotate(0deg);
+            opacity: 0.8;
+        }
+        50% {
+            transform: scale(1.2) rotate(180deg);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .countdown-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .countdown-number {
+            font-size: 2.5rem;
+        }
+
+        .countdown-title-modern {
+            font-size: 1.3rem;
+        }
+
+        .countdown-sparkle {
+            font-size: 2rem;
+        }
+    }
+
     @keyframes fadeIn {
         from {
             opacity: 0;
@@ -167,6 +275,45 @@
 
 {% block content %}
 <div class="waiting-container">
+    <!-- Compte à rebours jusqu'au 1er décembre 2025 -->
+    <div id="countdown-container" style="display: none;">
+        <div class="countdown-wrapper">
+            <div class="countdown-sparkle">✨</div>
+            <div class="countdown-title-modern">
+                <span class="countdown-emoji">🎄</span>
+                L'aventure commence dans...
+                <span class="countdown-emoji">🎄</span>
+            </div>
+            <div class="countdown-grid">
+                <div class="countdown-card">
+                    <div class="countdown-flip">
+                        <div class="countdown-number" id="days">00</div>
+                    </div>
+                    <div class="countdown-label-modern">Jours</div>
+                </div>
+                <div class="countdown-card">
+                    <div class="countdown-flip">
+                        <div class="countdown-number" id="hours">00</div>
+                    </div>
+                    <div class="countdown-label-modern">Heures</div>
+                </div>
+                <div class="countdown-card">
+                    <div class="countdown-flip">
+                        <div class="countdown-number" id="minutes">00</div>
+                    </div>
+                    <div class="countdown-label-modern">Minutes</div>
+                </div>
+                <div class="countdown-card">
+                    <div class="countdown-flip">
+                        <div class="countdown-number" id="seconds">00</div>
+                    </div>
+                    <div class="countdown-label-modern">Secondes</div>
+                </div>
+            </div>
+            <div class="countdown-sparkle">✨</div>
+        </div>
+    </div>
+
     <div class="waiting-card">
         {% if is_complete %}
             <div class="completion-badge">
@@ -228,4 +375,65 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+    // Compte à rebours jusqu'au 1er décembre 2025 à 00h01
+    function initCountdown() {
+        const countdownContainer = document.getElementById('countdown-container');
+        const targetDate = new Date('2025-12-01T00:01:00').getTime();
+        
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+            
+            // Si la date est passée, masquer le compte à rebours
+            if (distance < 0) {
+                if (countdownContainer) {
+                    countdownContainer.style.display = 'none';
+                }
+                return;
+            }
+            
+            // Afficher le compte à rebours
+            if (countdownContainer) {
+                countdownContainer.style.display = 'block';
+            }
+            
+            // Calculs
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Mise à jour de l'affichage avec padding zeros
+            const daysEl = document.getElementById('days');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+            
+            if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
+            if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+            if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
+            if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+        }
+        
+        // Mise à jour initiale
+        updateCountdown();
+        
+        // Mise à jour toutes les secondes
+        const intervalId = setInterval(updateCountdown, 1000);
+        
+        // Nettoyer l'intervalle quand on quitte la page
+        window.addEventListener('beforeunload', () => {
+            clearInterval(intervalId);
+        });
+    }
+    
+    // Démarrer le compte à rebours quand la page est chargée
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCountdown);
+    } else {
+        initCountdown();
+    }
+</script>
 {% endblock %}
