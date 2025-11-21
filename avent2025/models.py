@@ -222,3 +222,62 @@ class IndiceDevinette(models.Model):
     
     class Meta:
         ordering = ['enigme', 'numero']
+
+class AuditLog(models.Model):
+    """Modèle pour tracker les activités des utilisateurs"""
+    
+    # Types d'actions
+    LOGIN = 'LOGIN'
+    LOGOUT = 'LOGOUT'
+    ENIGME_VIEW = 'ENIGME_VIEW'
+    ENIGME_SUBMIT_SUCCESS = 'ENIGME_SUCCESS'
+    ENIGME_SUBMIT_FAIL = 'ENIGME_FAIL'
+    DEVINETTE_VIEW = 'DEVINETTE_VIEW'
+    DEVINETTE_SUBMIT_SUCCESS = 'DEVINETTE_SUCCESS'
+    DEVINETTE_SUBMIT_FAIL = 'DEVINETTE_FAIL'
+    INDICE_REVEAL = 'INDICE_REVEAL'
+    INDICE_DEVINETTE_REVEAL = 'INDICE_DEV_REVEAL'
+    CLASSEMENT_VIEW = 'CLASSEMENT_VIEW'
+    HOME_VIEW = 'HOME_VIEW'
+    
+    ACTION_CHOICES = [
+        (LOGIN, 'Connexion'),
+        (LOGOUT, 'Déconnexion'),
+        (ENIGME_VIEW, 'Consultation énigme'),
+        (ENIGME_SUBMIT_SUCCESS, 'Énigme réussie'),
+        (ENIGME_SUBMIT_FAIL, 'Énigme échouée'),
+        (DEVINETTE_VIEW, 'Consultation devinette'),
+        (DEVINETTE_SUBMIT_SUCCESS, 'Devinette réussie'),
+        (DEVINETTE_SUBMIT_FAIL, 'Devinette échouée'),
+        (INDICE_REVEAL, 'Révélation indice énigme'),
+        (INDICE_DEVINETTE_REVEAL, 'Révélation indice devinette'),
+        (CLASSEMENT_VIEW, 'Consultation classement'),
+        (HOME_VIEW, 'Consultation accueil'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='audit_logs')
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    
+    # Détails spécifiques à l'action
+    enigme_id = models.IntegerField(null=True, blank=True, verbose_name="ID Énigme")
+    devinette_id = models.IntegerField(null=True, blank=True, verbose_name="ID Devinette")
+    indice_id = models.IntegerField(null=True, blank=True, verbose_name="ID Indice")
+    reponse_donnee = models.CharField(max_length=500, blank=True, verbose_name="Réponse donnée")
+    details = models.TextField(blank=True, verbose_name="Détails additionnels")
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Log d'audit"
+        verbose_name_plural = "Logs d'audit"
+    
+    def __str__(self):
+        action_display = self.get_action_display()
+        if self.enigme_id:
+            return f"{self.user.username} - {action_display} (Énigme #{self.enigme_id}) - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+        elif self.devinette_id:
+            return f"{self.user.username} - {action_display} (Devinette #{self.devinette_id}) - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+        else:
+            return f"{self.user.username} - {action_display} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"

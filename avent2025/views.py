@@ -6,7 +6,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.urls import reverse
-from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get_or_create_profile, ScoreConfig
+from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get_or_create_profile, ScoreConfig, AuditLog
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -15,6 +15,7 @@ import unidecode
 import re
 from datetime import datetime, timezone
 from .forms import ContactForm
+from .audit import log_action
 
 
 def is_access_allowed(user):
@@ -200,6 +201,9 @@ def home(request):
             "devinettes_disponibles": devinettes_disponibles,
             "devinettes_existent": devinettes_existent,
         })
+        
+        # Log de la visite de la page d'accueil
+        log_action(request.user, AuditLog.HOME_VIEW, request)
     
     return render(request, 'avent2025/modern_home.html', context)
 
@@ -383,6 +387,9 @@ def display_enigme(request, enigme_id=None, reponse=None):
     indices_reveles = indices.filter(id__in=indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
     
+    # Log de la consultation de l'énigme
+    log_action(request.user, AuditLog.ENIGME_VIEW, request, enigme_id=enigme_id)
+    
     return render(request, 'avent2025/modern_enigme.html', {
         'reponse_enigme': current_enigma.reponse,
         'enigme': current_enigma,
@@ -455,6 +462,10 @@ def display_devinette(request, devinette_id=None, reponse=None):
     
     indices_reveles = indices.filter(id__in= indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
+    
+    # Log de la consultation de la devinette
+    log_action(request.user, AuditLog.DEVINETTE_VIEW, request, devinette_id=devinette_id)
+    
     return render(request, 'avent2025/modern_devinette.html',  {
         'reponse_devinette' : current_devinette.reponse,
         'devinette' : current_devinette,
@@ -498,6 +509,11 @@ def validate_enigme(request):
             messages.success(request, "Bonne reponse")
             user_profile.currentEnigma += 1
             update_user_score(user_profile)  # Mettre à jour le score
+            
+            # Log de succès
+            log_action(request.user, AuditLog.ENIGME_SUBMIT_SUCCESS, request, 
+                      enigme_id=current_enigma_number, reponse_donnee=reponse)
+            
             current_enigma = get_object_or_404(Enigme, id=user_profile.currentEnigma)
             image_id = random.randint(1, 13)
             return render(request, 'avent2025/modern_enigme.html',  {
@@ -511,6 +527,10 @@ def validate_enigme(request):
             image_id = random.randint(1, 24)
             user_profile.erreurEnigma += 1
             update_user_score(user_profile)  # Mettre à jour le score
+            
+            # Log d'échec
+            log_action(request.user, AuditLog.ENIGME_SUBMIT_FAIL, request, 
+                      enigme_id=current_enigma_number, reponse_donnee=reponse)
             return render(request, 'avent2025/modern_enigme.html',  {
                 'reponse_enigme' : current_enigma.reponse,
                 'enigme' : current_enigma,
@@ -542,6 +562,10 @@ def validate_devinette(request):
             user_profile.currentDevinette += 1
             update_user_score(user_profile)  # Mettre à jour le score
             
+            # Log de succès
+            log_action(request.user, AuditLog.DEVINETTE_SUBMIT_SUCCESS, request, 
+                      devinette_id=current_devinette_number, reponse_donnee=reponse)
+            
             # Vérifier si une devinette suivante existe
             next_devinette = Devinette.objects.filter(id=user_profile.currentDevinette).first()
             
@@ -562,6 +586,10 @@ def validate_devinette(request):
             image_id = random.randint(1, 24)
             user_profile.erreurDevinette += 1
             update_user_score(user_profile)  # Mettre à jour le score
+            
+            # Log d'échec
+            log_action(request.user, AuditLog.DEVINETTE_SUBMIT_FAIL, request, 
+                      devinette_id=current_devinette_number, reponse_donnee=reponse)
             return render(request, 'avent2025/modern_devinette.html',  {
                 'reponse_devinette' : current_devinette.reponse,
                 'devinette' : current_devinette,
@@ -608,6 +636,11 @@ def reveler_indice(request):
     user_profile.indices_enigme_reveles = ",".join(tmp_list)
     update_user_score(user_profile)  # Mettre à jour le score
     
+    # Log de la révélation de l'indice
+    log_action(request.user, AuditLog.INDICE_REVEAL, request, 
+              enigme_id=indice.enigme.id, indice_id=indice.id, 
+              details=f"Coût: {indice.cout} points")
+    
     return redirect(reverse('avent2025:display_enigme') + "#indices")
 
 
@@ -624,6 +657,11 @@ def reveler_indice_devinette(request):
     tmp_list.append(str(indice.id))
     user_profile.indices_devinette_reveles = ",".join(tmp_list)
     update_user_score(user_profile)  # Mettre à jour le score
+    
+    # Log de la révélation de l'indice
+    log_action(request.user, AuditLog.INDICE_DEVINETTE_REVEAL, request, 
+              devinette_id=indice.devinette.id, indice_id=indice.id, 
+              details=f"Coût: {indice.cout} points")
     
     return redirect(reverse('avent2025:display_devinette') + "#indices")
 
@@ -729,6 +767,11 @@ def classement(request):
     total_users = sum(1 for u in all_users if hasattr(u, 'userprofile_2025'))
     family_count = sum(1 for u in all_users if hasattr(u, 'userprofile_2025') and u.userprofile_2025.is_family)
     public_count = sum(1 for u in all_users if hasattr(u, 'userprofile_2025') and not u.userprofile_2025.is_family)
+    
+    # Log de la consultation du classement
+    if request.user.is_authenticated:
+        details = f"Type: {score_type}, Filtre: {filter_type}"
+        log_action(request.user, AuditLog.CLASSEMENT_VIEW, request, details=details)
     
     return render(request, 'avent2025/modern_classement.html',  {
         'users' : sorted_users,
