@@ -1,0 +1,132 @@
+{% extends "avent2025/modern_base.html" %}
+{% load static %}
+
+{% block title %}Message envoyé - Calendrier de l'Avent 2025{% endblock %}
+
+{% block extra_css %}
+<style>
+.success-container {
+    max-width: 600px;
+    margin: 4rem auto;
+    padding: 0 1rem;
+    text-align: center;
+}
+
+.success-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 3rem 2rem;
+    animation: fadeInScale 0.5s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.success-icon {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    animation: bounce 1s ease-in-out;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+.success-title {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-weight: bold;
+}
+
+.success-message {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.redirect-info {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--border-color);
+}
+
+.redirect-info strong {
+    color: var(--primary-color);
+}
+
+.countdown {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.btn-home {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-home:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">✅</div>
+        <h1 class="success-title">Message envoyé avec succès !</h1>
+        <p class="success-message">
+            Merci <strong>{{ name }}</strong> pour votre message !<br>
+            Je vous répondrai dès que possible à l'adresse email que vous avez indiquée.
+        </p>
+        
+        <a href="{% url 'avent2025:home' %}" class="btn-home">
+            Retour à l'accueil
+        </a>
+        
+        <div class="redirect-info">
+            Redirection automatique dans <span class="countdown" id="countdown">{{ redirect_delay }}</span> seconde(s)...
+        </div>
+    </div>
+</div>
+
+<script>
+// Compte à rebours et redirection automatique
+let seconds = {{ redirect_delay }};
+const countdownElement = document.getElementById('countdown');
+
+const countdown = setInterval(() => {
+    seconds--;
+    countdownElement.textContent = seconds;
+    
+    if (seconds <= 0) {
+        clearInterval(countdown);
+        window.location.href = "{% url 'avent2025:home' %}";
+    }
+}, 1000);
+</script>
+{% endblock %}

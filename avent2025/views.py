@@ -10,9 +10,10 @@ from .models import Enigme, Indice, UserProfile, Devinette, IndiceDevinette, get
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail, BadHeaderError
+from django.core.mail import send_mail, BadHeaderError, EmailMessage
 import unidecode
 import re
+import socket
 from datetime import datetime, timezone
 from .forms import ContactForm
 from .audit import log_action
@@ -857,38 +858,70 @@ def contact(request):
             # Construire le message email
             email_subject = f"[Calendrier Avent 2025] {subject}"
             email_body = f"""
-Nouveau message de contact depuis le Calendrier de l'Avent 2025
+                Nouveau message de contact depuis le Calendrier de l'Avent 2025
 
-Nom: {name}
-Email: {email}
-Sujet: {subject}
+                Nom: {name}
+                Email: {email}
+                Sujet: {subject}
 
-Message:
-{message}
+                Message:
+                {message}
 
----
-Ce message a été envoyé depuis le formulaire de contact du site.
-Pour répondre, utilisez l'adresse: {email}
+                ---
+                Ce message a été envoyé depuis le formulaire de contact du site.
+                Pour répondre, utilisez l'adresse: {email}
             """
             
+            import logging
+            import socket
+            logger = logging.getLogger(__name__)
+            
             try:
-                # Envoyer l'email
-                send_mail(
-                    email_subject,
-                    email_body,
-                    settings.DEFAULT_FROM_EMAIL,  # Expéditeur
-                    ['fayet.damien63@gmail.com'],  # Destinataire
-                    fail_silently=False,
-                    reply_to=[email]  # Email de réponse
+                logger.info(f"Tentative d'envoi d'email depuis {email}")
+                
+                # Envoyer l'email (utiliser EMAIL_HOST_USER comme expéditeur pour Gmail)
+                email_message = EmailMessage(
+                    subject=email_subject,
+                    body=email_body,
+                    from_email=settings.EMAIL_HOST_USER,
+                    to=[settings.DEFAULT_FROM_EMAIL],
+                    reply_to=[email]
                 )
-                messages.success(request, '✅ Votre message a été envoyé avec succès ! Je vous répondrai dès que possible.')
-                return redirect('avent2025:contact')
-            except BadHeaderError:
+                
+                # Définir un timeout pour éviter le blocage
+                original_timeout = socket.getdefaulttimeout()
+                socket.setdefaulttimeout(20)  # 10 secondes de timeout
+                
+                try:
+                    email_message.send(fail_silently=False)
+                    logger.info("Email envoyé avec succès")
+                finally:
+                    socket.setdefaulttimeout(original_timeout)
+                
+                # Afficher une page de confirmation avec redirection automatique
+                return render(request, 'avent2025/contact_success.html', {
+                    'name': name,
+                    'redirect_delay': 3  # Redirection après 3 secondes
+                })
+            except socket.timeout:
+                logger.error('Timeout lors de l\'envoi du mail de contact')
+                messages.error(request, '❌ Le serveur mail ne répond pas. Veuillez réessayer plus tard.')
+            except BadHeaderError as e:
+                logger.error(f'BadHeaderError lors de l\'envoi du mail de contact: {str(e)}')
                 messages.error(request, '❌ Erreur: en-tête email invalide.')
             except Exception as e:
-                messages.error(request, f'❌ Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer plus tard.')
-                # En développement, vous pouvez afficher l'erreur : messages.error(request, f'Erreur: {str(e)}')
+                import traceback
+                error_details = traceback.format_exc()
+                logger.error(f'Erreur lors de l\'envoi du mail de contact: {str(e)}\n{error_details}')
+                messages.error(request, f'❌ Une erreur est survenue lors de l\'envoi du message: {str(e)}')
     else:
-        form = ContactForm()
+        # Pré-remplir le formulaire avec les infos de l'utilisateur connecté
+        initial_data = {}
+        if request.user.is_authenticated:
+            initial_data['name'] = request.user.get_full_name() or request.user.username
+            if request.user.email:
+                initial_data['email'] = request.user.email
+        
+        form = ContactForm(initial=initial_data)
     
     return render(request, 'avent2025/contact.html', {'form': form})

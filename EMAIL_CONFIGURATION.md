@@ -23,7 +23,7 @@ Pour recevoir les emails sur `fayet.damien63@gmail.com`, vous devez configurer u
    - Aller sur https://myaccount.google.com/apppasswords
    - Sélectionner "Courrier" et "Autre (nom personnalisé)"
    - Nommer "Django Calendrier Avent"
-   - Copier le mot de passe généré (16 caractères)
+   - Copier le mot de passe généré (16 caractères) 
 
 3. **Modifier `mysite/settings.py`**
 
