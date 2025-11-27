@@ -884,8 +884,8 @@ def contact(request):
                     subject=email_subject,
                     body=email_body,
                     from_email=settings.EMAIL_HOST_USER,
-                    to=[settings.DEFAULT_FROM_EMAIL],
-                    reply_to=[email]
+                    to=[email],
+                    reply_to=[settings.DEFAULT_FROM_EMAIL]
                 )
                 
                 # Définir un timeout pour éviter le blocage
@@ -913,7 +913,7 @@ def contact(request):
                 import traceback
                 error_details = traceback.format_exc()
                 logger.error(f'Erreur lors de l\'envoi du mail de contact: {str(e)}\n{error_details}')
-                messages.error(request, f'❌ Une erreur est survenue lors de l\'envoi du message: {str(e)}')
+                messages.error(request, f'❌ Une erreur est survenue lors de l\'envoi du message: {str(error_details)}')
     else:
         # Pré-remplir le formulaire avec les infos de l'utilisateur connecté
         initial_data = {}

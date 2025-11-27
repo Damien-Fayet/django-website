@@ -71,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'avent2025.context_processors.discord_url',
             ],
         },
     },
@@ -147,6 +148,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # En développement, les emails seront affichés dans la console
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@calendrieravent2025.fr'
+
+# Discord - Lien vers le serveur Discord pour l'entraide et les échanges
+DISCORD_INVITE_URL = 'https://discord.gg/votre-invitation'  # Remplacez par votre lien d'invitation Discord
 
 # Pour la production, décommentez et configurez avec votre serveur SMTP :
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
