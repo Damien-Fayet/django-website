@@ -642,7 +642,8 @@ def reveler_indice(request):
               enigme_id=indice.enigme.id, indice_id=indice.id, 
               details=f"Coût: {indice.cout} points")
     
-    return redirect(reverse('avent2025:display_enigme') + "#indices")
+    # Rediriger vers l'énigme de l'indice révélé
+    return redirect(reverse('avent2025:display_enigme_id', kwargs={'enigme_id': indice.enigme.id}) + "#indices")
 
 
 @login_required
@@ -659,12 +660,13 @@ def reveler_indice_devinette(request):
     user_profile.indices_devinette_reveles = ",".join(tmp_list)
     update_user_score(user_profile)  # Mettre à jour le score
     
-    # Log de la révélation de l'indice
+    # Log de la révélation de l'indice (le champ s'appelle 'enigme' mais référence Devinette)
     log_action(request.user, AuditLog.INDICE_DEVINETTE_REVEAL, request, 
-              devinette_id=indice.devinette.id, indice_id=indice.id, 
+              devinette_id=indice.enigme.id, indice_id=indice.id, 
               details=f"Coût: {indice.cout} points")
     
-    return redirect(reverse('avent2025:display_devinette') + "#indices")
+    # Rediriger vers la devinette de l'indice révélé
+    return redirect(reverse('avent2025:display_devinette_id', kwargs={'devinette_id': indice.enigme.id}) + "#indices")
 
 
 def classement(request):
