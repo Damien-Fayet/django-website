@@ -391,6 +391,11 @@ def display_enigme(request, enigme_id=None, reponse=None):
     # Vérifier si l'énigme est déjà résolue (l'utilisateur est passé à la suivante)
     is_resolved = enigme_id < profile.currentEnigma
     
+    # Récupérer la réponse donnée par l'utilisateur si l'énigme est résolue
+    user_answer = None
+    if is_resolved and profile.reponses_enigmes:
+        user_answer = profile.reponses_enigmes.get(str(enigme_id))
+    
     # Log de la consultation de l'énigme
     log_action(request.user, AuditLog.ENIGME_VIEW, request, enigme_id=enigme_id)
     
@@ -403,6 +408,7 @@ def display_enigme(request, enigme_id=None, reponse=None):
         'indices_hidden': indices_hidden,
         'date_warning': date_warning,
         'is_resolved': is_resolved,
+        'user_answer': user_answer,
     })
   
 @login_required
@@ -470,6 +476,11 @@ def display_devinette(request, devinette_id=None, reponse=None):
     # Vérifier si la devinette est déjà résolue (l'utilisateur est passé à la suivante)
     is_resolved = devinette_id < profile.currentDevinette
     
+    # Récupérer la réponse donnée par l'utilisateur si la devinette est résolue
+    user_answer = None
+    if is_resolved and profile.reponses_devinettes:
+        user_answer = profile.reponses_devinettes.get(str(devinette_id))
+    
     # Log de la consultation de la devinette
     log_action(request.user, AuditLog.DEVINETTE_VIEW, request, devinette_id=devinette_id)
     
@@ -482,6 +493,7 @@ def display_devinette(request, devinette_id=None, reponse=None):
         'indices_hidden' : indices_hidden,
         'date_warning': date_warning,
         'is_resolved': is_resolved,
+        'user_answer': user_answer,
     })
       
 @login_required
@@ -515,6 +527,12 @@ def validate_enigme(request):
         
         if check_answer(reponse, reponses_possibles):
             messages.success(request, "Bonne reponse")
+            
+            # Enregistrer la réponse validée
+            if not user_profile.reponses_enigmes:
+                user_profile.reponses_enigmes = {}
+            user_profile.reponses_enigmes[str(current_enigma_number)] = reponse
+            
             user_profile.currentEnigma += 1
             update_user_score(user_profile)  # Mettre à jour le score
             
@@ -567,6 +585,12 @@ def validate_devinette(request):
         
         if check_answer(reponse, reponses_possibles):
             messages.success(request, "Bonne réponse !")
+            
+            # Enregistrer la réponse validée
+            if not user_profile.reponses_devinettes:
+                user_profile.reponses_devinettes = {}
+            user_profile.reponses_devinettes[str(current_devinette_number)] = reponse
+            
             user_profile.currentDevinette += 1
             update_user_score(user_profile)  # Mettre à jour le score
             

@@ -102,7 +102,7 @@
                             <input 
                                 type="password" 
                                 id="resolved_answer_{{ enigme.id }}" 
-                                value="{{ reponse_enigme }}" 
+                                value="{{ user_answer|default:reponse_enigme }}" 
                                 class="enigme-input resolved-answer" 
                                 readonly
                             >
