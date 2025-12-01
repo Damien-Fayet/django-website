@@ -6,9 +6,35 @@ from avent2025.models import UserProfile, Indice, IndiceDevinette, ScoreConfig
 class Command(BaseCommand):
     help = 'Recalcule les scores de tous les utilisateurs en fonction de leur progression'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--username',
+            type=str,
+            help='Nom d\'utilisateur spécifique (optionnel)',
+        )
+        parser.add_argument(
+            '--all',
+            action='store_true',
+            help='Recalculer les scores de tous les utilisateurs (par défaut)',
+        )
+
     def handle(self, *args, **options):
+        username = options.get('username')
+        
+        # Si un username est spécifié, ne traiter que cet utilisateur
+        if username:
+            try:
+                users = [User.objects.get(username=username)]
+                self.stdout.write(f'Recalcul du score pour {username}...\n')
+            except User.DoesNotExist:
+                self.stdout.write(
+                    self.style.ERROR(f'❌ Utilisateur "{username}" introuvable')
+                )
+                return
+        else:
+            users = User.objects.all()
+            self.stdout.write('Recalcul des scores pour tous les utilisateurs...\n')
         score_config = ScoreConfig.get_config()
-        users = User.objects.all()
         updated_count = 0
         
         for user in users:
