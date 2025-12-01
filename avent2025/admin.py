@@ -10,8 +10,8 @@ from django.utils.html import format_html
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
-    fields = ('currentEnigma', 'erreurEnigma', 'currentDevinette', 'erreurDevinette', 'score', 'is_family', 'derniere_activite_display', 'indices_enigme_reveles', 'indices_devinette_reveles')
-    readonly_fields = ('score', 'derniere_activite_display')
+    fields = ('currentEnigma', 'erreurEnigma', 'currentDevinette', 'erreurDevinette', 'score', 'is_family', 'derniere_activite_display', 'indices_enigme_reveles', 'indices_devinette_reveles', 'reponses_enigmes', 'reponses_devinettes', 'reponses_enigmes_display', 'reponses_devinettes_display')
+    readonly_fields = ('score', 'derniere_activite_display', 'reponses_enigmes_display', 'reponses_devinettes_display')
     
     def derniere_activite_display(self, obj):
         """Affiche la dernière activité de l'utilisateur"""
@@ -24,6 +24,36 @@ class UserProfileInline(admin.StackedInline):
             )
         return format_html('<span style="color: #999;">Aucune activité</span>')
     derniere_activite_display.short_description = 'Dernière activité'
+    
+    def reponses_enigmes_display(self, obj):
+        """Affiche les réponses validées pour les énigmes"""
+        if not obj.reponses_enigmes:
+            return format_html('<span style="color: #999;">Aucune réponse enregistrée</span>')
+        
+        html = '<table style="width: 100%; border-collapse: collapse;">'
+        html += '<tr style="background: #f0f0f0;"><th style="padding: 5px; border: 1px solid #ddd;">Énigme</th><th style="padding: 5px; border: 1px solid #ddd;">Réponse</th></tr>'
+        
+        for enigme_id, reponse in sorted(obj.reponses_enigmes.items(), key=lambda x: int(x[0])):
+            html += f'<tr><td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><strong>#{enigme_id}</strong></td><td style="padding: 5px; border: 1px solid #ddd;"><code>{reponse}</code></td></tr>'
+        
+        html += '</table>'
+        return format_html(html)
+    reponses_enigmes_display.short_description = 'Réponses des énigmes'
+    
+    def reponses_devinettes_display(self, obj):
+        """Affiche les réponses validées pour les devinettes"""
+        if not obj.reponses_devinettes:
+            return format_html('<span style="color: #999;">Aucune réponse enregistrée</span>')
+        
+        html = '<table style="width: 100%; border-collapse: collapse;">'
+        html += '<tr style="background: #f0f0f0;"><th style="padding: 5px; border: 1px solid #ddd;">Devinette</th><th style="padding: 5px; border: 1px solid #ddd;">Réponse</th></tr>'
+        
+        for devinette_id, reponse in sorted(obj.reponses_devinettes.items(), key=lambda x: int(x[0])):
+            html += f'<tr><td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><strong>#{devinette_id}</strong></td><td style="padding: 5px; border: 1px solid #ddd;"><code>{reponse}</code></td></tr>'
+        
+        html += '</table>'
+        return format_html(html)
+    reponses_devinettes_display.short_description = 'Réponses des devinettes'
 
 class AccountsUserAdmin(AuthUserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_family_member', 'last_activity', 'is_staff')
