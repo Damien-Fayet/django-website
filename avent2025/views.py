@@ -388,6 +388,9 @@ def display_enigme(request, enigme_id=None, reponse=None):
     indices_reveles = indices.filter(id__in=indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
     
+    # Vérifier si l'énigme est déjà résolue (l'utilisateur est passé à la suivante)
+    is_resolved = enigme_id < profile.currentEnigma
+    
     # Log de la consultation de l'énigme
     log_action(request.user, AuditLog.ENIGME_VIEW, request, enigme_id=enigme_id)
     
@@ -399,6 +402,7 @@ def display_enigme(request, enigme_id=None, reponse=None):
         'indices_reveles': indices_reveles,
         'indices_hidden': indices_hidden,
         'date_warning': date_warning,
+        'is_resolved': is_resolved,
     })
   
 @login_required
@@ -463,6 +467,8 @@ def display_devinette(request, devinette_id=None, reponse=None):
     
     indices_reveles = indices.filter(id__in= indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
+    # Vérifier si la devinette est déjà résolue (l'utilisateur est passé à la suivante)
+    is_resolved = devinette_id < profile.currentDevinette
     
     # Log de la consultation de la devinette
     log_action(request.user, AuditLog.DEVINETTE_VIEW, request, devinette_id=devinette_id)
@@ -475,6 +481,7 @@ def display_devinette(request, devinette_id=None, reponse=None):
         'indices_reveles' : indices_reveles,
         'indices_hidden' : indices_hidden,
         'date_warning': date_warning,
+        'is_resolved': is_resolved,
     })
       
 @login_required

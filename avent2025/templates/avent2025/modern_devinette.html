@@ -79,26 +79,52 @@
             </div>
             {% endif %}
 
-            <!-- Formulaire de réponse -->
+            <!-- Formulaire de réponse ou réponse validée -->
             <div class="enigme-form">
-                <form method="post" action="{% url 'avent2025:validate_devinette' %}">
-                    {% csrf_token %}
-                    <label for="reponse">💭 Votre réponse :</label>
-                    <div class="enigme-input-group">
-                        <input 
-                            type="text" 
-                            id="reponse" 
-                            name="reponse" 
-                            class="enigme-input" 
-                            placeholder="Entrez votre réponse..."
-                            autocomplete="off"
-                            required
-                        >
-                        <button type="submit" class="enigme-submit">
-                            ✓ Valider
-                        </button>
+                {% if is_resolved %}
+                    <!-- Devinette déjà résolue : afficher la réponse masquée -->
+                    <div class="resolved-answer-container">
+                        <label>✅ Devinette résolue ! Votre réponse validée :</label>
+                        <div class="resolved-answer-wrapper">
+                            <input 
+                                type="password" 
+                                id="resolved_answer_{{ devinette.id }}" 
+                                value="{{ reponse_devinette }}" 
+                                class="enigme-input resolved-answer" 
+                                readonly
+                            >
+                            <button 
+                                type="button" 
+                                class="toggle-answer-btn" 
+                                onclick="toggleAnswer('resolved_answer_{{ devinette.id }}', this)"
+                                title="Afficher/Masquer la réponse"
+                            >
+                                👁️
+                            </button>
+                        </div>
+                        <p class="resolved-hint">💡 Cliquez sur l'œil pour révéler la réponse</p>
                     </div>
-                </form>
+                {% else %}
+                    <!-- Devinette en cours : formulaire de réponse -->
+                    <form method="post" action="{% url 'avent2025:validate_devinette' %}">
+                        {% csrf_token %}
+                        <label for="reponse">💭 Votre réponse :</label>
+                        <div class="enigme-input-group">
+                            <input 
+                                type="text" 
+                                id="reponse" 
+                                name="reponse" 
+                                class="enigme-input" 
+                                placeholder="Entrez votre réponse..."
+                                autocomplete="off"
+                                required
+                            >
+                            <button type="submit" class="enigme-submit">
+                                ✓ Valider
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
             </div>
 
             <!-- Section des indices -->
@@ -198,5 +224,21 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+// Fonction pour afficher/masquer la réponse
+function toggleAnswer(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '🙈';
+        button.title = 'Masquer la réponse';
+    } else {
+        input.type = 'password';
+        button.textContent = '👁️';
+        button.title = 'Afficher la réponse';
+    }
+}
+</script>
 
 {% endblock %}
