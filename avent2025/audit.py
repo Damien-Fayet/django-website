@@ -25,8 +25,12 @@ def log_action(user, action, request=None, **kwargs):
         **kwargs: Champs additionnels (enigme_id, devinette_id, indice_id, reponse_donnee, details)
     
     Returns:
-        L'objet AuditLog créé
+        L'objet AuditLog créé ou None si l'utilisateur est admin
     """
+    # Ne pas logger les actions des admins/superusers
+    if user.is_staff or user.is_superuser:
+        return None
+    
     log_data = {
         'user': user,
         'action': action,

@@ -275,28 +275,31 @@ class AuditLogAdmin(admin.ModelAdmin):
     reponse_courte.short_description = 'Réponse'
     
     def changelist_view(self, request, extra_context=None):
-        """Ajoute des statistiques au contexte"""
+        """Ajoute des statistiques au contexte (exclut les admins)"""
         from django.utils import timezone
         from datetime import timedelta
         from django.db.models import Count
         
         extra_context = extra_context or {}
         
-        # Total des logs
-        extra_context['total_logs'] = AuditLog.objects.count()
+        # Exclure les actions des admins/staff des statistiques
+        logs_queryset = AuditLog.objects.filter(user__is_staff=False, user__is_superuser=False)
         
-        # Utilisateurs actifs (ayant au moins une action)
-        extra_context['active_users'] = AuditLog.objects.values('user').distinct().count()
+        # Total des logs (sans admins)
+        extra_context['total_logs'] = logs_queryset.count()
         
-        # Actions des dernières 24h
+        # Utilisateurs actifs (ayant au moins une action, sans admins)
+        extra_context['active_users'] = logs_queryset.values('user').distinct().count()
+        
+        # Actions des dernières 24h (sans admins)
         yesterday = timezone.now() - timedelta(days=1)
-        extra_context['logs_24h'] = AuditLog.objects.filter(timestamp__gte=yesterday).count()
+        extra_context['logs_24h'] = logs_queryset.filter(timestamp__gte=yesterday).count()
         
-        # Taux de réussite (succès / (succès + échecs))
-        success_count = AuditLog.objects.filter(
+        # Taux de réussite (succès / (succès + échecs)) sans admins
+        success_count = logs_queryset.filter(
             action__in=[AuditLog.ENIGME_SUBMIT_SUCCESS, AuditLog.DEVINETTE_SUBMIT_SUCCESS]
         ).count()
-        fail_count = AuditLog.objects.filter(
+        fail_count = logs_queryset.filter(
             action__in=[AuditLog.ENIGME_SUBMIT_FAIL, AuditLog.DEVINETTE_SUBMIT_FAIL]
         ).count()
         total_attempts = success_count + fail_count

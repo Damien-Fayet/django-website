@@ -627,11 +627,17 @@ select:focus {
     max-height: calc(90vh - 80px);
     object-fit: contain;
     transition: transform 0.3s ease;
-    cursor: grab;
+    cursor: default;
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.lightbox-image:active {
+.lightbox-image.can-drag {
+    cursor: grab;
+}
+
+.lightbox-image.can-drag:active {
     cursor: grabbing;
 }
 

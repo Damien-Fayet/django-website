@@ -378,7 +378,23 @@ def display_enigme(request, enigme_id=None, reponse=None):
             })
     
     # Récupérer tous les indices de cette énigme
-    indices = Indice.objects.filter(enigme=current_enigma)
+    all_indices = Indice.objects.filter(enigme=current_enigma)
+    
+    # Vérifier si l'énigme suivante est disponible (pour les indices "last chance")
+    try:
+        next_enigma = Enigme.objects.get(id=enigme_id + 1)
+        next_enigma_available = next_enigma.is_dispo
+    except Enigme.DoesNotExist:
+        # Pas d'énigme suivante, les indices last chance sont disponibles
+        next_enigma_available = True
+    
+    # Filtrer les indices selon leur type
+    if next_enigma_available:
+        # L'énigme suivante est dispo : tous les indices sont accessibles
+        indices = all_indices
+    else:
+        # L'énigme suivante n'est pas encore dispo : exclure les indices "last chance"
+        indices = all_indices.exclude(type_indice=Indice.LAST_CHANCE)
     
     # Lister les indices révélés
     indice_reveles_list = []
@@ -462,8 +478,18 @@ def display_devinette(request, devinette_id=None, reponse=None):
             })
     
     # Récupérer tous les indices de cette devinette
-    indices = IndiceDevinette.objects.filter(enigme=current_devinette)
+    all_indices = IndiceDevinette.objects.filter(enigme=current_devinette)
     
+    # Filtrer les indices "last chance" si la devinette suivante n'est pas encore disponible
+    try:
+        next_devinette = Devinette.objects.get(id=devinette_id + 1)
+        if not next_devinette.is_dispo:
+            indices = all_indices.exclude(type_indice=IndiceDevinette.LAST_CHANCE)
+        else:
+            indices = all_indices
+    except Devinette.DoesNotExist:
+        # Pas de devinette suivante, on affiche tous les indices
+        indices = all_indices
     
     # Lister les indice revelés
     indice_reveles_list = []
