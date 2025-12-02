@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail, BadHeaderError, EmailMessage
+from django.db import models
 import unidecode
 import re
 import socket
@@ -984,3 +985,187 @@ def contact(request):
         form = ContactForm(initial=initial_data)
     
     return render(request, 'avent2025/contact.html', {'form': form})
+
+
+@login_required
+def statistiques(request):
+    """
+    Affiche les statistiques globales du calendrier de l'avent.
+    Exclut les admins (staff et superusers) de toutes les statistiques.
+    """
+    # Filtrer les utilisateurs non-admins
+    users_non_admin = User.objects.filter(is_staff=False, is_superuser=False)
+    profiles_non_admin = UserProfile.objects.filter(user__is_staff=False, user__is_superuser=False)
+    
+    # Statistiques générales
+    total_users = users_non_admin.count()
+    total_enigmes = Enigme.objects.count()
+    total_devinettes = Devinette.objects.count()
+    
+    # Statistiques sur les énigmes
+    users_started_enigmes = profiles_non_admin.exclude(currentEnigma=1).count()
+    users_completed_all_enigmes = profiles_non_admin.filter(currentEnigma__gt=total_enigmes).count()
+    
+    # Statistiques sur les devinettes
+    users_started_devinettes = profiles_non_admin.exclude(currentDevinette=1).count()
+    users_completed_all_devinettes = profiles_non_admin.filter(currentDevinette__gt=total_devinettes).count()
+    
+    # Nombre total d'erreurs
+    total_erreurs_enigmes = profiles_non_admin.aggregate(total=models.Sum('erreurEnigma'))['total'] or 0
+    total_erreurs_devinettes = profiles_non_admin.aggregate(total=models.Sum('erreurDevinette'))['total'] or 0
+    
+    # Awards rigolos
+    # Le plus chanceux (meilleur ratio énigmes résolues / erreurs)
+    lucky_player = None
+    best_ratio = -1
+    for profile in profiles_non_admin:
+        enigmes_resolues = max(0, profile.currentEnigma - 1)
+        if enigmes_resolues > 0:
+            ratio = enigmes_resolues / max(1, profile.erreurEnigma)
+            if ratio > best_ratio:
+                best_ratio = ratio
+                lucky_player = profile
+    # Si aucun joueur chanceux, prendre celui avec le moins d'erreurs et au moins 1 énigme
+    if not lucky_player and profiles_non_admin.exists():
+        lucky_player = profiles_non_admin.filter(currentEnigma__gt=1).order_by('erreurEnigma').first()
+    
+    # Le plus persévérant (le plus d'erreurs mais continue quand même)
+    persistent_player = None
+    if profiles_non_admin.exists():
+        candidate = profiles_non_admin.order_by('-erreurEnigma', '-erreurDevinette').first()
+        # Afficher seulement si le joueur a au moins 1 erreur
+        if candidate and (candidate.erreurEnigma > 0 or candidate.erreurDevinette > 0):
+            persistent_player = candidate
+    
+    # Le collectionneur d'indices (le plus d'indices révélés)
+    collector_player = None
+    max_indices = 0
+    for profile in profiles_non_admin:
+        total_indices = 0
+        if profile.indices_enigme_reveles:
+            total_indices += len(profile.indices_enigme_reveles.split(','))
+        if profile.indices_devinette_reveles:
+            total_indices += len(profile.indices_devinette_reveles.split(','))
+        if total_indices > max_indices:
+            max_indices = total_indices
+            collector_player = profile
+    # Si aucun collectionneur, prendre n'importe quel joueur
+    if not collector_player and profiles_non_admin.exists():
+        collector_player = profiles_non_admin.first()
+    
+    # Le perfectionniste (meilleur score sans erreurs ou avec le moins d'erreurs)
+    perfectionist_player = None
+    if profiles_non_admin.exists():
+        candidate = profiles_non_admin.order_by('erreurEnigma', 'erreurDevinette', '-score').first()
+        # Toujours afficher un perfectionniste s'il y a des joueurs
+        perfectionist_player = candidate
+    
+    # L'acharné du classement (celui qui consulte le plus le classement)
+    classement_addict = None
+    max_views = 0
+    classement_logs = AuditLog.objects.filter(
+        user__is_staff=False,
+        user__is_superuser=False,
+        action=AuditLog.CLASSEMENT_VIEW
+    )
+    # Compter par utilisateur
+    from django.db.models import Count
+    user_views = classement_logs.values('user').annotate(view_count=Count('id')).order_by('-view_count').first()
+    if user_views:
+        classement_addict_user = User.objects.get(id=user_views['user'])
+        if hasattr(classement_addict_user, 'userprofile_2025'):
+            classement_addict = classement_addict_user.userprofile_2025
+            max_views = user_views['view_count']
+    
+    # Top 3 joueurs
+    top_players = profiles_non_admin.order_by('-score')[:3]
+    
+    # Statistiques par énigme
+    enigme_stats = []
+    for enigme in Enigme.objects.all().order_by('id'):
+        # Nombre d'utilisateurs ayant atteint cette énigme
+        reached = profiles_non_admin.filter(currentEnigma__gte=enigme.id).count()
+        # Nombre d'utilisateurs ayant complété cette énigme
+        completed = profiles_non_admin.filter(currentEnigma__gt=enigme.id).count()
+        
+        enigme_stats.append({
+            'enigme': enigme,
+            'reached': reached,
+            'completed': completed,
+            'completion_rate': (completed / reached * 100) if reached > 0 else 0
+        })
+    
+    # Statistiques par devinette
+    devinette_stats = []
+    for devinette in Devinette.objects.all().order_by('id'):
+        reached = profiles_non_admin.filter(currentDevinette__gte=devinette.id).count()
+        completed = profiles_non_admin.filter(currentDevinette__gt=devinette.id).count()
+        
+        devinette_stats.append({
+            'devinette': devinette,
+            'reached': reached,
+            'completed': completed,
+            'completion_rate': (completed / reached * 100) if reached > 0 else 0
+        })
+    
+    # Indices révélés
+    total_indices_enigmes = Indice.objects.count()
+    total_indices_devinettes = IndiceDevinette.objects.count()
+    
+    # Compter les indices révélés (en parsant les champs CSV)
+    indices_enigmes_reveles = 0
+    indices_devinettes_reveles = 0
+    for profile in profiles_non_admin:
+        if profile.indices_enigme_reveles:
+            indices_enigmes_reveles += len(profile.indices_enigme_reveles.split(','))
+        if profile.indices_devinette_reveles:
+            indices_devinettes_reveles += len(profile.indices_devinette_reveles.split(','))
+    
+    # Activité récente (logs des 7 derniers jours)
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    recent_logs = AuditLog.objects.filter(
+        user__is_staff=False,
+        user__is_superuser=False,
+        timestamp__gte=seven_days_ago
+    )
+    
+    enigmes_validated_7d = recent_logs.filter(action=AuditLog.ENIGME_SUBMIT_SUCCESS).count()
+    devinettes_validated_7d = recent_logs.filter(action=AuditLog.DEVINETTE_SUBMIT_SUCCESS).count()
+    indices_revealed_7d = recent_logs.filter(
+        action__in=[AuditLog.INDICE_REVEAL, AuditLog.INDICE_DEVINETTE_REVEAL]
+    ).count()
+    
+    context = {
+        'total_users': total_users,
+        'users_started_enigmes': users_started_enigmes,
+        'users_completed_all_enigmes': users_completed_all_enigmes,
+        'users_started_devinettes': users_started_devinettes,
+        'users_completed_all_devinettes': users_completed_all_devinettes,
+        'total_erreurs_enigmes': total_erreurs_enigmes,
+        'total_erreurs_devinettes': total_erreurs_devinettes,
+        'top_players': top_players,
+        'enigme_stats': enigme_stats,
+        'devinette_stats': devinette_stats,
+        'total_indices_enigmes': total_indices_enigmes,
+        'total_indices_devinettes': total_indices_devinettes,
+        'indices_enigmes_reveles': indices_enigmes_reveles,
+        'indices_devinettes_reveles': indices_devinettes_reveles,
+        'enigmes_validated_7d': enigmes_validated_7d,
+        'devinettes_validated_7d': devinettes_validated_7d,
+        'indices_revealed_7d': indices_revealed_7d,
+        # Awards
+        'lucky_player': lucky_player,
+        'persistent_player': persistent_player,
+        'collector_player': collector_player,
+        'perfectionist_player': perfectionist_player,
+        'classement_addict': classement_addict,
+        'classement_addict_views': max_views,
+    }
+    
+    # Log de la consultation des statistiques
+    log_action(request.user, AuditLog.CLASSEMENT_VIEW, request, details="Consultation des statistiques")
+    
+    return render(request, 'avent2025/statistiques.html', context)

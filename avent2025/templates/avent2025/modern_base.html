@@ -32,6 +32,7 @@
                     <div class="nav-bar-left">
                         <a href="{% url 'avent2025:home' %}">🎄 Avent 2025</a>
                         <a href="{% url 'avent2025:classement' %}">🏆 Classement</a>
+                        <a href="{% url 'avent2025:statistiques' %}">📊 Statistiques</a>
                         {% if user.userprofile_2025.is_family %}
                             <a href="{% url 'avent2025:classement' %}?filter=family" class="family-link">👨‍👩‍👧‍👦 Famille</a>
                         {% endif %}

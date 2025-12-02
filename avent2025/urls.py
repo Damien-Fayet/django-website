@@ -25,6 +25,7 @@ urlpatterns = [
     path('all_enigmes/', views.all_enigmes, name='all_enigmes'),
     path('contact/', views.contact, name='contact'),  # Formulaire de contact
     path('devinettes_completees/', views.devinettes_completees, name='devinettes_completees'),  # Toutes les devinettes terminées
+    path('statistiques/', views.statistiques, name='statistiques'),  # Statistiques globales
     
     
     
