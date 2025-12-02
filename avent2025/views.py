@@ -1080,9 +1080,13 @@ def statistiques(request):
     # Top 3 joueurs
     top_players = profiles_non_admin.order_by('-score')[:3]
     
-    # Statistiques par énigme
+    # Statistiques par énigme (seulement les énigmes disponibles)
     enigme_stats = []
     for enigme in Enigme.objects.all().order_by('id'):
+        # Ignorer les énigmes pas encore disponibles
+        if not enigme.is_dispo:
+            continue
+            
         # Nombre d'utilisateurs ayant atteint cette énigme
         reached = profiles_non_admin.filter(currentEnigma__gte=enigme.id).count()
         # Nombre d'utilisateurs ayant complété cette énigme
@@ -1095,9 +1099,13 @@ def statistiques(request):
             'completion_rate': (completed / reached * 100) if reached > 0 else 0
         })
     
-    # Statistiques par devinette
+    # Statistiques par devinette (seulement les devinettes disponibles)
     devinette_stats = []
     for devinette in Devinette.objects.all().order_by('id'):
+        # Ignorer les devinettes pas encore disponibles
+        if not devinette.is_dispo:
+            continue
+            
         reached = profiles_non_admin.filter(currentDevinette__gte=devinette.id).count()
         completed = profiles_non_admin.filter(currentDevinette__gt=devinette.id).count()
         
