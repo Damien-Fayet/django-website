@@ -72,7 +72,15 @@
                 {% else %}🥉{% endif %}
             </div>
             <div class="podium-username">{{ user.username }}</div>
-            <div class="podium-score-main">{{ scores|get_item:user.id }}</div>
+            <div class="podium-score-main">
+                {% if score_type == 'enigmes' %}
+                    {{ enigme_score|get_item:user.id }}
+                {% elif score_type == 'devinettes' %}
+                    {{ devinette_score|get_item:user.id }}
+                {% else %}
+                    {{ scores|get_item:user.id }}
+                {% endif %}
+            </div>
             <div class="podium-stats-compact">
                 🧩 {{ nb_enigmes|get_item:user.id }}/8 • 🎭 {{ nb_devinettes|get_item:user.id }}/24
             </div>
@@ -111,7 +119,17 @@
                         <strong>{{ user.username }}</strong>
                         {% if user == request.user %}<span class="badge-you">Vous</span>{% endif %}
                     </td>
-                    <td class="score-cell"><strong>{{ scores|get_item:user.id }}</strong></td>
+                    <td class="score-cell">
+                        <strong>
+                            {% if score_type == 'enigmes' %}
+                                {{ enigme_score|get_item:user.id }}
+                            {% elif score_type == 'devinettes' %}
+                                {{ devinette_score|get_item:user.id }}
+                            {% else %}
+                                {{ scores|get_item:user.id }}
+                            {% endif %}
+                        </strong>
+                    </td>
                     <td class="enigmes-cell">{{ nb_enigmes|get_item:user.id }}/8</td>
                     <td class="devinettes-cell">{{ nb_devinettes|get_item:user.id }}/24</td>
                     <td class="erreurs-cell">{{ nb_erreurs|get_item:user.id }}</td>
