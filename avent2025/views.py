@@ -1406,49 +1406,71 @@ def admin_triche(request):
     for user in users:
         profile = user.userprofile_2025
         
-        # Analyser les énigmes résolues rapidement (< 30 secondes)
+        # Analyser les énigmes résolues rapidement (< 30 secondes depuis la PREMIÈRE ouverture)
         enigme_logs = AuditLog.objects.filter(
             user=user,
             action__in=[AuditLog.ENIGME_VIEW, AuditLog.ENIGME_SUBMIT_SUCCESS]
         ).order_by('timestamp')
         
         very_fast_enigmes = []
-        current_view = None
-        for log in enigme_logs:
-            if log.action == AuditLog.ENIGME_VIEW:
-                current_view = log
-            elif log.action == AuditLog.ENIGME_SUBMIT_SUCCESS and current_view:
-                time_diff = (log.timestamp - current_view.timestamp).total_seconds()
-                if time_diff < 30:  # Moins de 30 secondes
-                    enigme_id = log.details.split('Énigme ')[1].split(' ')[0] if 'Énigme' in log.details else 'N/A'
-                    very_fast_enigmes.append({
-                        'enigme_id': enigme_id,
-                        'time': time_diff,
-                        'timestamp': log.timestamp
-                    })
-                current_view = None
+        # Dictionnaire pour stocker la première vue de chaque énigme
+        first_views = {}
         
-        # Analyser les devinettes résolues rapidement (< 10 secondes)
+        for log in enigme_logs:
+            # Extraire l'ID de l'énigme/devinette depuis les détails
+            if 'Énigme' in log.details:
+                item_id = log.details.split('Énigme ')[1].split(' ')[0] if 'Énigme ' in log.details else None
+            else:
+                item_id = None
+            
+            if log.action == AuditLog.ENIGME_VIEW and item_id:
+                # Enregistrer la première vue de cette énigme
+                if item_id not in first_views:
+                    first_views[item_id] = log
+                    
+            elif log.action == AuditLog.ENIGME_SUBMIT_SUCCESS and item_id:
+                # Vérifier le temps depuis la PREMIÈRE vue de cette énigme
+                if item_id in first_views:
+                    time_diff = (log.timestamp - first_views[item_id].timestamp).total_seconds()
+                    if time_diff < 30:  # Moins de 30 secondes depuis la première ouverture
+                        very_fast_enigmes.append({
+                            'enigme_id': item_id,
+                            'time': time_diff,
+                            'timestamp': log.timestamp
+                        })
+        
+        # Analyser les devinettes résolues rapidement (< 10 secondes depuis la PREMIÈRE ouverture)
         devinette_logs = AuditLog.objects.filter(
             user=user,
             action__in=[AuditLog.DEVINETTE_VIEW, AuditLog.DEVINETTE_SUBMIT_SUCCESS]
         ).order_by('timestamp')
         
         very_fast_devinettes = []
-        current_view = None
+        # Dictionnaire pour stocker la première vue de chaque devinette
+        first_views = {}
+        
         for log in devinette_logs:
-            if log.action == AuditLog.DEVINETTE_VIEW:
-                current_view = log
-            elif log.action == AuditLog.DEVINETTE_SUBMIT_SUCCESS and current_view:
-                time_diff = (log.timestamp - current_view.timestamp).total_seconds()
-                if time_diff < 10:  # Moins de 10 secondes
-                    devinette_id = log.details.split('Devinette ')[1].split(' ')[0] if 'Devinette' in log.details else 'N/A'
-                    very_fast_devinettes.append({
-                        'devinette_id': devinette_id,
-                        'time': time_diff,
-                        'timestamp': log.timestamp
-                    })
-                current_view = None
+            # Extraire l'ID de la devinette depuis les détails
+            if 'Devinette' in log.details:
+                item_id = log.details.split('Devinette ')[1].split(' ')[0] if 'Devinette ' in log.details else None
+            else:
+                item_id = None
+            
+            if log.action == AuditLog.DEVINETTE_VIEW and item_id:
+                # Enregistrer la première vue de cette devinette
+                if item_id not in first_views:
+                    first_views[item_id] = log
+                    
+            elif log.action == AuditLog.DEVINETTE_SUBMIT_SUCCESS and item_id:
+                # Vérifier le temps depuis la PREMIÈRE vue de cette devinette
+                if item_id in first_views:
+                    time_diff = (log.timestamp - first_views[item_id].timestamp).total_seconds()
+                    if time_diff < 10:  # Moins de 10 secondes depuis la première ouverture
+                        very_fast_devinettes.append({
+                            'devinette_id': item_id,
+                            'time': time_diff,
+                            'timestamp': log.timestamp
+                        })
         
         if very_fast_enigmes or very_fast_devinettes:
             fast_count = len(very_fast_enigmes) + len(very_fast_devinettes)
