@@ -1432,10 +1432,12 @@ def admin_triche(request):
                 # Vérifier le temps depuis la PREMIÈRE vue de cette énigme
                 if item_id in first_views:
                     time_diff = (log.timestamp - first_views[item_id].timestamp).total_seconds()
-                    if time_diff < 30:  # Moins de 30 secondes depuis la première ouverture
+                    if time_diff < 120:  # Moins de 2 minutes depuis la première ouverture
                         very_fast_enigmes.append({
                             'enigme_id': item_id,
                             'time': time_diff,
+                            'first_view_timestamp': first_views[item_id].timestamp,
+                            'success_timestamp': log.timestamp,
                             'timestamp': log.timestamp
                         })
         
@@ -1465,10 +1467,12 @@ def admin_triche(request):
                 # Vérifier le temps depuis la PREMIÈRE vue de cette devinette
                 if item_id in first_views:
                     time_diff = (log.timestamp - first_views[item_id].timestamp).total_seconds()
-                    if time_diff < 10:  # Moins de 10 secondes depuis la première ouverture
+                    if time_diff < 60:  # Moins de 1 minute depuis la première ouverture
                         very_fast_devinettes.append({
                             'devinette_id': item_id,
                             'time': time_diff,
+                            'first_view_timestamp': first_views[item_id].timestamp,
+                            'success_timestamp': log.timestamp,
                             'timestamp': log.timestamp
                         })
         
