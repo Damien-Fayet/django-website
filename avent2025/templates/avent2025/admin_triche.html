@@ -1,0 +1,797 @@
+{% extends 'avent2025/modern_base.html' %}
+{% load static %}
+
+{% block title %}Détection de Triche - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        max-width: 1600px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .admin-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border-radius: var(--radius-lg);
+        color: white;
+    }
+
+    .admin-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .admin-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .overview-card {
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        text-align: center;
+    }
+
+    .overview-card.high {
+        border-left: 4px solid #dc3545;
+    }
+
+    .overview-card.medium {
+        border-left: 4px solid #ffc107;
+    }
+
+    .overview-card.low {
+        border-left: 4px solid #28a745;
+    }
+
+    .overview-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+
+    .overview-label {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .section {
+        margin-bottom: 3rem;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        color: var(--text-color);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-full);
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .detection-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 1rem;
+        overflow: hidden;
+        border-left: 4px solid transparent;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .detection-card:hover {
+        transform: translateX(5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .detection-card.high {
+        border-left-color: #dc3545;
+    }
+
+    .detection-card.medium {
+        border-left-color: #ffc107;
+    }
+
+    .detection-card.low {
+        border-left-color: #28a745;
+    }
+
+    .card-header {
+        padding: 1rem 1.5rem;
+        background: rgba(0,0,0,0.02);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .suspicion-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-full);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .suspicion-badge.high {
+        background: #dc3545;
+        color: white;
+    }
+
+    .suspicion-badge.medium {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .suspicion-badge.low {
+        background: #28a745;
+        color: white;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        color: var(--text-light);
+        font-weight: 500;
+    }
+
+    .detail-value {
+        color: var(--text-color);
+        font-weight: 600;
+    }
+
+    .user-list {
+        margin-top: 0.5rem;
+        padding-left: 1rem;
+    }
+
+    .user-item {
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        background: rgba(0,0,0,0.02);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .user-email {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .user-score {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-full);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .family-badge {
+        background: #17a2b8;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+    }
+
+    .cheater-badge {
+        background: #dc3545;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .btn-toggle-cheater {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+    }
+
+    .btn-flag-cheater {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-flag-cheater:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-unflag-cheater {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-unflag-cheater:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .user-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .issue-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0;
+    }
+
+    .issue-item {
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        background: rgba(220, 53, 69, 0.1);
+        border-left: 3px solid #dc3545;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+    }
+
+    .fast-solve-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .fast-solve-item {
+        padding: 0.5rem;
+        background: rgba(255, 193, 7, 0.1);
+        border-left: 3px solid #ffc107;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+    }
+
+    .fast-solve-time {
+        font-weight: 700;
+        color: #dc3545;
+    }
+
+    .similarity-bars {
+        margin: 0.5rem 0;
+    }
+
+    .similarity-bar {
+        margin: 0.5rem 0;
+    }
+
+    .similarity-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+    }
+
+    .similarity-progress {
+        height: 8px;
+        background: rgba(0,0,0,0.1);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .similarity-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+        transition: width 0.3s ease;
+    }
+
+    .ip-address {
+        font-family: 'Courier New', monospace;
+        background: rgba(0,0,0,0.05);
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state-text {
+        font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .admin-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .stats-overview {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .detection-card:hover {
+            transform: none;
+        }
+
+        .fast-solve-list {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>🛡️ Détection de Triche</h1>
+        <p>Panneau d'administration - Analyse des comportements suspects</p>
+    </div>
+
+    <!-- Vue d'ensemble -->
+    <div class="stats-overview">
+        <div class="overview-card high">
+            <div class="overview-value">{{ high_suspicion_count }}</div>
+            <div class="overview-label">🚨 Suspicion Élevée</div>
+        </div>
+        <div class="overview-card medium">
+            <div class="overview-value">{{ medium_suspicion_count }}</div>
+            <div class="overview-label">⚠️ Suspicion Moyenne</div>
+        </div>
+        <div class="overview-card low">
+            <div class="overview-value">{{ total_users }}</div>
+            <div class="overview-label">👥 Utilisateurs Total</div>
+        </div>
+    </div>
+
+    <!-- 1. IPs multiples -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                🌐 Comptes Multiples sur Même IP
+                <span class="section-badge">{{ total_suspicious_ips }}</span>
+            </h2>
+        </div>
+
+        {% if suspicious_ips %}
+            {% for item in suspicious_ips %}
+            <div class="detection-card {{ item.suspicion_level }}">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <span class="ip-address">{{ item.ip }}</span>
+                        <span class="suspicion-badge {{ item.suspicion_level }}">{{ item.suspicion_level }}</span>
+                    </div>
+                    <div>
+                        <strong>{{ item.count }}</strong> compte(s) | Score total: <strong>{{ item.total_score }}</strong>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <span class="detail-label">Comptes famille</span>
+                        <span class="detail-value">{{ item.family_count }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Comptes non-famille</span>
+                        <span class="detail-value">{{ item.non_family_count }}</span>
+                    </div>
+                    <div class="user-list">
+                        {% for user in item.users %}
+                        <div class="user-item">
+                            <div class="user-info">
+                                <span class="user-name">{{ user.username }}</span>
+                                {% if user.userprofile_2025.is_family %}
+                                <span class="family-badge">Famille</span>
+                                {% endif %}
+                                {% if user.userprofile_2025.is_cheater %}
+                                <span class="cheater-badge">🚨 Tricheur</span>
+                                {% endif %}
+                                {% if user.email %}
+                                <span class="user-email">({{ user.email }})</span>
+                                {% endif %}
+                            </div>
+                            <div class="user-actions">
+                                <span class="user-score">{{ user.userprofile_2025.score }} pts</span>
+                                <form method="post" action="{% url 'avent2025:toggle_cheater' user.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    {% if user.userprofile_2025.is_cheater %}
+                                    <button type="submit" class="btn-toggle-cheater btn-unflag-cheater" onclick="return confirm('Êtes-vous sûr de vouloir retirer le flag tricheur de {{ user.username }} ?');">
+                                        ✅ Réhabiliter
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn-toggle-cheater btn-flag-cheater" onclick="return confirm('Êtes-vous sûr de vouloir marquer {{ user.username }} comme tricheur ? Il sera exclu des classements.');">
+                                        🚨 Marquer tricheur
+                                    </button>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-text">Aucune IP suspecte détectée</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 2. Réponses rapides -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                ⚡ Résolutions Anormalement Rapides
+                <span class="section-badge">{{ total_fast_solvers }}</span>
+            </h2>
+        </div>
+
+        {% if fast_solvers %}
+            {% for item in fast_solvers %}
+            <div class="detection-card {{ item.suspicion_level }}">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <span class="user-name">{{ item.user.username }}</span>
+                        {% if item.user.userprofile_2025.is_cheater %}
+                        <span class="cheater-badge">🚨 Tricheur</span>
+                        {% endif %}
+                        <span class="suspicion-badge {{ item.suspicion_level }}">{{ item.suspicion_level }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div>
+                            <strong>{{ item.total_fast }}</strong> résolution(s) rapide(s) | Score: <strong>{{ item.score }}</strong>
+                        </div>
+                        <form method="post" action="{% url 'avent2025:toggle_cheater' item.user.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            {% if item.user.userprofile_2025.is_cheater %}
+                            <button type="submit" class="btn-toggle-cheater btn-unflag-cheater" onclick="return confirm('Êtes-vous sûr de vouloir retirer le flag tricheur de {{ item.user.username }} ?');">
+                                ✅ Réhabiliter
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn-toggle-cheater btn-flag-cheater" onclick="return confirm('Êtes-vous sûr de vouloir marquer {{ item.user.username }} comme tricheur ?');">
+                                🚨 Marquer tricheur
+                            </button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if item.enigmes %}
+                    <div class="detail-row">
+                        <span class="detail-label">Énigmes rapides (< 30s)</span>
+                        <span class="detail-value">{{ item.enigmes|length }}</span>
+                    </div>
+                    <div class="fast-solve-list">
+                        {% for enigme in item.enigmes %}
+                        <div class="fast-solve-item">
+                            Énigme #{{ enigme.enigme_id }}<br>
+                            <span class="fast-solve-time">{{ enigme.time|floatformat:1 }}s</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if item.devinettes %}
+                    <div class="detail-row" style="margin-top: 1rem;">
+                        <span class="detail-label">Devinettes rapides (< 10s)</span>
+                        <span class="detail-value">{{ item.devinettes|length }}</span>
+                    </div>
+                    <div class="fast-solve-list">
+                        {% for devinette in item.devinettes %}
+                        <div class="fast-solve-item">
+                            Devinette #{{ devinette.devinette_id }}<br>
+                            <span class="fast-solve-time">{{ devinette.time|floatformat:1 }}s</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-text">Aucune résolution suspecte détectée</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. Comptes similaires -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                👥 Comptes avec Noms/Emails Similaires
+                <span class="section-badge">{{ total_similar_accounts }}</span>
+            </h2>
+        </div>
+
+        {% if similar_accounts %}
+            {% for item in similar_accounts %}
+            <div class="detection-card {{ item.suspicion_level }}">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <span class="suspicion-badge {{ item.suspicion_level }}">{{ item.suspicion_level }}</span>
+                    </div>
+                    <div>
+                        Similarité max: <strong>{{ item.max_similarity }}%</strong>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="user-list">
+                        <div class="user-item">
+                            <div class="user-info">
+                                <span class="user-name">{{ item.user1.username }}</span>
+                                {% if item.user1.userprofile_2025.is_cheater %}
+                                <span class="cheater-badge">🚨 Tricheur</span>
+                                {% endif %}
+                                {% if item.user1.email %}
+                                <span class="user-email">({{ item.user1.email }})</span>
+                                {% endif %}
+                            </div>
+                            <form method="post" action="{% url 'avent2025:toggle_cheater' item.user1.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                {% if item.user1.userprofile_2025.is_cheater %}
+                                <button type="submit" class="btn-toggle-cheater btn-unflag-cheater" onclick="return confirm('Réhabiliter {{ item.user1.username }} ?');">✅ Réhabiliter</button>
+                                {% else %}
+                                <button type="submit" class="btn-toggle-cheater btn-flag-cheater" onclick="return confirm('Marquer {{ item.user1.username }} comme tricheur ?');">🚨 Marquer</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-info">
+                                <span class="user-name">{{ item.user2.username }}</span>
+                                {% if item.user2.userprofile_2025.is_cheater %}
+                                <span class="cheater-badge">🚨 Tricheur</span>
+                                {% endif %}
+                                {% if item.user2.email %}
+                                <span class="user-email">({{ item.user2.email }})</span>
+                                {% endif %}
+                            </div>
+                            <form method="post" action="{% url 'avent2025:toggle_cheater' item.user2.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                {% if item.user2.userprofile_2025.is_cheater %}
+                                <button type="submit" class="btn-toggle-cheater btn-unflag-cheater" onclick="return confirm('Réhabiliter {{ item.user2.username }} ?');">✅ Réhabiliter</button>
+                                {% else %}
+                                <button type="submit" class="btn-toggle-cheater btn-flag-cheater" onclick="return confirm('Marquer {{ item.user2.username }} comme tricheur ?');">🚨 Marquer</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="similarity-bars">
+                        <div class="similarity-bar">
+                            <div class="similarity-label">Username: {{ item.username_similarity }}%</div>
+                            <div class="similarity-progress">
+                                <div class="similarity-fill" style="width: {{ item.username_similarity }}%"></div>
+                            </div>
+                        </div>
+                        <div class="similarity-bar">
+                            <div class="similarity-label">Email: {{ item.email_similarity }}%</div>
+                            <div class="similarity-progress">
+                                <div class="similarity-fill" style="width: {{ item.email_similarity }}%"></div>
+                            </div>
+                        </div>
+                        <div class="similarity-bar">
+                            <div class="similarity-label">Nom: {{ item.name_similarity }}%</div>
+                            <div class="similarity-progress">
+                                <div class="similarity-fill" style="width: {{ item.name_similarity }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if item.shared_ips %}
+                    <div class="detail-row" style="margin-top: 1rem;">
+                        <span class="detail-label">IPs partagées</span>
+                        <span class="detail-value">
+                            {% for ip in item.shared_ips %}
+                            <span class="ip-address">{{ ip }}</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-text">Aucun compte similaire détecté</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 4. Patterns suspects -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                🎯 Patterns de Comportement Suspects
+                <span class="section-badge">{{ total_suspicious_patterns }}</span>
+            </h2>
+        </div>
+
+        {% if suspicious_patterns %}
+            {% for item in suspicious_patterns %}
+            <div class="detection-card {{ item.suspicion_level }}">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <span class="user-name">{{ item.user.username }}</span>
+                        {% if item.user.userprofile_2025.is_cheater %}
+                        <span class="cheater-badge">🚨 Tricheur</span>
+                        {% endif %}
+                        <span class="suspicion-badge {{ item.suspicion_level }}">{{ item.suspicion_level }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div>
+                            <strong>{{ item.issues|length }}</strong> anomalie(s) | Score: <strong>{{ item.score }}</strong>
+                        </div>
+                        <form method="post" action="{% url 'avent2025:toggle_cheater' item.user.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            {% if item.user.userprofile_2025.is_cheater %}
+                            <button type="submit" class="btn-toggle-cheater btn-unflag-cheater" onclick="return confirm('Réhabiliter {{ item.user.username }} ?');">✅ Réhabiliter</button>
+                            {% else %}
+                            <button type="submit" class="btn-toggle-cheater btn-flag-cheater" onclick="return confirm('Marquer {{ item.user.username }} comme tricheur ?');">🚨 Marquer</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <span class="detail-label">Énigmes résolues</span>
+                        <span class="detail-value">{{ item.enigmes_resolues }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Devinettes résolues</span>
+                        <span class="detail-value">{{ item.devinettes_resolues }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Erreurs</span>
+                        <span class="detail-value">{{ item.erreurs }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Indices révélés</span>
+                        <span class="detail-value">{{ item.indices }}</span>
+                    </div>
+
+                    <ul class="issue-list">
+                        {% for issue in item.issues %}
+                        <li class="issue-item">⚠️ {{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-text">Aucun pattern suspect détecté</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 5. Activité anormale -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                📊 Activité Anormale
+                <span class="section-badge">{{ total_unusual_activity }}</span>
+            </h2>
+        </div>
+
+        {% if unusual_activity %}
+            {% for item in unusual_activity %}
+            <div class="detection-card {{ item.suspicion_level }}">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <span class="user-name">{{ item.user.username }}</span>
+                        {% if item.user.userprofile_2025.is_cheater %}
+                        <span class="cheater-badge">🚨 Tricheur</span>
+                        {% endif %}
+                        <span class="suspicion-badge {{ item.suspicion_level }}">{{ item.suspicion_level }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div>
+                            <strong>{{ item.max_actions_per_minute }}</strong> actions/minute
+                        </div>
+                        <form method="post" action="{% url 'avent2025:toggle_cheater' item.user.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            {% if item.user.userprofile_2025.is_cheater %}
+                            <button type="submit" class="btn-toggle-cheater btn-unflag-cheater" onclick="return confirm('Réhabiliter {{ item.user.username }} ?');">✅ Réhabiliter</button>
+                            {% else %}
+                            <button type="submit" class="btn-toggle-cheater btn-flag-cheater" onclick="return confirm('Marquer {{ item.user.username }} comme tricheur ?');">🚨 Marquer</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <span class="detail-label">Total de logs récents</span>
+                        <span class="detail-value">{{ item.total_logs }}</span>
+                    </div>
+                    <div class="issue-list">
+                        <li class="issue-item">⚠️ {{ item.issue }}</li>
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-text">Aucune activité anormale détectée</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -12,6 +12,25 @@
 
 {% if user.is_authenticated %}
 
+<!-- Bannière d'avertissement pour les tricheurs -->
+{% if user.userprofile_2025.is_cheater %}
+<div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 2rem; margin: 1rem auto; max-width: 1200px; border-radius: 12px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); text-align: center; border: 3px solid #fff;">
+    <h2 style="font-size: 2rem; margin: 0 0 1rem 0; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+        🚨 Compte Suspendu - Triche Détectée 🚨
+    </h2>
+    <p style="font-size: 1.2rem; margin: 0 0 1rem 0; line-height: 1.6;">
+        Votre compte a été identifié comme utilisant des méthodes de triche ou des comportements frauduleux.<br>
+        <strong>Vous êtes exclu de tous les classements.</strong>
+    </p>
+    <p style="font-size: 1rem; margin: 1rem 0; opacity: 0.95;">
+        Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter l'administrateur pour faire appel de cette décision.
+    </p>
+    <a href="{% url 'avent2025:contact' %}" style="display: inline-block; background: white; color: #dc3545; padding: 1rem 2rem; border-radius: 8px; font-weight: 700; text-decoration: none; margin-top: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+        ✉️ Contacter le Webmaster
+    </a>
+</div>
+{% endif %}
+
 <!-- Hero Section -->
 <section class="hero-section fade-in">
     <h1>🎄 Calendrier de l'Avent 2025</h1>
@@ -133,12 +152,18 @@
                 <div class="progress-icons">
                     {% for i in "12345678" %}
                         {% with enigma_num=forloop.counter %}
-                            {% if enigma_num <= user.userprofile_2025.currentEnigma and user.userprofile_2025.currentEnigma > 0 %}
-                                <a href="{% url 'avent2025:display_enigme_id' enigma_num %}" class="progress-icon-link {% if enigma_num < user.userprofile_2025.currentEnigma %}completed{% elif enigma_num == user.userprofile_2025.currentEnigma %}current{% endif %}" title="Énigme {{ enigma_num }}{% if enigma_num < user.userprofile_2025.currentEnigma %} - Résolue - Cliquez pour revoir{% elif enigma_num == user.userprofile_2025.currentEnigma %} - En cours - Cliquez pour continuer{% endif %}">
-                                    <span class="progress-icon">{% if enigma_num < user.userprofile_2025.currentEnigma %}✨{% else %}🔥{% endif %}</span>
+                            {% if enigma_num in enigmes_resolues_ids %}
+                                <a href="{% url 'avent2025:display_enigme_id' enigma_num %}" class="progress-icon-link completed" title="Énigme {{ enigma_num }} - Résolue - Cliquez pour revoir">
+                                    <span class="progress-icon">✨</span>
+                                </a>
+                            {% elif enigma_num == user.userprofile_2025.currentEnigma and user.userprofile_2025.currentEnigma > 0 %}
+                                <a href="{% url 'avent2025:display_enigme_id' enigma_num %}" class="progress-icon-link current" title="Énigme {{ enigma_num }} - En cours - Cliquez pour continuer">
+                                    <span class="progress-icon">🔥</span>
                                 </a>
                             {% elif enigmes_existent|get_item:enigma_num and enigmes_disponibles|get_item:enigma_num %}
-                                <span class="progress-icon available" title="Énigme {{ enigma_num }} - Disponible mais non commencée">🔓</span>
+                                <a href="{% url 'avent2025:display_enigme_id' enigma_num %}" class="progress-icon-link available" title="Énigme {{ enigma_num }} - Disponible - Cliquez pour démarrer">
+                                    <span class="progress-icon">🔓</span>
+                                </a>
                             {% else %}
                                 <span class="progress-icon locked" title="Énigme {{ enigma_num }} - {% if enigmes_existent|get_item:enigma_num %}Pas encore disponible{% else %}Bloquée{% endif %}">🔒</span>
                             {% endif %}
@@ -165,7 +190,7 @@
                 <div class="progress-icons devinette-icons">
                     {% for i in "123456789012345678901234" %}
                         {% with devinette_num=forloop.counter current_dev=user.userprofile_2025.currentDevinette %}
-                            {% if current_dev > 0 and devinette_num < current_dev %}
+                            {% if devinette_num in devinettes_resolues_ids %}
                                 <a href="{% url 'avent2025:display_devinette_id' devinette_num %}" class="progress-icon-link progress-icon-small completed" title="Devinette {{ devinette_num }} - Résolue - Cliquez pour revoir">
                                     <span class="progress-icon progress-icon-small">✨</span>
                                 </a>
@@ -174,7 +199,9 @@
                                     <span class="progress-icon progress-icon-small">🔥</span>
                                 </a>
                             {% elif devinettes_existent|get_item:devinette_num and devinettes_disponibles|get_item:devinette_num %}
-                                <span class="progress-icon progress-icon-small available" title="Devinette {{ devinette_num }} - Disponible mais non commencée">🔓</span>
+                                <a href="{% url 'avent2025:display_devinette_id' devinette_num %}" class="progress-icon-link progress-icon-small available" title="Devinette {{ devinette_num }} - Disponible - Cliquez pour démarrer">
+                                    <span class="progress-icon progress-icon-small">🔓</span>
+                                </a>
                             {% else %}
                                 <span class="progress-icon progress-icon-small locked" title="Devinette {{ devinette_num }} - {% if devinettes_existent|get_item:devinette_num %}Pas encore disponible{% else %}Bloquée{% endif %}">🔒</span>
                             {% endif %}

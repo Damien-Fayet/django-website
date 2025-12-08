@@ -26,6 +26,8 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),  # Formulaire de contact
     path('devinettes_completees/', views.devinettes_completees, name='devinettes_completees'),  # Toutes les devinettes terminées
     path('statistiques/', views.statistiques, name='statistiques'),  # Statistiques globales
+    path('admin-triche/', views.admin_triche, name='admin_triche'),  # Détection de triche (admins uniquement)
+    path('toggle-cheater/<int:user_id>/', views.toggle_cheater, name='toggle_cheater'),  # Toggle statut tricheur
     
     
     

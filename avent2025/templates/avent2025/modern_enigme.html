@@ -58,7 +58,7 @@
                 <img src="{% static 'avent2025/images/perdu/' %}{{ image_reponse }}" alt="Erreur" style="max-width: 60%; height: auto; border-radius: var(--border-radius);">
             </div>
             {% endif %}
-            <a href="{% url 'avent2025:display_enigme' %}" class="enigme-submit-btn" style="display: inline-block; margin-top: 2rem;">
+            <a href="{% url 'avent2025:display_enigme_id' enigme.id %}" class="enigme-submit-btn" style="display: inline-block; margin-top: 2rem;">
                 🔄 Réessayer
             </a>
         </div>
@@ -121,6 +121,7 @@
                     <!-- Énigme en cours : formulaire de réponse -->
                     <form method="post" action="{% url 'avent2025:validate_enigme' %}">
                         {% csrf_token %}
+                        <input type="hidden" name="enigme_id" value="{{ enigme.id }}">
                         <label for="user_reponse">💭 Votre réponse :</label>
                         <div class="enigme-input-group">
                             <input 

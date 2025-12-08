@@ -45,7 +45,7 @@
                 <img src="/static/avent2025/images/perdu/{{ image_reponse }}" alt="Erreur">
             </div>
             {% endif %}
-            <a href="{% url 'avent2025:display_devinette' %}" class="enigme-submit retry-btn">
+            <a href="{% url 'avent2025:display_devinette_id' devinette.id %}" class="enigme-submit retry-btn">
                 🔄 Réessayer
             </a>
         </div>
@@ -108,6 +108,7 @@
                     <!-- Devinette en cours : formulaire de réponse -->
                     <form method="post" action="{% url 'avent2025:validate_devinette' %}">
                         {% csrf_token %}
+                        <input type="hidden" name="devinette_id" value="{{ devinette.id }}">
                         <label for="reponse">💭 Votre réponse :</label>
                         <div class="enigme-input-group">
                             <input 

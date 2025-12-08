@@ -480,6 +480,23 @@
     cursor: default;
 }
 
+.progress-icon-link.available {
+    cursor: pointer;
+}
+
+.progress-icon-link.available .progress-icon {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 193, 7, 0.9));
+    animation: glow-available 2s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.progress-icon-link.available:hover .progress-icon {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 16px rgba(255, 215, 0, 1)) drop-shadow(0 0 24px rgba(255, 193, 7, 0.6));
+    animation: none;
+}
+
 @keyframes glow-available {
     0%, 100% {
         filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));

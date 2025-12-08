@@ -187,3 +187,15 @@ Les tests requièrent :
 - Toutes les apps listées dans `INSTALLED_APPS`
 
 Aucune dépendance externe supplémentaire n'est nécessaire.
+
+## Migration
+# 1. Faire une sauvegarde de la base de données
+python manage.py dumpdata avent2025 > backup_avent2025.json
+
+# 2. Exécuter le script de migration
+source django/bin/activate
+python migrate_user_responses.py
+
+# 3. Vérifier les logs pour s'assurer que tout s'est bien passé
+
+# 4. Déployer le nouveau code

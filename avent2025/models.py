@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     indices_enigme_reveles = models.CharField(validators=[int_list_validator()], default="", max_length=200, blank=True)
     indices_devinette_reveles = models.CharField(validators=[int_list_validator()],default="", max_length=200, blank=True)
     is_family = models.BooleanField(default=False, verbose_name="Membre de la famille", help_text="Cochez pour marquer cet utilisateur comme membre de la famille")
+    is_cheater = models.BooleanField(default=False, verbose_name="Tricheur détecté", help_text="Cochez pour marquer cet utilisateur comme tricheur (exclu des classements)")
     # Stockage des réponses validées (format JSON: {"1": "réponse1", "2": "réponse2"})
     reponses_enigmes = models.JSONField(default=dict, blank=True, verbose_name="Réponses validées des énigmes")
     reponses_devinettes = models.JSONField(default=dict, blank=True, verbose_name="Réponses validées des devinettes")

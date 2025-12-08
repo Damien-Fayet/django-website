@@ -98,8 +98,11 @@ def update_user_score(user_profile):
     """
     score_config = ScoreConfig.get_config()
     
-    # Calculer le score des énigmes
-    enigmes_resolues = max(0, user_profile.currentEnigma - 1) if user_profile.currentEnigma > 0 else 0
+    # Calculer le score des énigmes (compter les énigmes réellement résolues)
+    enigmes_resolues = 0
+    if user_profile.reponses_enigmes:
+        enigmes_resolues = len(user_profile.reponses_enigmes)
+    
     score_enigmes = enigmes_resolues * score_config.points_enigme_resolue
     malus_erreurs_enigmes = user_profile.erreurEnigma * score_config.malus_erreur_enigme
     
@@ -114,8 +117,11 @@ def update_user_score(user_profile):
             except Indice.DoesNotExist:
                 pass
     
-    # Calculer le score des devinettes
-    devinettes_resolues = max(0, user_profile.currentDevinette - 1) if user_profile.currentDevinette > 0 else 0
+    # Calculer le score des devinettes (compter les devinettes réellement résolues)
+    devinettes_resolues = 0
+    if user_profile.reponses_devinettes:
+        devinettes_resolues = len(user_profile.reponses_devinettes)
+    
     score_devinettes = devinettes_resolues * score_config.points_devinette_resolue
     malus_erreurs_devinettes = user_profile.erreurDevinette * score_config.malus_erreur_devinette
     
@@ -193,6 +199,15 @@ def home(request):
                 devinettes_existent[i] = False
                 devinettes_disponibles[i] = False
         
+        # Récupérer les énigmes et devinettes résolues (depuis les réponses enregistrées)
+        enigmes_resolues_ids = set()
+        if profile.reponses_enigmes:
+            enigmes_resolues_ids = {int(k) for k in profile.reponses_enigmes.keys()}
+        
+        devinettes_resolues_ids = set()
+        if profile.reponses_devinettes:
+            devinettes_resolues_ids = {int(k) for k in profile.reponses_devinettes.keys()}
+        
         context.update({
             "current_enigma": current_enigma,
             "enigmes_resolues": enigmes_resolues,
@@ -202,6 +217,8 @@ def home(request):
             "enigmes_existent": enigmes_existent,
             "devinettes_disponibles": devinettes_disponibles,
             "devinettes_existent": devinettes_existent,
+            "enigmes_resolues_ids": enigmes_resolues_ids,
+            "devinettes_resolues_ids": devinettes_resolues_ids,
         })
         
         # Log de la visite de la page d'accueil
@@ -341,15 +358,6 @@ def display_enigme(request, enigme_id=None, reponse=None):
     # Si aucun ID spécifié, utiliser l'énigme actuelle
     if enigme_id is None:
         enigme_id = profile.currentEnigma
-    else:
-        # Vérifier que l'énigme demandée est accessible (débloquée)
-        if enigme_id > profile.currentEnigma:
-            return render(request, 'avent2025/waiting.html', {
-                'content_type': 'énigme',
-                'message': 'Énigme non accessible',
-                'description': f'L\'énigme #{enigme_id} n\'est pas encore débloquée. Résolvez d\'abord les énigmes précédentes !',
-                'show_start_button': False
-            })
     
     # Récupérer l'énigme
     try:
@@ -405,12 +413,11 @@ def display_enigme(request, enigme_id=None, reponse=None):
     indices_reveles = indices.filter(id__in=indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
     
-    # Vérifier si l'énigme est déjà résolue (l'utilisateur est passé à la suivante)
-    is_resolved = enigme_id < profile.currentEnigma
-    
-    # Récupérer la réponse donnée par l'utilisateur si l'énigme est résolue
+    # Vérifier si l'énigme est déjà résolue (présente dans les réponses)
+    is_resolved = False
     user_answer = None
-    if is_resolved and profile.reponses_enigmes:
+    if profile.reponses_enigmes and str(enigme_id) in profile.reponses_enigmes:
+        is_resolved = True
         user_answer = profile.reponses_enigmes.get(str(enigme_id))
     
     # Log de la consultation de l'énigme
@@ -445,15 +452,6 @@ def display_devinette(request, devinette_id=None, reponse=None):
     # Si aucun ID spécifié, utiliser la devinette actuelle
     if devinette_id is None:
         devinette_id = profile.currentDevinette
-    else:
-        # Vérifier que la devinette demandée est accessible (débloquée)
-        if devinette_id > profile.currentDevinette:
-            return render(request, 'avent2025/waiting.html', {
-                'content_type': 'devinette',
-                'message': 'Devinette non accessible',
-                'description': f'La devinette #{devinette_id} n\'est pas encore débloquée. Résolvez d\'abord les devinettes précédentes !',
-                'show_start_button': False
-            })
     
     # Vérifier si la devinette existe (cas où toutes les devinettes sont terminées)
     try:
@@ -500,12 +498,12 @@ def display_devinette(request, devinette_id=None, reponse=None):
     
     indices_reveles = indices.filter(id__in= indice_reveles_list)
     indices_hidden = indices.exclude(id__in=indice_reveles_list)
-    # Vérifier si la devinette est déjà résolue (l'utilisateur est passé à la suivante)
-    is_resolved = devinette_id < profile.currentDevinette
     
-    # Récupérer la réponse donnée par l'utilisateur si la devinette est résolue
+    # Vérifier si la devinette est déjà résolue (présente dans les réponses)
+    is_resolved = False
     user_answer = None
-    if is_resolved and profile.reponses_devinettes:
+    if profile.reponses_devinettes and str(devinette_id) in profile.reponses_devinettes:
+        is_resolved = True
         user_answer = profile.reponses_devinettes.get(str(devinette_id))
     
     # Log de la consultation de la devinette
@@ -540,56 +538,111 @@ def validate_enigme(request):
     if request.method == "POST":
         # Garantir que l'utilisateur a un profil
         user_profile = get_or_create_profile(request.user)
-        current_enigma_number = user_profile.currentEnigma
-        current_enigma = get_object_or_404(Enigme, id=current_enigma_number)
+        
+        # Récupérer l'ID de l'énigme depuis le formulaire
+        enigme_id = request.POST.get("enigme_id")
+        if not enigme_id:
+            messages.error(request, "Erreur : énigme non spécifiée")
+            return redirect('avent2025:display_enigme')
+        
+        enigme_id = int(enigme_id)
+        current_enigma = get_object_or_404(Enigme, id=enigme_id)
         reponse = request.POST.get("user_reponse")  # Correspond au nom du champ dans modern_enigme.html
         
         # Vérifier que la réponse n'est pas vide
         if not reponse:
             messages.error(request, "Veuillez entrer une réponse")
-            return redirect('avent2025:display_enigme')
+            return redirect('avent2025:display_enigme_id', enigme_id=enigme_id)
         
         # Utiliser la fonction de validation robuste
         reponses_possibles = [r.strip() for r in current_enigma.reponse.split(",")]
         
         if check_answer(reponse, reponses_possibles):
-            messages.success(request, "Bonne reponse")
-            
             # Enregistrer la réponse validée
             if not user_profile.reponses_enigmes:
                 user_profile.reponses_enigmes = {}
-            user_profile.reponses_enigmes[str(current_enigma_number)] = reponse
+            user_profile.reponses_enigmes[str(enigme_id)] = reponse
             
-            user_profile.currentEnigma += 1
+            # Si c'est l'énigme en cours, avancer la progression
+            if enigme_id == user_profile.currentEnigma:
+                user_profile.currentEnigma += 1
+            
             update_user_score(user_profile)  # Mettre à jour le score
+            user_profile.save()  # Sauvegarder les modifications
             
             # Log de succès
             log_action(request.user, AuditLog.ENIGME_SUBMIT_SUCCESS, request, 
-                      enigme_id=current_enigma_number, reponse_donnee=reponse)
+                      enigme_id=enigme_id, reponse_donnee=reponse)
             
-            current_enigma = get_object_or_404(Enigme, id=user_profile.currentEnigma)
+            # Afficher la page de succès avec image humoristique
             image_id = random.randint(1, 13)
-            return render(request, 'avent2025/modern_enigme.html',  {
-                'reponse_enigme' : current_enigma.reponse,
-                'enigme' : current_enigma,
-                'user_reponse' : 'OK',
-                'old_enigme_id' : current_enigma.id -1,
-                'image_reponse' : f"gagne{image_id}.gif"
-            })
+            
+            # Préparer le contexte pour l'énigme suivante ou actuelle
+            try:
+                next_enigma = Enigme.objects.get(id=user_profile.currentEnigma)
+                context = {
+                    'reponse_enigme': next_enigma.reponse,
+                    'enigme': next_enigma,
+                    'user_reponse': 'OK',
+                    'old_enigme_id': enigme_id,
+                    'image_reponse': f"gagne{image_id}.gif",
+                    'indices': [],
+                    'indices_reveles': [],
+                    'indices_hidden': [],
+                    'is_resolved': False,
+                }
+            except Enigme.DoesNotExist:
+                # Toutes les énigmes terminées
+                return redirect('avent2025:home')
+            
+            return render(request, 'avent2025/modern_enigme.html', context)
         else:
-            image_id = random.randint(1, 24)
             user_profile.erreurEnigma += 1
             update_user_score(user_profile)  # Mettre à jour le score
+            user_profile.save()  # Sauvegarder les modifications
             
             # Log d'échec
             log_action(request.user, AuditLog.ENIGME_SUBMIT_FAIL, request, 
-                      enigme_id=current_enigma_number, reponse_donnee=reponse)
-            return render(request, 'avent2025/modern_enigme.html',  {
-                'reponse_enigme' : current_enigma.reponse,
-                'enigme' : current_enigma,
-                'user_reponse' : 'KO',
-                'image_reponse' : f"perdu{image_id}.gif"
-            })
+                      enigme_id=enigme_id, reponse_donnee=reponse)
+            
+            # Afficher la page d'erreur avec image humoristique
+            image_id = random.randint(1, 24)
+            
+            # Récupérer les indices pour l'énigme actuelle
+            all_indices = Indice.objects.filter(enigme=current_enigma)
+            try:
+                next_enigma = Enigme.objects.get(id=enigme_id + 1)
+                next_enigma_available = next_enigma.is_dispo
+            except Enigme.DoesNotExist:
+                next_enigma_available = True
+            
+            if next_enigma_available:
+                indices = all_indices
+            else:
+                indices = all_indices.exclude(type_indice=Indice.LAST_CHANCE)
+            
+            indice_reveles_list = []
+            if user_profile.indices_enigme_reveles:
+                indice_reveles_list = [int(x) for x in user_profile.indices_enigme_reveles.split(",")]
+            
+            indices_reveles = indices.filter(id__in=indice_reveles_list)
+            indices_hidden = indices.exclude(id__in=indice_reveles_list)
+            
+            # Vérifier si l'énigme est déjà résolue (présente dans les réponses)
+            is_resolved = user_profile.reponses_enigmes and str(enigme_id) in user_profile.reponses_enigmes
+            
+            context = {
+                'reponse_enigme': current_enigma.reponse,
+                'enigme': current_enigma,
+                'user_reponse': 'KO',
+                'image_reponse': f"perdu{image_id}.gif",
+                'indices': indices,
+                'indices_reveles': indices_reveles,
+                'indices_hidden': indices_hidden,
+                'is_resolved': is_resolved,
+            }
+            
+            return render(request, 'avent2025/modern_enigme.html', context)
 
     return redirect('avent2025:display_enigme')
 
@@ -598,63 +651,109 @@ def validate_devinette(request):
     if request.method == "POST":
         # Garantir que l'utilisateur a un profil
         user_profile = get_or_create_profile(request.user)
-        current_devinette_number = user_profile.currentDevinette
-        current_devinette = get_object_or_404(Devinette, id=current_devinette_number)
+        
+        # Récupérer l'ID de la devinette depuis le formulaire
+        devinette_id = request.POST.get("devinette_id")
+        if not devinette_id:
+            messages.error(request, "Erreur : devinette non spécifiée")
+            return redirect('avent2025:display_devinette')
+        
+        devinette_id = int(devinette_id)
+        current_devinette = get_object_or_404(Devinette, id=devinette_id)
         reponse = request.POST.get("reponse")
         
         # Vérifier que la réponse n'est pas vide
         if not reponse:
             messages.error(request, "Veuillez entrer une réponse")
-            return redirect('avent2025:display_devinette')
+            return redirect('avent2025:display_devinette_id', devinette_id=devinette_id)
         
         # Utiliser la fonction de validation robuste
         reponses_possibles = [r.strip() for r in current_devinette.reponse.split(",")]
         
         if check_answer(reponse, reponses_possibles):
-            messages.success(request, "Bonne réponse !")
-            
             # Enregistrer la réponse validée
             if not user_profile.reponses_devinettes:
                 user_profile.reponses_devinettes = {}
-            user_profile.reponses_devinettes[str(current_devinette_number)] = reponse
+            user_profile.reponses_devinettes[str(devinette_id)] = reponse
             
-            user_profile.currentDevinette += 1
+            # Si c'est la devinette en cours, avancer la progression
+            if devinette_id == user_profile.currentDevinette:
+                user_profile.currentDevinette += 1
+            
             update_user_score(user_profile)  # Mettre à jour le score
+            user_profile.save()  # Sauvegarder les modifications
             
             # Log de succès
             log_action(request.user, AuditLog.DEVINETTE_SUBMIT_SUCCESS, request, 
-                      devinette_id=current_devinette_number, reponse_donnee=reponse)
+                      devinette_id=devinette_id, reponse_donnee=reponse)
+            
+            # Afficher la page de succès avec image humoristique
+            image_id = random.randint(1, 13)
             
             # Vérifier si une devinette suivante existe
-            next_devinette = Devinette.objects.filter(id=user_profile.currentDevinette).first()
-            
-            if next_devinette:
-                # Il y a une devinette suivante
-                image_id = random.randint(1, 13)
-                return render(request, 'avent2025/modern_devinette.html',  {
-                    'reponse_devinette' : next_devinette.reponse,
-                    'devinette' : next_devinette,
-                    'user_reponse' : 'OK',
-                    'old_devinette_id' : next_devinette.id - 1,
-                    'image_reponse' : f"gagne{image_id}.gif"
-                })
-            else:
+            try:
+                next_devinette = Devinette.objects.get(id=user_profile.currentDevinette)
+                context = {
+                    'reponse_devinette': next_devinette.reponse,
+                    'devinette': next_devinette,
+                    'user_reponse': 'OK',
+                    'old_devinette_id': devinette_id,
+                    'image_reponse': f"gagne{image_id}.gif",
+                    'indices': [],
+                    'indices_reveles': [],
+                    'indices_hidden': [],
+                    'is_resolved': False,
+                }
+                return render(request, 'avent2025/modern_devinette.html', context)
+            except Devinette.DoesNotExist:
                 # Toutes les devinettes sont terminées
                 return redirect('avent2025:devinettes_completees')
         else:
-            image_id = random.randint(1, 24)
             user_profile.erreurDevinette += 1
             update_user_score(user_profile)  # Mettre à jour le score
+            user_profile.save()  # Sauvegarder les modifications
             
             # Log d'échec
             log_action(request.user, AuditLog.DEVINETTE_SUBMIT_FAIL, request, 
-                      devinette_id=current_devinette_number, reponse_donnee=reponse)
-            return render(request, 'avent2025/modern_devinette.html',  {
-                'reponse_devinette' : current_devinette.reponse,
-                'devinette' : current_devinette,
-                'user_reponse' : 'KO',
-                'image_reponse' : f"perdu{image_id}.gif"
-            })
+                      devinette_id=devinette_id, reponse_donnee=reponse)
+            
+            # Afficher la page d'erreur avec image humoristique
+            image_id = random.randint(1, 24)
+            
+            # Récupérer les indices pour la devinette actuelle
+            all_indices = IndiceDevinette.objects.filter(enigme=current_devinette)
+            
+            try:
+                next_devinette = Devinette.objects.get(id=devinette_id + 1)
+                if not next_devinette.is_dispo:
+                    indices = all_indices.exclude(type_indice=IndiceDevinette.LAST_CHANCE)
+                else:
+                    indices = all_indices
+            except Devinette.DoesNotExist:
+                indices = all_indices
+            
+            indice_reveles_list = []
+            if user_profile.indices_devinette_reveles:
+                indice_reveles_list = [int(x) for x in user_profile.indices_devinette_reveles.split(",")]
+            
+            indices_reveles = indices.filter(id__in=indice_reveles_list)
+            indices_hidden = indices.exclude(id__in=indice_reveles_list)
+            
+            # Vérifier si la devinette est déjà résolue (présente dans les réponses)
+            is_resolved = user_profile.reponses_devinettes and str(devinette_id) in user_profile.reponses_devinettes
+            
+            context = {
+                'reponse_devinette': current_devinette.reponse,
+                'devinette': current_devinette,
+                'user_reponse': 'KO',
+                'image_reponse': f"perdu{image_id}.gif",
+                'indices': indices,
+                'indices_reveles': indices_reveles,
+                'indices_hidden': indices_hidden,
+                'is_resolved': is_resolved,
+            }
+            
+            return render(request, 'avent2025/modern_devinette.html', context)
 
     return redirect('avent2025:display_devinette')
 
@@ -748,6 +847,10 @@ def classement(request):
     users_with_profile = []
     for u in users:
         if hasattr(u, 'userprofile_2025'):
+            # Exclure les tricheurs du classement
+            if u.userprofile_2025.is_cheater:
+                continue
+                
             # Appliquer le filtre famille/public
             if filter_type == 'family' and not u.userprofile_2025.is_family:
                 continue
@@ -762,8 +865,15 @@ def classement(request):
             
             # Utiliser ScoreConfig pour calculer les scores partiels (pour affichage)
             score_config = ScoreConfig.get_config()
-            enigmes_resolues = max(0, u.userprofile_2025.currentEnigma - 1) if u.userprofile_2025.currentEnigma > 0 else 0
-            devinettes_resolues = max(0, u.userprofile_2025.currentDevinette - 1) if u.userprofile_2025.currentDevinette > 0 else 0
+            
+            # Compter les énigmes et devinettes réellement résolues
+            enigmes_resolues = 0
+            if u.userprofile_2025.reponses_enigmes:
+                enigmes_resolues = len(u.userprofile_2025.reponses_enigmes)
+            
+            devinettes_resolues = 0
+            if u.userprofile_2025.reponses_devinettes:
+                devinettes_resolues = len(u.userprofile_2025.reponses_devinettes)
             
             # Calculer les coûts réels des indices
             cout_indices_enigmes = 0
@@ -815,8 +925,8 @@ def classement(request):
     sorted_users_devinette = sorted(users, key=lambda item: devinette_score[item.id],reverse=True)
     
     # Calculer quelques stats supplémentaires
-    nb_enigmes = {u.id: max(0, u.userprofile_2025.currentEnigma - 1) for u in users}
-    nb_devinettes = {u.id: max(0, u.userprofile_2025.currentDevinette - 1) for u in users}
+    nb_enigmes = {u.id: len(u.userprofile_2025.reponses_enigmes) if u.userprofile_2025.reponses_enigmes else 0 for u in users}
+    nb_devinettes = {u.id: len(u.userprofile_2025.reponses_devinettes) if u.userprofile_2025.reponses_devinettes else 0 for u in users}
     nb_erreurs = {u.id: u.userprofile_2025.erreurEnigma for u in users}
     scores = {u.id: total[u.id] for u in users}
     total_enigmes = 8
@@ -993,21 +1103,31 @@ def statistiques(request):
     Affiche les statistiques globales du calendrier de l'avent.
     Exclut les admins (staff et superusers) de toutes les statistiques.
     """
-    # Filtrer les utilisateurs non-admins
+    # Filtrer les utilisateurs non-admins et non-tricheurs
     users_non_admin = User.objects.filter(is_staff=False, is_superuser=False)
-    profiles_non_admin = UserProfile.objects.filter(user__is_staff=False, user__is_superuser=False)
+    profiles_non_admin = UserProfile.objects.filter(
+        user__is_staff=False, 
+        user__is_superuser=False,
+        is_cheater=False  # Exclure les tricheurs
+    )
     
     # Statistiques générales
     total_users = users_non_admin.count()
+    
+    # Joueurs actifs = ceux qui ont commencé au moins une énigme OU une devinette
+    active_players = profiles_non_admin.filter(
+        models.Q(currentEnigma__gt=1) | models.Q(currentDevinette__gt=1)
+    ).count()
+    
     total_enigmes = Enigme.objects.count()
     total_devinettes = Devinette.objects.count()
     
-    # Statistiques sur les énigmes
-    users_started_enigmes = profiles_non_admin.exclude(currentEnigma=1).count()
+    # Statistiques sur les énigmes (parmi les joueurs actifs)
+    users_started_enigmes = profiles_non_admin.filter(currentEnigma__gt=1).count()
     users_completed_all_enigmes = profiles_non_admin.filter(currentEnigma__gt=total_enigmes).count()
     
-    # Statistiques sur les devinettes
-    users_started_devinettes = profiles_non_admin.exclude(currentDevinette=1).count()
+    # Statistiques sur les devinettes (parmi les joueurs actifs)
+    users_started_devinettes = profiles_non_admin.filter(currentDevinette__gt=1).count()
     users_completed_all_devinettes = profiles_non_admin.filter(currentDevinette__gt=total_devinettes).count()
     
     # Nombre total d'erreurs
@@ -1019,7 +1139,7 @@ def statistiques(request):
     lucky_player = None
     best_ratio = -1
     for profile in profiles_non_admin:
-        enigmes_resolues = max(0, profile.currentEnigma - 1)
+        enigmes_resolues = len(profile.reponses_enigmes) if profile.reponses_enigmes else 0
         if enigmes_resolues > 0:
             ratio = enigmes_resolues / max(1, profile.erreurEnigma)
             if ratio > best_ratio:
@@ -1077,6 +1197,36 @@ def statistiques(request):
             classement_addict = classement_addict_user.userprofile_2025
             max_views = user_views['view_count']
     
+    # Lucky Luke (celui qui a résolu le plus de devinettes en moins de 2 minutes)
+    lucky_luke = None
+    max_fast_devinettes = 0
+    
+    for profile in profiles_non_admin:
+        fast_count = 0
+        # Récupérer toutes les vues et succès de devinettes pour cet utilisateur
+        devinette_views = AuditLog.objects.filter(
+            user=profile.user,
+            action=AuditLog.DEVINETTE_VIEW
+        ).order_by('devinette_id', 'timestamp')
+        
+        devinette_success = AuditLog.objects.filter(
+            user=profile.user,
+            action=AuditLog.DEVINETTE_SUBMIT_SUCCESS
+        ).order_by('devinette_id', 'timestamp')
+        
+        # Pour chaque devinette réussie, vérifier si elle a été résolue en moins de 2 minutes
+        for success in devinette_success:
+            # Trouver la première consultation de cette devinette
+            first_view = devinette_views.filter(devinette_id=success.devinette_id).first()
+            if first_view and success.devinette_id:
+                time_diff = (success.timestamp - first_view.timestamp).total_seconds()
+                if time_diff <= 120:  # 2 minutes = 120 secondes
+                    fast_count += 1
+        
+        if fast_count > max_fast_devinettes:
+            max_fast_devinettes = fast_count
+            lucky_luke = profile
+    
     # Top 3 joueurs
     top_players = profiles_non_admin.order_by('-score')[:3]
     
@@ -1086,17 +1236,21 @@ def statistiques(request):
         # Ignorer les énigmes pas encore disponibles
         if not enigme.is_dispo:
             continue
-            
-        # Nombre d'utilisateurs ayant atteint cette énigme
-        reached = profiles_non_admin.filter(currentEnigma__gte=enigme.id).count()
-        # Nombre d'utilisateurs ayant complété cette énigme
-        completed = profiles_non_admin.filter(currentEnigma__gt=enigme.id).count()
+        
+        # Compter les joueurs qui ont résolu cette énigme (présent dans reponses_enigmes)
+        completed = 0
+        for profile in profiles_non_admin:
+            if profile.reponses_enigmes and str(enigme.id) in profile.reponses_enigmes:
+                completed += 1
+        
+        # Calculer le taux de complétion par rapport aux joueurs actifs
+        completion_rate = (completed / active_players * 100) if active_players > 0 else 0
         
         enigme_stats.append({
             'enigme': enigme,
-            'reached': reached,
             'completed': completed,
-            'completion_rate': (completed / reached * 100) if reached > 0 else 0
+            'completion_rate': completion_rate,
+            'active_players': active_players,
         })
     
     # Statistiques par devinette (seulement les devinettes disponibles)
@@ -1105,15 +1259,21 @@ def statistiques(request):
         # Ignorer les devinettes pas encore disponibles
         if not devinette.is_dispo:
             continue
-            
-        reached = profiles_non_admin.filter(currentDevinette__gte=devinette.id).count()
-        completed = profiles_non_admin.filter(currentDevinette__gt=devinette.id).count()
+        
+        # Compter les joueurs qui ont résolu cette devinette (présent dans reponses_devinettes)
+        completed = 0
+        for profile in profiles_non_admin:
+            if profile.reponses_devinettes and str(devinette.id) in profile.reponses_devinettes:
+                completed += 1
+        
+        # Calculer le taux de complétion par rapport aux joueurs actifs
+        completion_rate = (completed / active_players * 100) if active_players > 0 else 0
         
         devinette_stats.append({
             'devinette': devinette,
-            'reached': reached,
             'completed': completed,
-            'completion_rate': (completed / reached * 100) if reached > 0 else 0
+            'completion_rate': completion_rate,
+            'active_players': active_players,
         })
     
     # Indices révélés
@@ -1148,6 +1308,7 @@ def statistiques(request):
     
     context = {
         'total_users': total_users,
+        'active_players': active_players,
         'users_started_enigmes': users_started_enigmes,
         'users_completed_all_enigmes': users_completed_all_enigmes,
         'users_started_devinettes': users_started_devinettes,
@@ -1171,9 +1332,334 @@ def statistiques(request):
         'perfectionist_player': perfectionist_player,
         'classement_addict': classement_addict,
         'classement_addict_views': max_views,
+        'lucky_luke': lucky_luke,
+        'lucky_luke_count': max_fast_devinettes,
     }
     
     # Log de la consultation des statistiques
     log_action(request.user, AuditLog.CLASSEMENT_VIEW, request, details="Consultation des statistiques")
     
     return render(request, 'avent2025/statistiques.html', context)
+
+
+@login_required
+def admin_triche(request):
+    """
+    Page de détection de triche réservée aux administrateurs.
+    Analyse plusieurs indicateurs de fraude potentielle :
+    - Comptes multiples sur même IP
+    - Réponses anormalement rapides
+    - Patterns de réponses suspects
+    - Comptes avec noms/emails similaires
+    - Activité suspecte (scores impossibles, progression anormale)
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Accès refusé. Cette page est réservée aux administrateurs.")
+        return redirect('avent2025:home')
+    
+    from collections import defaultdict, Counter
+    from datetime import timedelta
+    from difflib import SequenceMatcher
+    
+    # Récupérer tous les utilisateurs avec profil (exclure les admins)
+    users = User.objects.filter(
+        userprofile_2025__isnull=False,
+        is_staff=False,
+        is_superuser=False
+    ).select_related('userprofile_2025')
+    
+    # ==== 1. DÉTECTION DES IPs MULTIPLES ====
+    ip_users = defaultdict(set)  # Utiliser un set pour éviter les doublons
+    for user in users:
+        # Récupérer les IPs des logs d'audit
+        user_logs = AuditLog.objects.filter(user=user).values_list('ip_address', flat=True).distinct()
+        for ip in user_logs:
+            if ip:
+                ip_users[ip].add(user)  # add au lieu de append pour éviter les doublons
+    
+    # Filtrer les IPs avec plusieurs comptes
+    suspicious_ips = []
+    for ip, ip_user_set in ip_users.items():
+        ip_user_list = list(ip_user_set)  # Convertir le set en liste
+        if len(ip_user_list) > 1:
+            # Vérifier si ce ne sont pas des membres de la même famille
+            family_members = [u for u in ip_user_list if hasattr(u, 'userprofile_2025') and u.userprofile_2025.is_family]
+            non_family = [u for u in ip_user_list if u not in family_members]
+            
+            # Calculer les scores pour évaluer la suspicion
+            total_score = sum(u.userprofile_2025.score for u in ip_user_list if hasattr(u, 'userprofile_2025'))
+            
+            suspicious_ips.append({
+                'ip': ip,
+                'users': ip_user_list,
+                'count': len(ip_user_list),
+                'family_count': len(family_members),
+                'non_family_count': len(non_family),
+                'total_score': total_score,
+                'suspicion_level': 'high' if len(non_family) > 1 and total_score > 100 else 'medium' if len(non_family) > 1 else 'low'
+            })
+    
+    suspicious_ips.sort(key=lambda x: (x['suspicion_level'] == 'high', x['non_family_count'], x['total_score']), reverse=True)
+    
+    # ==== 2. RÉPONSES ANORMALEMENT RAPIDES ====
+    fast_solvers = []
+    for user in users:
+        profile = user.userprofile_2025
+        
+        # Analyser les énigmes résolues rapidement (< 30 secondes)
+        enigme_logs = AuditLog.objects.filter(
+            user=user,
+            action__in=[AuditLog.ENIGME_VIEW, AuditLog.ENIGME_SUBMIT_SUCCESS]
+        ).order_by('timestamp')
+        
+        very_fast_enigmes = []
+        current_view = None
+        for log in enigme_logs:
+            if log.action == AuditLog.ENIGME_VIEW:
+                current_view = log
+            elif log.action == AuditLog.ENIGME_SUBMIT_SUCCESS and current_view:
+                time_diff = (log.timestamp - current_view.timestamp).total_seconds()
+                if time_diff < 30:  # Moins de 30 secondes
+                    enigme_id = log.details.split('Énigme ')[1].split(' ')[0] if 'Énigme' in log.details else 'N/A'
+                    very_fast_enigmes.append({
+                        'enigme_id': enigme_id,
+                        'time': time_diff,
+                        'timestamp': log.timestamp
+                    })
+                current_view = None
+        
+        # Analyser les devinettes résolues rapidement (< 10 secondes)
+        devinette_logs = AuditLog.objects.filter(
+            user=user,
+            action__in=[AuditLog.DEVINETTE_VIEW, AuditLog.DEVINETTE_SUBMIT_SUCCESS]
+        ).order_by('timestamp')
+        
+        very_fast_devinettes = []
+        current_view = None
+        for log in devinette_logs:
+            if log.action == AuditLog.DEVINETTE_VIEW:
+                current_view = log
+            elif log.action == AuditLog.DEVINETTE_SUBMIT_SUCCESS and current_view:
+                time_diff = (log.timestamp - current_view.timestamp).total_seconds()
+                if time_diff < 10:  # Moins de 10 secondes
+                    devinette_id = log.details.split('Devinette ')[1].split(' ')[0] if 'Devinette' in log.details else 'N/A'
+                    very_fast_devinettes.append({
+                        'devinette_id': devinette_id,
+                        'time': time_diff,
+                        'timestamp': log.timestamp
+                    })
+                current_view = None
+        
+        if very_fast_enigmes or very_fast_devinettes:
+            fast_count = len(very_fast_enigmes) + len(very_fast_devinettes)
+            fast_solvers.append({
+                'user': user,
+                'enigmes': very_fast_enigmes,
+                'devinettes': very_fast_devinettes,
+                'total_fast': fast_count,
+                'score': profile.score,
+                'suspicion_level': 'high' if fast_count > 5 else 'medium' if fast_count > 2 else 'low'
+            })
+    
+    fast_solvers.sort(key=lambda x: (x['suspicion_level'] == 'high', x['total_fast']), reverse=True)
+    
+    # ==== 3. COMPTES AVEC NOMS/EMAILS SIMILAIRES ====
+    similar_accounts = []
+    users_list = list(users)
+    
+    def similarity(a, b):
+        return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+    
+    checked_pairs = set()
+    for i, user1 in enumerate(users_list):
+        for user2 in users_list[i+1:]:
+            pair_key = tuple(sorted([user1.id, user2.id]))
+            if pair_key in checked_pairs:
+                continue
+            checked_pairs.add(pair_key)
+            
+            # Comparer usernames
+            username_sim = similarity(user1.username, user2.username)
+            
+            # Comparer emails si disponibles
+            email_sim = 0
+            if user1.email and user2.email:
+                email_sim = similarity(user1.email.split('@')[0], user2.email.split('@')[0])
+            
+            # Comparer first_name et last_name
+            name_sim = 0
+            if user1.first_name and user2.first_name:
+                name_sim = max(name_sim, similarity(user1.first_name, user2.first_name))
+            if user1.last_name and user2.last_name:
+                name_sim = max(name_sim, similarity(user1.last_name, user2.last_name))
+            
+            max_similarity = max(username_sim, email_sim, name_sim)
+            
+            if max_similarity > 0.7:  # Seuil de similarité
+                # Vérifier s'ils partagent une IP
+                user1_ips = set(AuditLog.objects.filter(user=user1).values_list('ip_address', flat=True))
+                user2_ips = set(AuditLog.objects.filter(user=user2).values_list('ip_address', flat=True))
+                shared_ips = user1_ips & user2_ips
+                
+                similar_accounts.append({
+                    'user1': user1,
+                    'user2': user2,
+                    'username_similarity': round(username_sim * 100, 1),
+                    'email_similarity': round(email_sim * 100, 1),
+                    'name_similarity': round(name_sim * 100, 1),
+                    'max_similarity': round(max_similarity * 100, 1),
+                    'shared_ips': list(shared_ips),
+                    'suspicion_level': 'high' if (max_similarity > 0.85 and shared_ips) else 'medium' if max_similarity > 0.85 else 'low'
+                })
+    
+    similar_accounts.sort(key=lambda x: (x['suspicion_level'] == 'high', x['max_similarity']), reverse=True)
+    
+    # ==== 4. PATTERNS DE RÉPONSES SUSPECTS ====
+    suspicious_patterns = []
+    for user in users:
+        profile = user.userprofile_2025
+        
+        issues = []
+        
+        # Score trop élevé avec trop peu d'erreurs (possiblement des réponses copiées)
+        enigmes_resolues = len(profile.reponses_enigmes) if profile.reponses_enigmes else 0
+        devinettes_resolues = len(profile.reponses_devinettes) if profile.reponses_devinettes else 0
+        total_resolues = enigmes_resolues + devinettes_resolues
+        
+        if total_resolues > 15 and profile.erreurEnigma < 3:
+            issues.append(f"Taux de réussite suspect : {total_resolues} résolues avec seulement {profile.erreurEnigma} erreurs")
+        
+        # Nombre d'indices révélés anormal (tous révélés d'un coup ?)
+        indices_enigme_count = len(profile.indices_enigme_reveles) if profile.indices_enigme_reveles else 0
+        indices_devinette_count = len(profile.indices_devinette_reveles) if profile.indices_devinette_reveles else 0
+        total_indices = indices_enigme_count + indices_devinette_count
+        
+        if total_indices > 30:  # Beaucoup d'indices révélés
+            issues.append(f"Nombre d'indices révélés très élevé : {total_indices}")
+        
+        # Progression trop rapide (toutes les énigmes résolues en très peu de temps)
+        first_log = AuditLog.objects.filter(user=user).order_by('timestamp').first()
+        last_success = AuditLog.objects.filter(
+            user=user,
+            action__in=[AuditLog.ENIGME_SUBMIT_SUCCESS, AuditLog.DEVINETTE_SUBMIT_SUCCESS]
+        ).order_by('-timestamp').first()
+        
+        if first_log and last_success and total_resolues > 10:
+            time_span = (last_success.timestamp - first_log.timestamp).total_seconds() / 3600  # en heures
+            if time_span < 2 and total_resolues > 15:  # Plus de 15 réponses en moins de 2h
+                issues.append(f"Progression très rapide : {total_resolues} résolues en {time_span:.1f}h")
+        
+        # Score anormalement bas pour le nombre de résolutions (possiblement un bug ou manipulation)
+        expected_min_score = enigmes_resolues * 50 + devinettes_resolues * 20  # Score minimum attendu
+        actual_score = profile.score
+        if total_resolues > 5 and actual_score < expected_min_score * 0.5:
+            issues.append(f"Score anormalement bas : {actual_score} pour {total_resolues} résolutions (attendu ≥{expected_min_score})")
+        
+        if issues:
+            suspicious_patterns.append({
+                'user': user,
+                'issues': issues,
+                'enigmes_resolues': enigmes_resolues,
+                'devinettes_resolues': devinettes_resolues,
+                'erreurs': profile.erreurEnigma,
+                'indices': total_indices,
+                'score': actual_score,
+                'suspicion_level': 'high' if len(issues) >= 3 else 'medium' if len(issues) >= 2 else 'low'
+            })
+    
+    suspicious_patterns.sort(key=lambda x: (x['suspicion_level'] == 'high', len(x['issues'])), reverse=True)
+    
+    # ==== 5. ACTIVITÉ ANORMALE (sessions multiples simultanées, etc.) ====
+    unusual_activity = []
+    for user in users:
+        # Détecter les sessions suspectes (beaucoup d'actions en peu de temps)
+        recent_logs = AuditLog.objects.filter(user=user).order_by('-timestamp')[:100]
+        
+        if recent_logs.count() > 50:
+            # Grouper par minute
+            actions_per_minute = defaultdict(int)
+            for log in recent_logs:
+                minute_key = log.timestamp.strftime('%Y-%m-%d %H:%M')
+                actions_per_minute[minute_key] += 1
+            
+            max_actions_per_minute = max(actions_per_minute.values()) if actions_per_minute else 0
+            
+            if max_actions_per_minute > 20:  # Plus de 20 actions par minute
+                unusual_activity.append({
+                    'user': user,
+                    'max_actions_per_minute': max_actions_per_minute,
+                    'total_logs': recent_logs.count(),
+                    'issue': f"Activité anormalement élevée : {max_actions_per_minute} actions/minute",
+                    'suspicion_level': 'high' if max_actions_per_minute > 30 else 'medium'
+                })
+    
+    unusual_activity.sort(key=lambda x: (x['suspicion_level'] == 'high', x['max_actions_per_minute']), reverse=True)
+    
+    # ==== 6. STATISTIQUES GLOBALES ====
+    total_users_count = users.count()
+    high_suspicion_count = (
+        sum(1 for x in suspicious_ips if x['suspicion_level'] == 'high') +
+        sum(1 for x in fast_solvers if x['suspicion_level'] == 'high') +
+        sum(1 for x in similar_accounts if x['suspicion_level'] == 'high') +
+        sum(1 for x in suspicious_patterns if x['suspicion_level'] == 'high') +
+        sum(1 for x in unusual_activity if x['suspicion_level'] == 'high')
+    )
+    medium_suspicion_count = (
+        sum(1 for x in suspicious_ips if x['suspicion_level'] == 'medium') +
+        sum(1 for x in fast_solvers if x['suspicion_level'] == 'medium') +
+        sum(1 for x in similar_accounts if x['suspicion_level'] == 'medium') +
+        sum(1 for x in suspicious_patterns if x['suspicion_level'] == 'medium') +
+        sum(1 for x in unusual_activity if x['suspicion_level'] == 'medium')
+    )
+    
+    context = {
+        'suspicious_ips': suspicious_ips[:20],  # Limiter à 20 résultats
+        'fast_solvers': fast_solvers[:20],
+        'similar_accounts': similar_accounts[:20],
+        'suspicious_patterns': suspicious_patterns[:20],
+        'unusual_activity': unusual_activity[:20],
+        'total_users': total_users_count,
+        'high_suspicion_count': high_suspicion_count,
+        'medium_suspicion_count': medium_suspicion_count,
+        'total_suspicious_ips': len(suspicious_ips),
+        'total_fast_solvers': len(fast_solvers),
+        'total_similar_accounts': len(similar_accounts),
+        'total_suspicious_patterns': len(suspicious_patterns),
+        'total_unusual_activity': len(unusual_activity),
+    }
+    
+    return render(request, 'avent2025/admin_triche.html', context)
+
+
+@login_required
+def toggle_cheater(request, user_id):
+    """
+    Toggle le statut de tricheur d'un utilisateur (admin uniquement).
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Accès refusé. Cette action est réservée aux administrateurs.")
+        return redirect('avent2025:home')
+    
+    if request.method != 'POST':
+        messages.error(request, "Méthode non autorisée.")
+        return redirect('avent2025:admin_triche')
+    
+    try:
+        user = User.objects.get(id=user_id)
+        profile = user.userprofile_2025
+        
+        # Toggle le statut
+        profile.is_cheater = not profile.is_cheater
+        profile.save()
+        
+        if profile.is_cheater:
+            messages.success(request, f"✅ L'utilisateur {user.username} a été marqué comme tricheur. Il est maintenant exclu des classements.")
+        else:
+            messages.success(request, f"✅ L'utilisateur {user.username} n'est plus marqué comme tricheur. Il est à nouveau inclus dans les classements.")
+        
+    except User.DoesNotExist:
+        messages.error(request, "Utilisateur introuvable.")
+    except Exception as e:
+        messages.error(request, f"Erreur lors du changement de statut : {str(e)}")
+    
+    return redirect('avent2025:admin_triche')

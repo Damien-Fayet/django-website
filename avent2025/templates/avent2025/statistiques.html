@@ -254,7 +254,7 @@
 <div class="stats-container">
     <div class="stats-header">
         <h1>📊 Statistiques du Calendrier de l'Avent</h1>
-        <p>Découvrez les performances des {{ total_users }} participants</p>
+        <p>{{ active_players }} joueur{{ active_players|pluralize }} actif{{ active_players|pluralize }} sur {{ total_users }} inscrit{{ total_users|pluralize }}</p>
     </div>
 
     <!-- Statistiques générales -->
@@ -341,6 +341,17 @@
             </div>
         </div>
         {% endif %}
+
+        {% if lucky_luke %}
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 215, 0, 0.15) 100%);">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-value" style="font-size: 1.2rem;">{{ lucky_luke.user.get_full_name|default:lucky_luke.user.username }}</div>
+            <div class="stat-label">Lucky Luke</div>
+            <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">
+                {{ lucky_luke_count }} devinette{{ lucky_luke_count|pluralize }} en moins de 2 minutes !
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Top 3 joueurs -->
@@ -381,7 +392,7 @@
                     </div>
                 </div>
                 <div class="completion-rate">
-                    {{ stat.completed }}/{{ stat.reached }}
+                    {{ stat.completed }}/{{ stat.active_players }} joueurs actifs
                     ({{ stat.completion_rate|floatformat:0 }}%)
                 </div>
             </div>
@@ -404,7 +415,7 @@
                     </div>
                 </div>
                 <div class="completion-rate">
-                    {{ stat.completed }}/{{ stat.reached }}
+                    {{ stat.completed }}/{{ stat.active_players }} joueurs actifs
                     ({{ stat.completion_rate|floatformat:0 }}%)
                 </div>
             </div>
