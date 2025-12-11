@@ -28,6 +28,7 @@ urlpatterns = [
     path('statistiques/', views.statistiques, name='statistiques'),  # Statistiques globales
     path('admin-triche/', views.admin_triche, name='admin_triche'),  # Détection de triche (admins uniquement)
     path('toggle-cheater/<int:user_id>/', views.toggle_cheater, name='toggle_cheater'),  # Toggle statut tricheur
+    path('admin-progression/', views.admin_progression, name='admin_progression'),  # Progression détaillée utilisateur (admins uniquement)
     
     
     

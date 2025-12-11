@@ -1,0 +1,569 @@
+{% extends 'avent2025/modern_base.html' %}
+{% load static %}
+
+{% block title %}Progression Utilisateur - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .user-selector {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .user-selector label {
+        display: block;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .user-selector select {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .user-selector select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .category-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .category-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+
+    .category-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .mini-stat {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .mini-stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #64b5f6;
+    }
+
+    .mini-stat-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 0.3rem;
+    }
+
+    .item-card {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #64b5f6;
+    }
+
+    .item-card.resolved {
+        border-left-color: #81c784;
+    }
+
+    .item-card.in-progress {
+        border-left-color: #ffd54f;
+    }
+
+    .item-card.locked {
+        border-left-color: rgba(255, 255, 255, 0.2);
+        opacity: 0.6;
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 5px;
+        transition: background 0.2s ease;
+    }
+
+    .item-header:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .item-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .item-status {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .status-resolved {
+        background: rgba(129, 199, 132, 0.2);
+        color: #81c784;
+    }
+
+    .status-in-progress {
+        background: rgba(255, 213, 79, 0.2);
+        color: #ffd54f;
+    }
+
+    .status-locked {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .accordion-toggle {
+        background: none;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.8);
+        padding: 0.3rem 0.8rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+
+    .accordion-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .accordion-icon {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        margin-right: 0.3rem;
+    }
+
+    .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .accordion-content.open {
+        max-height: 2000px;
+    }
+
+    .item-details {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .detail-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .detail-value {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+    }
+
+    .timeline {
+        margin-top: 1rem;
+        padding-left: 1rem;
+        border-left: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .timeline-item {
+        margin-bottom: 0.8rem;
+        padding-left: 1rem;
+        position: relative;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.35rem;
+        top: 0.5rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #667eea;
+    }
+
+    .timeline-date {
+        color: #64b5f6;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .timeline-action {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
+    }
+
+    .timeline-item.error::before {
+        background: #e57373;
+    }
+
+    .timeline-item.success::before {
+        background: #81c784;
+    }
+
+    .timeline-item.hint::before {
+        background: #ffd54f;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1rem;
+        color: #64b5f6;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+        color: #90caf9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <a href="{% url 'avent2025:admin_triche' %}" class="back-link">← Retour à la détection de triche</a>
+
+    <div class="page-header">
+        <h1>📊 Progression Détaillée</h1>
+        <p>Analyse complète de la progression d'un utilisateur</p>
+    </div>
+
+    <div class="user-selector">
+        <form method="get" action="{% url 'avent2025:admin_progression' %}">
+            <label for="user-select">Sélectionner un utilisateur :</label>
+            <select name="user_id" id="user-select" onchange="this.form.submit()">
+                <option value="">-- Choisir un utilisateur --</option>
+                {% for user in all_users %}
+                <option value="{{ user.id }}" {% if selected_user and user.id == selected_user.id %}selected{% endif %}>
+                    {{ user.username }} ({{ user.userprofile_2025.score }} pts)
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    {% if selected_user %}
+    <div class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-value">{{ selected_user.userprofile_2025.score }}</div>
+            <div class="stat-label">Score Total</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ enigmes_resolved }}</div>
+            <div class="stat-label">Énigmes Résolues</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ devinettes_resolved }}</div>
+            <div class="stat-label">Devinettes Résolues</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_errors }}</div>
+            <div class="stat-label">Erreurs Totales</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_hints }}</div>
+            <div class="stat-label">Indices Pris</div>
+        </div>
+    </div>
+
+    <!-- Section Énigmes -->
+    <div class="category-section">
+        <div class="category-header">
+            <h2 class="category-title">🔐 Énigmes</h2>
+        </div>
+
+        <div class="category-stats">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ enigmes_resolved }}/{{ total_enigmes }}</div>
+                <div class="mini-stat-label">Résolues</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ enigme_errors }}</div>
+                <div class="mini-stat-label">Erreurs</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ enigme_hints_used }}/{{ enigme_hints_total }}</div>
+                <div class="mini-stat-label">Indices Utilisés</div>
+            </div>
+        </div>
+
+        {% for enigme_data in enigmes_data %}
+        <div class="item-card {% if enigme_data.status == 'resolved' %}resolved{% elif enigme_data.status == 'in-progress' %}in-progress{% else %}locked{% endif %}">
+            <div class="item-header" onclick="toggleDetails(this)">
+                <div>
+                    <span class="item-title">Énigme {{ enigme_data.enigme.numero }}</span>
+                    {% if enigme_data.status == 'resolved' %}
+                    <span class="item-status status-resolved">✓ Résolue</span>
+                    {% elif enigme_data.status == 'in-progress' %}
+                    <span class="item-status status-in-progress">⏳ En cours</span>
+                    {% else %}
+                    <span class="item-status status-locked">🔒 Verrouillée</span>
+                    {% endif %}
+                </div>
+                {% if enigme_data.logs %}
+                <button class="accordion-toggle" type="button">
+                    <span class="accordion-icon">▶</span> Détails
+                </button>
+                {% endif %}
+            </div>
+
+            {% if enigme_data.logs %}
+            <div class="accordion-content">
+                <div class="item-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Erreurs</span>
+                        <span class="detail-value">{{ enigme_data.error_count }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Indices révélés</span>
+                        <span class="detail-value">{{ enigme_data.hints_count }}/{{ enigme_data.total_hints }}</span>
+                    </div>
+                    {% if enigme_data.first_view %}
+                    <div class="detail-row">
+                        <span class="detail-label">Première consultation</span>
+                        <span class="detail-value">{{ enigme_data.first_view|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    {% if enigme_data.resolved_date %}
+                    <div class="detail-row">
+                        <span class="detail-label">Date de résolution</span>
+                        <span class="detail-value">{{ enigme_data.resolved_date|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="timeline">
+                        <h4 style="margin-bottom: 1rem; color: rgba(255,255,255,0.8);">📅 Chronologie</h4>
+                        {% for log in enigme_data.logs %}
+                        <div class="timeline-item {% if log.action == 'ENIGME_SUCCESS' %}success{% elif log.action == 'ENIGME_FAIL' %}error{% elif log.action == 'INDICE_REVEAL' %}hint{% endif %}">
+                            <div class="timeline-date">{{ log.timestamp|date:"d/m/Y H:i:s" }}</div>
+                            <div class="timeline-action">{{ log.get_action_display }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Section Devinettes -->
+    <div class="category-section">
+        <div class="category-header">
+            <h2 class="category-title">🎯 Devinettes</h2>
+        </div>
+
+        <div class="category-stats">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ devinettes_resolved }}/{{ total_devinettes }}</div>
+                <div class="mini-stat-label">Résolues</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ devinette_errors }}</div>
+                <div class="mini-stat-label">Erreurs</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ devinette_hints_used }}/{{ devinette_hints_total }}</div>
+                <div class="mini-stat-label">Indices Utilisés</div>
+            </div>
+        </div>
+
+        {% for devinette_data in devinettes_data %}
+        <div class="item-card {% if devinette_data.status == 'resolved' %}resolved{% elif devinette_data.status == 'in-progress' %}in-progress{% else %}locked{% endif %}">
+            <div class="item-header" onclick="toggleDetails(this)">
+                <div>
+                    <span class="item-title">Devinette {{ devinette_data.devinette.numero }}</span>
+                    {% if devinette_data.status == 'resolved' %}
+                    <span class="item-status status-resolved">✓ Résolue</span>
+                    {% elif devinette_data.status == 'in-progress' %}
+                    <span class="item-status status-in-progress">⏳ En cours</span>
+                    {% else %}
+                    <span class="item-status status-locked">🔒 Verrouillée</span>
+                    {% endif %}
+                </div>
+                {% if devinette_data.logs %}
+                <button class="accordion-toggle" type="button">
+                    <span class="accordion-icon">▶</span> Détails
+                </button>
+                {% endif %}
+            </div>
+
+            {% if devinette_data.logs %}
+            <div class="accordion-content">
+                <div class="item-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Erreurs</span>
+                        <span class="detail-value">{{ devinette_data.error_count }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Indices révélés</span>
+                        <span class="detail-value">{{ devinette_data.hints_count }}/{{ devinette_data.total_hints }}</span>
+                    </div>
+                    {% if devinette_data.first_view %}
+                    <div class="detail-row">
+                        <span class="detail-label">Première consultation</span>
+                        <span class="detail-value">{{ devinette_data.first_view|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    {% if devinette_data.resolved_date %}
+                    <div class="detail-row">
+                        <span class="detail-label">Date de résolution</span>
+                        <span class="detail-value">{{ devinette_data.resolved_date|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="timeline">
+                        <h4 style="margin-bottom: 1rem; color: rgba(255,255,255,0.8);">📅 Chronologie</h4>
+                        {% for log in devinette_data.logs %}
+                        <div class="timeline-item {% if log.action == 'DEVINETTE_SUCCESS' %}success{% elif log.action == 'DEVINETTE_FAIL' %}error{% elif log.action == 'INDICE_DEV_REVEAL' %}hint{% endif %}">
+                            <div class="timeline-date">{{ log.timestamp|date:"d/m/Y H:i:s" }}</div>
+                            <div class="timeline-action">{{ log.get_action_display }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>Veuillez sélectionner un utilisateur pour voir sa progression détaillée.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleDetails(element) {
+    // Ne toggle que si on clique sur le header, pas sur le bouton
+    if (event.target.closest('.accordion-toggle')) {
+        event.stopPropagation();
+        return;
+    }
+    
+    const button = element.querySelector('.accordion-toggle');
+    if (button) {
+        toggleAccordion(button, event);
+    }
+}
+
+function toggleAccordion(button, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const card = button.closest('.item-card');
+    const content = card.querySelector('.accordion-content');
+    const icon = button.querySelector('.accordion-icon');
+    
+    if (content.classList.contains('open')) {
+        content.classList.remove('open');
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        content.classList.add('open');
+        icon.style.transform = 'rotate(90deg)';
+    }
+}
+</script>
+{% endblock %}
