@@ -1769,16 +1769,30 @@ def admin_progression(request):
                 else:
                     status = 'locked'
                 
-                # Compter les erreurs
-                error_count = logs.filter(action=AuditLog.ENIGME_SUBMIT_FAIL).count()
+                # Compter les erreurs et récupérer les détails
+                error_logs = logs.filter(action=AuditLog.ENIGME_SUBMIT_FAIL)
+                error_count = error_logs.count()
                 enigme_errors += error_count
                 
-                # Compter les indices pour cette énigme
-                enigme_indices = Indice.objects.filter(enigme=enigme).count()
-                enigme_hints_total += enigme_indices
+                # Liste des erreurs avec détails
+                errors_detail = []
+                for error_log in error_logs:
+                    errors_detail.append({
+                        'timestamp': error_log.timestamp,
+                        'reponse': error_log.reponse_donnee
+                    })
                 
-                hints_revealed = sum(1 for idx in revealed_enigme_hints if Indice.objects.filter(id=idx, enigme=enigme).exists())
-                enigme_hints_used += hints_revealed
+                # Récupérer tous les indices de cette énigme
+                all_indices_enigme = Indice.objects.filter(enigme=enigme).order_by('numero')
+                enigme_indices_count = all_indices_enigme.count()
+                enigme_hints_total += enigme_indices_count
+                
+                # Déterminer quels indices ont été révélés pour cette énigme
+                revealed_indices = []
+                for indice in all_indices_enigme:
+                    if indice.id in revealed_enigme_hints:
+                        revealed_indices.append(indice)
+                        enigme_hints_used += 1
                 
                 # Dates importantes
                 first_view = logs.filter(action=AuditLog.ENIGME_VIEW).first()
@@ -1789,14 +1803,16 @@ def admin_progression(request):
                     'status': status,
                     'logs': logs if logs.exists() else None,
                     'error_count': error_count,
-                    'hints_count': hints_revealed,
-                    'total_hints': enigme_indices,
+                    'errors_detail': errors_detail,
+                    'hints_count': len(revealed_indices),
+                    'total_hints': enigme_indices_count,
+                    'revealed_indices': revealed_indices,
                     'first_view': first_view.timestamp if first_view else None,
                     'resolved_date': resolved_log.timestamp if resolved_log else None,
                 })
             
             # Récupérer toutes les devinettes
-            all_devinettes = Devinette.objects.all().order_by('numero')
+            all_devinettes = Devinette.objects.all().order_by('id')
             total_devinettes = all_devinettes.count()
             
             # Récupérer les indices révélés
@@ -1806,7 +1822,7 @@ def admin_progression(request):
             
             # Traiter chaque devinette
             for devinette in all_devinettes:
-                devinette_id = devinette.numero
+                devinette_id = devinette.id
                 
                 # Récupérer tous les logs pour cette devinette
                 logs = AuditLog.objects.filter(
@@ -1826,16 +1842,30 @@ def admin_progression(request):
                 else:
                     status = 'locked'
                 
-                # Compter les erreurs
-                error_count = logs.filter(action=AuditLog.DEVINETTE_SUBMIT_FAIL).count()
+                # Compter les erreurs et récupérer les détails
+                error_logs = logs.filter(action=AuditLog.DEVINETTE_SUBMIT_FAIL)
+                error_count = error_logs.count()
                 devinette_errors += error_count
                 
-                # Compter les indices pour cette devinette
-                devinette_indices = IndiceDevinette.objects.filter(devinette=devinette).count()
-                devinette_hints_total += devinette_indices
+                # Liste des erreurs avec détails
+                errors_detail = []
+                for error_log in error_logs:
+                    errors_detail.append({
+                        'timestamp': error_log.timestamp,
+                        'reponse': error_log.reponse_donnee
+                    })
                 
-                hints_revealed = sum(1 for idx in revealed_devinette_hints if IndiceDevinette.objects.filter(id=idx, devinette=devinette).exists())
-                devinette_hints_used += hints_revealed
+                # Récupérer tous les indices de cette devinette
+                all_indices_devinette = IndiceDevinette.objects.filter(devinette=devinette).order_by('numero')
+                devinette_indices_count = all_indices_devinette.count()
+                devinette_hints_total += devinette_indices_count
+                
+                # Déterminer quels indices ont été révélés pour cette devinette
+                revealed_indices = []
+                for indice in all_indices_devinette:
+                    if indice.id in revealed_devinette_hints:
+                        revealed_indices.append(indice)
+                        devinette_hints_used += 1
                 
                 # Dates importantes
                 first_view = logs.filter(action=AuditLog.DEVINETTE_VIEW).first()
@@ -1846,8 +1876,10 @@ def admin_progression(request):
                     'status': status,
                     'logs': logs if logs.exists() else None,
                     'error_count': error_count,
-                    'hints_count': hints_revealed,
-                    'total_hints': devinette_indices,
+                    'errors_detail': errors_detail,
+                    'hints_count': len(revealed_indices),
+                    'total_hints': devinette_indices_count,
+                    'revealed_indices': revealed_indices,
                     'first_view': first_view.timestamp if first_view else None,
                     'resolved_date': resolved_log.timestamp if resolved_log else None,
                 })
