@@ -115,7 +115,7 @@ def update_user_score(user_profile):
             try:
                 indice = Indice.objects.get(id=indice_id)
                 # Vérifier si l'énigme est résolue
-                enigme_id = str(indice.enigme.numero)
+                enigme_id = str(indice.enigme.id)
                 if enigme_id not in user_profile.reponses_enigmes:
                     # L'énigme n'est pas résolue, on déduit le coût de l'indice
                     cout_indices_enigmes += indice.cout
@@ -1749,7 +1749,7 @@ def admin_progression(request):
             
             # Traiter chaque énigme
             for enigme in all_enigmes:
-                enigme_id = enigme.numero
+                enigme_id = enigme.id
                 
                 # Récupérer tous les logs pour cette énigme
                 logs = AuditLog.objects.filter(
