@@ -139,7 +139,7 @@ def update_user_score(user_profile):
             try:
                 indice = IndiceDevinette.objects.get(id=indice_id)
                 # Vérifier si la devinette est résolue
-                devinette_id = str(indice.enigme.numero)  # Le champ s'appelle 'enigme' mais référence Devinette
+                devinette_id = str(indice.enigme.id)  # Le champ s'appelle 'enigme' mais référence Devinette
                 if devinette_id not in user_profile.reponses_devinettes:
                     # La devinette n'est pas résolue, on déduit le coût de l'indice
                     cout_indices_devinettes += indice.cout
