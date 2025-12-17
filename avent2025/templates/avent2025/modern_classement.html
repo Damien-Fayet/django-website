@@ -98,10 +98,22 @@
                     <th>Rang</th>
                     <th>Participant</th>
                     <th>💯 Score</th>
+                    {% if score_type == 'general' %}
                     <th>🧩 Énigmes</th>
+                    <th>🎭 Devinettes</th>
+                    <th>❌ Erreurs 🧩</th>
+                    <th>💡 Indices 🧩</th>
+                    <th>❌ Erreurs 🎭</th>
+                    <th>💡 Indices 🎭</th>
+                    {% elif score_type == 'enigmes' %}
+                    <th>🧩 Énigmes</th>
+                    <th>❌ Erreurs</th>
+                    <th>💡 Indices</th>
+                    {% elif score_type == 'devinettes' %}
                     <th>🎭 Devinettes</th>
                     <th>❌ Erreurs</th>
                     <th>💡 Indices</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -130,14 +142,66 @@
                             {% endif %}
                         </strong>
                     </td>
+                    {% if score_type == 'general' %}
                     <td class="enigmes-cell">{{ nb_enigmes|get_item:user.id }}/8</td>
                     <td class="devinettes-cell">{{ nb_devinettes|get_item:user.id }}/24</td>
-                    <td class="erreurs-cell">{{ nb_erreurs|get_item:user.id }}</td>
-                    <td class="indices-cell">{{ nb_indice_enigme|get_item:user.id }}</td>
+                    <td class="erreurs-cell">
+                        {{ nb_erreurs_enigmes|get_item:user.id }}
+                        {% if malus_pts_erreurs_enigmes|get_item:user.id > 0 %}
+                            <span style="color: #ff6b6b; font-size: 0.85em;">(-{{ malus_pts_erreurs_enigmes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    <td class="indices-cell">
+                        {{ nb_indice_enigme|get_item:user.id }}
+                        {% if cout_pts_indices_enigmes|get_item:user.id > 0 %}
+                            <span style="color: #ffa94d; font-size: 0.85em;">(-{{ cout_pts_indices_enigmes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    <td class="erreurs-cell">
+                        {{ nb_erreurs_devinettes|get_item:user.id }}
+                        {% if malus_pts_erreurs_devinettes|get_item:user.id > 0 %}
+                            <span style="color: #ff6b6b; font-size: 0.85em;">(-{{ malus_pts_erreurs_devinettes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    <td class="indices-cell">
+                        {{ nb_indice_devinette|get_item:user.id }}
+                        {% if cout_pts_indices_devinettes|get_item:user.id > 0 %}
+                            <span style="color: #ffa94d; font-size: 0.85em;">(-{{ cout_pts_indices_devinettes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    {% elif score_type == 'enigmes' %}
+                    <td class="enigmes-cell">{{ nb_enigmes|get_item:user.id }}/8</td>
+                    <td class="erreurs-cell">
+                        {{ nb_erreurs_enigmes|get_item:user.id }}
+                        {% if malus_pts_erreurs_enigmes|get_item:user.id > 0 %}
+                            <span style="color: #ff6b6b; font-size: 0.85em;">(-{{ malus_pts_erreurs_enigmes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    <td class="indices-cell">
+                        {{ nb_indice_enigme|get_item:user.id }}
+                        {% if cout_pts_indices_enigmes|get_item:user.id > 0 %}
+                            <span style="color: #ffa94d; font-size: 0.85em;">(-{{ cout_pts_indices_enigmes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    {% elif score_type == 'devinettes' %}
+                    <td class="devinettes-cell">{{ nb_devinettes|get_item:user.id }}/24</td>
+                    <td class="erreurs-cell">
+                        {{ nb_erreurs_devinettes|get_item:user.id }}
+                        {% if malus_pts_erreurs_devinettes|get_item:user.id > 0 %}
+                            <span style="color: #ff6b6b; font-size: 0.85em;">(-{{ malus_pts_erreurs_devinettes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    <td class="indices-cell">
+                        {{ nb_indice_devinette|get_item:user.id }}
+                        {% if cout_pts_indices_devinettes|get_item:user.id > 0 %}
+                            <span style="color: #ffa94d; font-size: 0.85em;">(-{{ cout_pts_indices_devinettes|get_item:user.id }} pts)</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="empty-state">
+                    <td colspan="{% if score_type == 'general' %}9{% else %}6{% endif %}" class="empty-state">
                         <div class="empty-icon">🎄</div>
                         <div>Aucun participant pour le moment.</div>
                         <div style="font-size: 0.9rem; margin-top: 0.5rem;">Soyez le premier à commencer l'aventure !</div>

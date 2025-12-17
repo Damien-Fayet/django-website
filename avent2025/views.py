@@ -852,6 +852,12 @@ def classement(request):
     moy_indices_enigme ={}
     moy_indices_devinette = {}
     total = {}
+    nb_erreurs_enigmes = {}
+    nb_erreurs_devinettes = {}
+    cout_pts_indices_enigmes = {}
+    cout_pts_indices_devinettes = {}
+    malus_pts_erreurs_enigmes = {}
+    malus_pts_erreurs_devinettes = {}
     
     # Filtrer uniquement les utilisateurs qui ont un profil
     users_with_profile = []
@@ -918,6 +924,14 @@ def classement(request):
             moy_indices_enigme[u.id] = 0 if enigmes_resolues <= 0 else round(nb_indice_enigme[u.id] / enigmes_resolues, 1)
             moy_indices_devinette[u.id] = 0 if devinettes_resolues <= 0 else round(nb_indice_devinette[u.id] / devinettes_resolues, 1)
             
+            # Stocker les erreurs et coûts en points
+            nb_erreurs_enigmes[u.id] = u.userprofile_2025.erreurEnigma
+            nb_erreurs_devinettes[u.id] = u.userprofile_2025.erreurDevinette
+            cout_pts_indices_enigmes[u.id] = cout_indices_enigmes
+            cout_pts_indices_devinettes[u.id] = cout_indices_devinettes
+            malus_pts_erreurs_enigmes[u.id] = u.userprofile_2025.erreurEnigma * score_config.malus_erreur_enigme
+            malus_pts_erreurs_devinettes[u.id] = u.userprofile_2025.erreurDevinette * score_config.malus_erreur_devinette
+            
             # Utiliser le score stocké dans le profil
             total[u.id] = u.userprofile_2025.score
         
@@ -968,6 +982,12 @@ def classement(request):
         'nb_enigmes': nb_enigmes,
         'nb_devinettes': nb_devinettes,
         'nb_erreurs': nb_erreurs,
+        'nb_erreurs_enigmes': nb_erreurs_enigmes,
+        'nb_erreurs_devinettes': nb_erreurs_devinettes,
+        'cout_pts_indices_enigmes': cout_pts_indices_enigmes,
+        'cout_pts_indices_devinettes': cout_pts_indices_devinettes,
+        'malus_pts_erreurs_enigmes': malus_pts_erreurs_enigmes,
+        'malus_pts_erreurs_devinettes': malus_pts_erreurs_devinettes,
         'scores': scores,
         'total_enigmes': total_enigmes,
         'total_devinettes': total_devinettes,
@@ -1739,7 +1759,7 @@ def admin_progression(request):
             profile = selected_user.userprofile_2025
             
             # Récupérer toutes les énigmes
-            all_enigmes = Enigme.objects.all().order_by('numero')
+            all_enigmes = Enigme.objects.all().order_by('id')
             total_enigmes = all_enigmes.count()
             
             # Récupérer les indices révélés
@@ -1783,7 +1803,7 @@ def admin_progression(request):
                     })
                 
                 # Récupérer tous les indices de cette énigme
-                all_indices_enigme = Indice.objects.filter(enigme=enigme).order_by('numero')
+                all_indices_enigme = Indice.objects.filter(enigme=enigme).order_by('id')
                 enigme_indices_count = all_indices_enigme.count()
                 enigme_hints_total += enigme_indices_count
                 
@@ -1856,7 +1876,7 @@ def admin_progression(request):
                     })
                 
                 # Récupérer tous les indices de cette devinette
-                all_indices_devinette = IndiceDevinette.objects.filter(devinette=devinette).order_by('numero')
+                all_indices_devinette = IndiceDevinette.objects.filter(enigme=devinette).order_by('id')
                 devinette_indices_count = all_indices_devinette.count()
                 devinette_hints_total += devinette_indices_count
                 

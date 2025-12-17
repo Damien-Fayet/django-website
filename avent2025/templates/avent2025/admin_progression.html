@@ -545,7 +545,7 @@
             <div class="item-header" onclick="toggleDetails(this)">
                 <div style="flex: 1;">
                     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                        <span class="item-title">Énigme {{ enigme_data.enigme.numero }}</span>
+                        <span class="item-title">Énigme {{ enigme_data.enigme.id }}{% if enigme_data.enigme.titre %} - {{ enigme_data.enigme.titre }}{% endif %}</span>
                         {% if enigme_data.status == 'resolved' %}
                         <span class="item-status status-resolved">✓ Résolue</span>
                         {% elif enigme_data.status == 'in-progress' %}
@@ -660,7 +660,7 @@
             <div class="item-header" onclick="toggleDetails(this)">
                 <div style="flex: 1;">
                     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                        <span class="item-title">Devinette {{ devinette_data.devinette.id }}</span>
+                        <span class="item-title">Devinette {{ devinette_data.devinette.id }}{% if devinette_data.devinette.titre %} - {{ devinette_data.devinette.titre }}{% endif %}</span>
                         {% if devinette_data.status == 'resolved' %}
                         <span class="item-status status-resolved">✓ Résolue</span>
                         {% elif devinette_data.status == 'in-progress' %}
