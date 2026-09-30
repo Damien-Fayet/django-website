@@ -4,7 +4,7 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 
 ## Apps
 - `accounts` : inscription/connexion, page d'accueil publique (`public_home`), context processor `discord_url`.
-- `avent2026` : calendrier de l'Avent 2026 (squelette vide : page « Bientôt »).
+- `avent2026` : calendrier de l'Avent 2026 (voir section dédiée ci-dessous).
 - `biblio` : mini-site indépendant.
 - `mysite` : settings / urls. `templates/` : templates globaux (`home.html`, `base.html`, auth). `static/` : statiques globaux (`static/css/modern-*.css` pour l'accueil et l'auth).
 
@@ -25,3 +25,12 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 ## Commandes
 - Lancer : `python manage.py runserver` ; migrations : `python manage.py migrate` ; tests : `python manage.py test`.
 - Déploiement PythonAnywhere : sauvegarder `db.sqlite3`, `git pull`, `python manage.py migrate`, `python manage.py collectstatic`, puis « Reload » de la web app. Après la première migration de nettoyage : `sqlite3 db.sqlite3 "VACUUM;"` pour récupérer l'espace.
+
+## avent2026 — architecture
+- Modèles : `Puzzle` (kind enigme/devinette, jour 1-24, difficulté facile/difficile), `Hint` (indices ordonnés, coût), `Attempt` (progression/points par joueur et puzzle), `HintReveal`. Pas de `UserProfile` : les scores se calculent depuis `Attempt`.
+- Règles dans `avent2026/scoring.py` (points de base par type/difficulté, coût d'indice, pénalité d'erreur, déblocage à minuit Europe/Paris, normalisation des réponses). Le staff voit tous les jours ; `AVENT2026_UNLOCK_ALL = True` dans settings débloque tout (tests/démo).
+- Scène d'accueil non linéaire : `avent2026/scene.py` (positions des 24 jours, paysage/portrait) + `static/avent2026/css/avent.css`. Décors des 4 zones en SVG inline dans `templates/avent2026/_zone_art.html` (viewBox 160x100, `slice` : en portrait seule la bande centrale reste visible) ; aucune image.
+- Contenu : via l'admin (`/admin/`), ou `python manage.py seed_avent2026` (contenu de test sur les jours 1 et 2, idempotent).
+- Énoncés et indices rendus en HTML non échappé (`|safe`) : contenu saisi par l'admin uniquement.
+- Tests : `python manage.py test avent2026`.
+- Thème 2026 : un petit robot apprend et s'améliore pour rejoindre le Père Noël. `avent2026/robot.py` : niveaux/modules (énergie = total des points), prologue/épilogue ; `scene.py` : 4 zones de 6 jours ; `templates/avent2026/_robot.html` : robot en SVG inline (modules affichés selon le niveau) ; `Puzzle.story` : fragment d'histoire révélé à la résolution, archivé dans le Journal (`/avent2026/journal/`). La date reste la seule porte d'entrée : aucun puzzle n'est bloqué par un échec.

@@ -1,0 +1,15 @@
+{% extends "avent2026/base.html" %}
+{% block title %}Classement{% endblock %}
+{% block content %}
+<div class="panel">
+  <h1>🏆 Classement</h1>
+  <div class="boards">
+    <section><h2>🧩 Énigmes</h2>
+      <ol>{% for r in enigmes %}<li class="{% if r.name == me %}me{% endif %}"><span>{{ r.name }}</span><b>{{ r.points }}</b></li>{% empty %}<li class="muted">Personne encore.</li>{% endfor %}</ol></section>
+    <section><h2>🎭 Devinettes</h2>
+      <ol>{% for r in devinettes %}<li class="{% if r.name == me %}me{% endif %}"><span>{{ r.name }}</span><b>{{ r.points }}</b></li>{% empty %}<li class="muted">Personne encore.</li>{% endfor %}</ol></section>
+    <section><h2>Total</h2>
+      <ol>{% for r in total %}<li class="{% if r.name == me %}me{% endif %}"><span>{{ r.name }}</span><b>{{ r.points }}</b></li>{% empty %}<li class="muted">Personne encore.</li>{% endfor %}</ol></section>
+  </div>
+</div>
+{% endblock %}

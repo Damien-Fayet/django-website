@@ -1,0 +1,33 @@
+{% extends "avent2026/base.html" %}
+{% block title %}Jour {{ day }}{% endblock %}
+{% block content %}
+<div class="panel">
+  <h1>Jour {{ day }}</h1>
+  {% if not enigmes and not devinettes %}<p>Rien n'est encore publié pour ce jour.</p>{% endif %}
+  {% if enigmes %}
+  <h2>🧩 Énigme</h2>
+  <div class="cards">
+    {% for p in enigmes %}
+    <a class="card {{ p.difficulty }} {% if p.done %}done{% endif %}" href="{% url 'avent2026:puzzle' p.id %}">
+      <span class="tag">{{ p.get_difficulty_display }}</span>
+      <strong>{{ p.title }}</strong>
+      <small>{% if p.done %}✔ résolue{% else %}jusqu'à {{ p.max_points }} pts{% endif %}</small>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if devinettes %}
+  <h2>🎭 Devinette</h2>
+  <div class="cards">
+    {% for p in devinettes %}
+    <a class="card {{ p.difficulty }} {% if p.done %}done{% endif %}" href="{% url 'avent2026:puzzle' p.id %}">
+      <span class="tag">{{ p.get_difficulty_display }}</span>
+      <strong>{{ p.title }}</strong>
+      <small>{% if p.done %}✔ résolue{% else %}jusqu'à {{ p.max_points }} pts{% endif %}</small>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <p><a href="{% url 'avent2026:home' %}">← Retour à la scène</a></p>
+</div>
+{% endblock %}

@@ -1,11 +1,41 @@
-{% extends "base.html" %}
-
-{% block title %}Calendrier de l'Avent 2026{% endblock %}
-
+{% extends "avent2026/base.html" %}
+{% block title %}Avent 2026 — La scène{% endblock %}
 {% block content %}
-<div style="text-align:center; padding: 4rem 1rem;">
-  <h1>🎄 Calendrier de l'Avent 2026</h1>
-  <p>Bientôt disponible !</p>
-  <p><a href="{% url 'home' %}">← Retour à l'accueil</a></p>
+{% if prologue %}<div class="panel story"><h2>🤖 Prologue</h2><p>{{ prologue }}</p></div>{% endif %}
+{% if epilogue %}<div class="panel story"><h2>🎅 Épilogue</h2><p>{{ epilogue }}</p></div>{% endif %}
+
+<section class="scores">
+  <span>🧩 Énigmes <b>{{ scores.enigme }}</b></span>
+  <span>🎭 Devinettes <b>{{ scores.devinette }}</b></span>
+  <span>⚡ Énergie <b>{{ scores.total }}</b></span>
+  <span class="lvl">Niveau {{ robot.level }}/{{ robot.max_level }} — {{ robot.title }}
+    {% if robot.next_module %}<progress max="100" value="{{ robot.progress_pct }}"></progress> prochain : {{ robot.next_module }} ({{ robot.next_threshold }}){% endif %}</span>
+</section>
+
+<div class="stage">
+  {% for z in zones %}
+  <div class="zone {% if not z.lit %}dark{% endif %}"
+       style="--l:{{ z.rect.0 }}%;--t:{{ z.rect.1 }}%;--w:{{ z.rect.2 }}%;--h:{{ z.rect.3 }}%;--pl:{{ z.prect.0 }}%;--pt:{{ z.prect.1 }}%;--pw:{{ z.prect.2 }}%;--ph:{{ z.prect.3 }}%;--from:{{ z.bg_from }};--to:{{ z.bg_to }}">
+    {% include "avent2026/_zone_art.html" %}
+    <span class="zone-name" title="{{ z.description }}">{{ z.name }}</span>
+  </div>
+  {% endfor %}
+  {% for n in nodes %}
+    {% if n.state == "locked" %}
+      <span class="node locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%" title="Pas encore débloqué">
+        <b>{{ n.day }}</b><i>🔒</i>
+      </span>
+    {% else %}
+      <a class="node {{ n.state }}" href="{% url 'avent2026:day' n.day %}"
+         style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
+         title="{% if n.total %}{{ n.solved }}/{{ n.total }} résolus{% else %}Rien de publié{% endif %}">
+        <b>{{ n.day }}</b><i>{% if n.state == "done" %}✔{% elif n.state == "empty" %}·{% else %}✨{% endif %}</i>
+      </a>
+    {% endif %}
+  {% endfor %}
+  <div class="robot-wrap" style="--x:{{ robot_node.x }}%;--y:{{ robot_node.y }}%;--px:{{ robot_node.px }}%;--py:{{ robot_node.py }}%">
+    {% include "avent2026/_robot.html" %}
+  </div>
 </div>
+<p class="hint-line">Chaque jour se débloque à minuit (heure de Paris). Joue-les dans l'ordre que tu veux.</p>
 {% endblock %}

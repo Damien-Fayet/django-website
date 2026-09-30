@@ -1,0 +1,38 @@
+{% extends "avent2026/base.html" %}
+{% block title %}{{ puzzle.title }}{% endblock %}
+{% block content %}
+<div class="panel">
+  <p class="crumbs"><a href="{% url 'avent2026:day' puzzle.day %}">← Jour {{ puzzle.day }}</a></p>
+  <h1>{{ puzzle.get_kind_display }} — {{ puzzle.title }}</h1>
+  <p class="tags">
+    {% for s in siblings %}
+      <a class="tag {{ s.difficulty }}{% if s.id == puzzle.id %} current{% endif %}" href="{% url 'avent2026:puzzle' s.id %}">{{ s.get_difficulty_display }}</a>
+    {% endfor %}
+  </p>
+
+  <div class="statement">
+    {% if puzzle.image %}<img src="{{ puzzle.image.url }}" alt="" loading="lazy">{% endif %}
+    {{ puzzle.text|safe }}
+  </div>
+
+  {% if solved %}
+    <p class="msg success">✔ Résolue : +{{ attempt.points }} points.</p>
+    {% if story %}<div class="panel story"><h2>📖 Journal de bord</h2>{{ story|safe }}</div>{% endif %}
+  {% else %}
+    <p class="points">Vaut actuellement <b>{{ current_points }}</b> points (max {{ max_points }}) — {{ errors }} erreur{{ errors|pluralize }}.</p>
+    <form method="post" action="{% url 'avent2026:answer' puzzle.id %}" class="answer">{% csrf_token %}
+      <input type="text" name="answer" placeholder="Ta réponse" autocomplete="off" autofocus required>
+      <button class="btn" type="submit">Valider</button>
+    </form>
+  {% endif %}
+
+  <h2>💡 Indices</h2>
+  {% for h in revealed_hints %}<p class="hint">Indice {{ h.number }} : {{ h.text|safe }}</p>{% endfor %}
+  {% if not solved and next_hint %}
+    <form method="post" action="{% url 'avent2026:hint' puzzle.id %}">{% csrf_token %}
+      <button class="btn ghost" type="submit">Révéler l'indice {{ next_hint.number }} (−{{ next_hint.display_cost }} pts)</button>
+    </form>
+  {% elif not hint_count %}<p class="muted">Pas d'indice pour celle-ci.</p>
+  {% elif not next_hint and not solved %}<p class="muted">Tous les indices sont révélés.</p>{% endif %}
+</div>
+{% endblock %}

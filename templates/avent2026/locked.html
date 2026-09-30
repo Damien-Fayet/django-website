@@ -1,0 +1,9 @@
+{% extends "avent2026/base.html" %}
+{% block title %}Pas encore…{% endblock %}
+{% block content %}
+<div class="panel center">
+  <h1>🔒 Jour {{ day }}</h1>
+  <p>Ce jour n'est pas encore débloqué{% if unlock_date %} : rendez-vous le {{ unlock_date|date:"j F Y" }}{% else %} : rendez-vous le {{ day }} décembre{% endif %}.</p>
+  <a class="btn" href="{% url 'avent2026:home' %}">Retour à la scène</a>
+</div>
+{% endblock %}
