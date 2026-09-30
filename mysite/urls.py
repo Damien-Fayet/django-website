@@ -19,14 +19,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.views.generic.base import TemplateView
-from avent2025.views import public_home
+from accounts.views import public_home
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("ckeditor5/", include('django_ckeditor_5.urls')),
     path("sudoku/", include("sudoku.urls")),
-    path("avent/", include("avent2024.urls")),  # Nouveau chemin pour avent
-    path("avent2025/", include("avent2025.urls")),  # Nouveau chemin pour avent 2025
+    path("avent2026/", include("avent2026.urls")),
     path("biblio/", include("biblio.urls")),    # Nouveau chemin pour biblio
     path("chessTrainer/", include("chessTrainer.urls")),      # Nouveau chemin pour chessTrainer
     path("max_challenge/", include("max_challenge.urls")),    # Nouveau chemin pour max_challenge

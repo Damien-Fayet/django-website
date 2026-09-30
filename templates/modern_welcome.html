@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendrier de l'Avent 2025 - Bienvenue</title>
+    <title>Calendrier de l'Avent - Bienvenue</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'avent2025/css/modern-base.css' %}">
-    <link rel="stylesheet" href="{% static 'avent2025/css/modern-auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern-auth.css' %}">
 </head>
 <body>
     <!-- Navigation simple pour non-connectés -->
     <nav class="nav-bar-container">
         <div class="nav-bar nav-bar-welcome">
             <div class="nav-bar-logo">
-                <h1>🎄 Calendrier de l'Avent 2025</h1>
+                <h1>🎄 Calendrier de l'Avent</h1>
             </div>
             <div class="nav-bar-actions">
                 <a href="{% url 'login' %}" class="btn-nav btn-nav-secondary">Se connecter</a>
@@ -28,7 +28,7 @@
             <div class="hero-text">
                 <h1 class="hero-title">
                     ✨ Bienvenue dans l'aventure <br/>
-                    <span class="hero-highlight">Calendrier de l'Avent 2025</span>
+                    <span class="hero-highlight">Calendrier de l'Avent</span>
                 </h1>
                 <p class="hero-description">
                     Relevez 8 énigmes captivantes et 24 devinettes quotidiennes durant le mois de décembre. 
@@ -71,7 +71,7 @@
                         </div>
                         <div class="countdown-date-info">
                             <span class="countdown-icon">🎁</span>
-                            Rendez-vous le <strong>1er décembre 2025</strong> à <strong>00h01</strong>
+                            Rendez-vous le <strong>1er décembre 2026</strong> à <strong>00h01</strong>
                             <span class="countdown-icon">🎁</span>
                         </div>
                     </div>
@@ -240,14 +240,14 @@
 
     <!-- Footer simple -->
     <footer class="footer-welcome">
-        <p>🎄 Calendrier de l'Avent 2025 - Bonne chance à tous les participants ! 🎄</p>
+        <p>🎄 Calendrier de l'Avent - Bonne chance à tous les participants ! 🎄</p>
     </footer>
 
     <script>
-        // Compte à rebours jusqu'au 1er décembre 2025 à 00h01
+        // Compte à rebours jusqu'au 1er décembre 2026 à 00h01
         function initCountdown() {
             const countdownContainer = document.getElementById('countdown-container-welcome');
-            const targetDate = new Date('2025-12-01T00:01:00').getTime();
+            const targetDate = new Date('2026-12-01T00:01:00').getTime();
             
             function updateCountdown() {
                 const now = new Date().getTime();
