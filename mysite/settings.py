@@ -31,8 +31,7 @@ ALLOWED_HOSTS = ['*','damienf.pythonanywhere.com']
 # Application definition
 
 INSTALLED_APPS = [
-    "avent2024.apps.Avent2024Config",
-    "avent2025.apps.Avent2025Config",
+    "avent2026.apps.Avent2026Config",
     "sudoku.apps.SudokuConfig",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -71,7 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'avent2025.context_processors.discord_url',
+                'accounts.context_processors.discord_url',
             ],
         },
     },
@@ -98,7 +97,7 @@ AUTH_PASSWORD_VALIDATORS = [
     
 ]
 
-LOGIN_REDIRECT_URL = "avent2025:home"
+LOGIN_REDIRECT_URL = "avent2026:home"
 LOGOUT_REDIRECT_URL = "home"  # Page d'accueil publique
 INTERNAL_IPS = [
     # ...
@@ -147,7 +146,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Configuration Email (pour formulaire de contact)
 # En développement, les emails seront affichés dans la console
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@calendrieravent2025.fr'
+DEFAULT_FROM_EMAIL = 'noreply@calendrieravent.fr'
 
 # Discord - Lien vers le serveur Discord pour l'entraide et les échanges
 DISCORD_INVITE_URL = 'https://discord.gg/votre-invitation'  # Remplacez par votre lien d'invitation Discord
@@ -159,7 +158,7 @@ DISCORD_INVITE_URL = 'https://discord.gg/votre-invitation'  # Remplacez par votr
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'votre-email@gmail.com'
 # EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-application'
-# DEFAULT_FROM_EMAIL = 'noreply@calendrieravent2025.fr'
+# DEFAULT_FROM_EMAIL = 'noreply@calendrieravent.fr'
 
 # Configuration du logging pour réduire la verbosité des requêtes AJAX répétitives
 LOGGING = {

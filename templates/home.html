@@ -106,20 +106,8 @@
         50% { transform: translate(10%, 10%); }
     }
 
-    .avent2024-enigmes .app-card-header {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    }
-
-    .avent2024-devinettes .app-card-header {
-        background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
-    }
-
-    .avent2025-enigmes .app-card-header {
+    .avent2026 .app-card-header {
         background: var(--purple-gradient);
-    }
-
-    .avent2025-devinettes .app-card-header {
-        background: var(--pink-gradient);
     }
 
     .biblio .app-card-header {
@@ -288,72 +276,20 @@
 
     <!-- Applications Grid -->
     <div class="apps-grid">
-        <!-- Calendrier de l'Avent 2025 - Enigmes -->
-        <div class="app-card avent2025-enigmes">
-            <span class="new-badge">🎄 Nouveau 2025</span>
+        <!-- Calendrier de l'Avent 2026 -->
+        <div class="app-card avent2026">
+            <span class="new-badge">🎄 Nouveau 2026</span>
             <div class="app-card-header">
-                <div class="app-icon">🧩</div>
-                <div class="app-title">Énigmes 2025</div>
-                <div class="app-badge">Niveau intermédiaire</div>
+                <div class="app-icon">🎄</div>
+                <div class="app-title">Avent 2026</div>
+                <div class="app-badge">Bientôt</div>
             </div>
             <div class="app-card-body">
                 <p class="app-description">
-                    Calendrier de l'Avent 2025 ! Résolvez des énigmes variées et stimulantes tout au long du mois de décembre. Logique, observation et créativité seront vos meilleurs alliés.
+                    Le calendrier de l'Avent 2026 se prépare. Rendez-vous en décembre !
                 </p>
-                <a href="{% url 'avent2025:avent2025' %}" class="app-link">
-                    Commencer l'aventure →
-                </a>
-            </div>
-        </div>
-
-        <!-- Calendrier de l'Avent 2025 - Devinettes -->
-        <div class="app-card avent2025-devinettes">
-            <span class="new-badge">🎄 Nouveau 2025</span>
-            <div class="app-card-header">
-                <div class="app-icon">🎭</div>
-                <div class="app-title">Devinettes 2025</div>
-                <div class="app-badge">Niveau facile</div>
-            </div>
-            <div class="app-card-body">
-                <p class="app-description">
-                    Devinettes imagées du calendrier de l'Avent 2025 ! Retrouvez artistes, chansons, films... Une devinette chaque jour pour tester votre culture générale.
-                </p>
-                <a href="{% url 'avent2025:avent2025_devinette' %}" class="app-link">
-                    Découvrir les devinettes →
-                </a>
-            </div>
-        </div>
-
-        <!-- Calendrier de l'Avent 2024 - Enigmes -->
-        <div class="app-card avent2024-enigmes">
-            <div class="app-card-header">
-                <div class="app-icon">🧩</div>
-                <div class="app-title">Énigmes 2024</div>
-                <div class="app-badge">Archives 2024</div>
-            </div>
-            <div class="app-card-body">
-                <p class="app-description">
-                    L'édition 2024 du calendrier de l'Avent avec son thème égyptien. Revivez l'aventure de Gabin et Louis à travers les pyramides mystérieuses.
-                </p>
-                <a href="{% url 'avent2024:avent2024' %}" class="app-link">
-                    Accéder aux énigmes 2024 →
-                </a>
-            </div>
-        </div>
-
-        <!-- Calendrier de l'Avent 2024 - Devinettes -->
-        <div class="app-card avent2024-devinettes">
-            <div class="app-card-header">
-                <div class="app-icon">�</div>
-                <div class="app-title">Devinettes 2024</div>
-                <div class="app-badge">Archives 2024</div>
-            </div>
-            <div class="app-card-body">
-                <p class="app-description">
-                    Les devinettes de l'édition 2024. Une collection de défis visuels et culturels pour toute la famille.
-                </p>
-                <a href="{% url 'avent2024:avent2024_devinette' %}" class="app-link">
-                    Voir les devinettes 2024 →
+                <a href="{% url 'avent2026:home' %}" class="app-link">
+                    Voir le calendrier →
                 </a>
             </div>
         </div>

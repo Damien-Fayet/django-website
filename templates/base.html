@@ -8,7 +8,6 @@
 </head>
 <style>
   body {
-    background: url("/static/avent2024/images/wallpaper.png") no-repeat center center fixed;
     background-size: cover;
     position: relative;
   }
@@ -88,15 +87,6 @@
 </style>
 <body>
   <main>
-    <div class="login-title">
-      <img src="/static/avent2024/images/banner.png" width="120px"/>
-      <div id="title">
-        <p> Bienvenue sur le calendrier de l'avent 2024 !</p>
-        <a href="{% url 'avent2024:classement' %}">Classement</a>
-      </div>
-
-      <img style="float:right;text-align: right;" src="/static/avent2024/images/banner.png" width="120px"/>
-    </div>
     {% block content %}
     {% endblock %}
   </main>
