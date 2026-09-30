@@ -33,3 +33,4 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 - Contenu : via l'admin (`/admin/`), ou `python manage.py seed_avent2026` (contenu de test sur les jours 1 et 2, idempotent).
 - Énoncés et indices rendus en HTML non échappé (`|safe`) : contenu saisi par l'admin uniquement.
 - Tests : `python manage.py test avent2026`.
+- Thème 2026 : un petit robot apprend et s'améliore pour rejoindre le Père Noël. `avent2026/robot.py` : niveaux/modules (énergie = total des points), prologue/épilogue ; `scene.py` : 4 zones de 6 jours ; `templates/avent2026/_robot.html` : robot en SVG inline (modules affichés selon le niveau) ; `Puzzle.story` : fragment d'histoire révélé à la résolution, archivé dans le Journal (`/avent2026/journal/`). La date reste la seule porte d'entrée : aucun puzzle n'est bloqué par un échec.

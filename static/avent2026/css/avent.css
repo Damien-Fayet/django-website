@@ -62,3 +62,28 @@ input[type=text] { background: rgba(255,255,255,.1); border: 1px solid var(--mut
 .boards ol { padding-left: 1.4rem; margin: 0; }
 .boards li { padding: .2rem 0; } .boards li span { display: inline-block; min-width: 8rem; }
 .boards li.me { color: var(--accent); font-weight: 600; }
+
+/* Zones et robot */
+.stage { background: #07091c; }
+.zone { position: absolute; left: var(--l); top: var(--t); width: var(--w); height: var(--h);
+  background: linear-gradient(160deg, var(--from), var(--to)); border: 1px solid rgba(255,255,255,.06); transition: filter .4s; }
+.zone.dark { filter: brightness(.35) saturate(.6); }
+.zone-name { position: absolute; left: .6rem; top: .4rem; font-size: .8rem; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+.robot-wrap { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -115%); width: 56px; pointer-events: none;
+  transition: left .8s ease, top .8s ease; z-index: 3; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 50% { margin-top: -5px; } }
+.robot { width: 100%; height: auto; fill: #c8d3f0; stroke: #0b1026; stroke-width: 2; }
+.robot .eye { fill: var(--accent); } .robot .panel { fill: #6b7aa8; } .robot .led { fill: var(--bad); }
+.robot .m-antenna line, .robot .m-radar path { fill: none; stroke: var(--accent); stroke-width: 3; }
+.robot .m-jetpack rect { fill: #8a94b8; } .robot .flame { fill: var(--hard); }
+.robot .m-wheels rect, .robot .m-wheels circle { fill: #505a82; }
+.robot .m-wheels.basic circle { fill: #505a82; }
+.scores .lvl { flex-basis: 100%; text-align: center; }
+.scores progress { width: 110px; vertical-align: middle; accent-color: var(--accent); }
+.story { line-height: 1.6; } .story h2 { margin-top: 0; font-size: 1.1rem; }
+.journal-robot { display: flex; align-items: center; gap: 1rem; } .journal-robot .robot { width: 70px; flex: none; }
+@media (max-width: 700px) {
+  .zone { left: var(--pl); top: var(--pt); width: var(--pw); height: var(--ph); }
+  .robot-wrap { left: var(--px); top: var(--py); width: 44px; }
+}
+html { background: var(--bg); }

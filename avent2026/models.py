@@ -26,6 +26,10 @@ class Puzzle(models.Model):
         "Réponses acceptées",
         help_text="Une par ligne. Comparaison sans accents, majuscules ni ponctuation.",
     )
+    story = models.TextField(
+        "Fragment d'histoire", blank=True,
+        help_text="Révélé au joueur quand il résout ce puzzle (HTML autorisé).",
+    )
     base_points = models.PositiveIntegerField(
         "Points de base", null=True, blank=True,
         help_text="Laisser vide pour utiliser la valeur par défaut (voir scoring.py).",

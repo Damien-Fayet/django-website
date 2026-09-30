@@ -17,6 +17,7 @@
 
   {% if solved %}
     <p class="msg success">✔ Résolue : +{{ attempt.points }} points.</p>
+    {% if story %}<div class="panel story"><h2>📖 Journal de bord</h2>{{ story|safe }}</div>{% endif %}
   {% else %}
     <p class="points">Vaut actuellement <b>{{ current_points }}</b> points (max {{ max_points }}) — {{ errors }} erreur{{ errors|pluralize }}.</p>
     <form method="post" action="{% url 'avent2026:answer' puzzle.id %}" class="answer">{% csrf_token %}

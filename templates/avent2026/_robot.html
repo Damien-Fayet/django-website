@@ -1,0 +1,16 @@
+{# Petit robot en SVG ; les modules apparaissent selon robot.module_keys. Classe CSS .robot pour la taille. #}
+<svg class="robot" viewBox="0 0 120 140" role="img" aria-label="Robot niveau {{ robot.level }}">
+  {% if "jetpack" in robot.module_keys %}<g class="m-jetpack"><rect x="14" y="60" width="16" height="42" rx="6"/><path d="M18 102 l4 14 l4 -14z" class="flame"/></g>{% endif %}
+  {% if "antenna" in robot.module_keys %}<g class="m-antenna"><line x1="60" y1="20" x2="60" y2="4" /><circle cx="60" cy="4" r="4" class="led"/></g>{% endif %}
+  <g class="body">
+    <rect x="30" y="20" width="60" height="42" rx="12"/>
+    <circle cx="48" cy="40" r="7" class="eye"/><circle cx="72" cy="40" r="7" class="eye"/>
+    <rect x="34" y="62" width="52" height="40" rx="10"/>
+    <rect x="48" y="74" width="24" height="10" rx="3" class="panel"/>
+  </g>
+  {% if "arms" in robot.module_keys %}<g class="m-arms"><rect x="14" y="66" width="14" height="30" rx="6"/><rect x="92" y="66" width="14" height="30" rx="6"/></g>
+  {% else %}<g class="m-arms"><rect x="20" y="70" width="10" height="16" rx="5"/><rect x="90" y="70" width="10" height="16" rx="5"/></g>{% endif %}
+  {% if "radar" in robot.module_keys %}<g class="m-radar"><path d="M78 20 q12 -12 24 0" /><path d="M82 14 q8 -8 16 0" /></g>{% endif %}
+  {% if "wheels" in robot.module_keys %}<g class="m-wheels"><rect x="26" y="106" width="68" height="20" rx="10"/><circle cx="42" cy="116" r="4"/><circle cx="60" cy="116" r="4"/><circle cx="78" cy="116" r="4"/></g>
+  {% else %}<g class="m-wheels basic"><circle cx="46" cy="116" r="9"/><circle cx="74" cy="116" r="9"/></g>{% endif %}
+</svg>

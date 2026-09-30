@@ -1,14 +1,24 @@
 {% extends "avent2026/base.html" %}
 {% block title %}Avent 2026 — La scène{% endblock %}
 {% block content %}
+{% if prologue %}<div class="panel story"><h2>🤖 Prologue</h2><p>{{ prologue }}</p></div>{% endif %}
+{% if epilogue %}<div class="panel story"><h2>🎅 Épilogue</h2><p>{{ epilogue }}</p></div>{% endif %}
+
 <section class="scores">
   <span>🧩 Énigmes <b>{{ scores.enigme }}</b></span>
   <span>🎭 Devinettes <b>{{ scores.devinette }}</b></span>
-  <span>Total <b>{{ scores.total }}</b></span>
+  <span>⚡ Énergie <b>{{ scores.total }}</b></span>
+  <span class="lvl">Niveau {{ robot.level }}/{{ robot.max_level }} — {{ robot.title }}
+    {% if robot.next_module %}<progress max="100" value="{{ robot.progress_pct }}"></progress> prochain : {{ robot.next_module }} ({{ robot.next_threshold }}){% endif %}</span>
 </section>
 
-{# Scène immersive : fond et décor à remplacer quand le thème sera choisi (image dans static/avent2026/). #}
 <div class="stage">
+  {% for z in zones %}
+  <div class="zone {% if not z.lit %}dark{% endif %}"
+       style="--l:{{ z.rect.0 }}%;--t:{{ z.rect.1 }}%;--w:{{ z.rect.2 }}%;--h:{{ z.rect.3 }}%;--pl:{{ z.prect.0 }}%;--pt:{{ z.prect.1 }}%;--pw:{{ z.prect.2 }}%;--ph:{{ z.prect.3 }}%;--from:{{ z.bg_from }};--to:{{ z.bg_to }}">
+    <span class="zone-name" title="{{ z.description }}">{{ z.name }}</span>
+  </div>
+  {% endfor %}
   {% for n in nodes %}
     {% if n.state == "locked" %}
       <span class="node locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%" title="Pas encore débloqué">
@@ -22,6 +32,9 @@
       </a>
     {% endif %}
   {% endfor %}
+  <div class="robot-wrap" style="--x:{{ robot_node.x }}%;--y:{{ robot_node.y }}%;--px:{{ robot_node.px }}%;--py:{{ robot_node.py }}%">
+    {% include "avent2026/_robot.html" %}
+  </div>
 </div>
 <p class="hint-line">Chaque jour se débloque à minuit (heure de Paris). Joue-les dans l'ordre que tu veux.</p>
 {% endblock %}

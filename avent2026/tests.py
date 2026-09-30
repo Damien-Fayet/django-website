@@ -103,3 +103,54 @@ class FlowTests(TestCase):
     def test_unlock_all_setting(self):
         with mock.patch("avent2026.scoring.today", return_value=date(2026, 1, 1)):
             self.assertEqual(self.client.get(reverse("avent2026:day", args=[24])).status_code, 200)
+
+
+class RobotTests(TestCase):
+    def test_thresholds_and_modules(self):
+        from . import robot
+        self.assertEqual(robot.robot_state(0)["level"], 1)
+        self.assertEqual(robot.robot_state(0)["module_keys"], [])
+        s = robot.robot_state(900)
+        self.assertEqual((s["level"], s["module_keys"]), (3, ["antenna", "arms"]))
+        top = robot.robot_state(10 ** 6)
+        self.assertEqual((top["level"], top["progress_pct"], top["next_threshold"]), (6, 100, None))
+
+    def test_max_level_reachable(self):
+        """Un joueur parfait sur un calendrier complet (1 énigme f/d + 1 devinette f/j) atteint le niveau max."""
+        from . import robot, scoring
+        per_day = sum(scoring.BASE_POINTS[k] for k in [("enigme", "facile"), ("enigme", "difficile"), ("devinette", "facile")])
+        self.assertGreater(per_day * 24, robot.LEVELS[-1][0])
+
+
+class StoryTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("carl", password="pw")
+        self.client.force_login(self.user)
+        self.p = Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="oui",
+                                       story="<p>SECRET-FRAGMENT</p>")
+
+    def test_story_hidden_until_solved(self):
+        with at(1):
+            url = reverse("avent2026:puzzle", args=[self.p.id])
+            self.assertNotContains(self.client.get(url), "SECRET-FRAGMENT")
+            self.assertNotContains(self.client.get(reverse("avent2026:journal")), "SECRET-FRAGMENT")
+            self.client.post(reverse("avent2026:answer", args=[self.p.id]), {"answer": "oui"})
+            self.assertContains(self.client.get(url), "SECRET-FRAGMENT")
+            self.assertContains(self.client.get(reverse("avent2026:journal")), "SECRET-FRAGMENT")
+
+    def test_zone_lit_by_date_and_prologue_once(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:home"))
+            self.assertTrue(r.context["prologue"])
+            self.assertEqual([z["lit"] for z in r.context["zones"]], [True, False, False, False])
+            self.assertFalse(self.client.get(reverse("avent2026:home")).context["prologue"])
+        with at(8):
+            r = self.client.get(reverse("avent2026:home"))
+            self.assertEqual([z["lit"] for z in r.context["zones"]], [True, True, False, False])
+
+    def test_epilogue_after_day_24(self):
+        p24 = Puzzle.objects.create(kind="devinette", day=24, title="Fin", text="?", answers="x")
+        with at(24):
+            self.assertFalse(self.client.get(reverse("avent2026:home")).context["epilogue"])
+            self.client.post(reverse("avent2026:answer", args=[p24.id]), {"answer": "x"})
+            self.assertTrue(self.client.get(reverse("avent2026:home")).context["epilogue"])

@@ -4,22 +4,22 @@ from avent2026.models import Hint, Puzzle
 
 # Contenu de test, à remplacer par le vrai contenu (via l'admin) une fois le thème choisi.
 SAMPLES = [
-    dict(kind="enigme", day=1, difficulty="facile", title="Le compte est bon",
+    dict(kind="enigme", day=1, difficulty="facile", title="Le compte est bon", story="<p>Le robot aligne ses engrenages : 2, 4, 8, 16, 32… Son processeur ronronne. Il sait enfin compter.</p>",
          text="<p>Je suis le prochain nombre : 2, 4, 8, 16, …</p>", answers="32\ntrente deux",
          hints=["Chaque nombre est le double du précédent.", "16 × 2 = ?"]),
-    dict(kind="enigme", day=1, difficulty="difficile", title="Suite piégeuse",
+    dict(kind="enigme", day=1, difficulty="difficile", title="Suite piégeuse", story="<p>Dans un tiroir, il trouve un vieux manuel de mathématiques. Une spirale dorée y est dessinée : la nature aussi sait calculer.</p>",
          text="<p>1, 1, 2, 3, 5, 8, 13, … Quel est le nombre suivant <b>après</b> 21 ?</p>", answers="34\ntrente quatre",
          hints=["Regarde comment chaque nombre se forme à partir des deux précédents.", "13 + 21 = 34… mais attends, que demande-t-on ?"]),
-    dict(kind="devinette", day=1, difficulty="facile", title="Qui suis-je ?",
+    dict(kind="devinette", day=1, difficulty="facile", title="Qui suis-je ?", story="<p>Un écho dans son antenne encore muette : « …rouge et blanc… » Le robot comprend qui l'appelle.</p>",
          text="<p>Je suis rouge et blanc, j'apporte des cadeaux et je n'aime pas la cheminée trop étroite.</p>",
          answers="le père noël\npere noel\nle pere noel", hints=["Il a une grande barbe blanche."]),
-    dict(kind="enigme", day=2, difficulty="facile", title="Dans le sapin",
+    dict(kind="enigme", day=2, difficulty="facile", title="Dans le sapin", story="<p>Une guirlande clignote dans l'atelier. Le robot y branche son câble : il a de l'énergie pour la journée.</p>",
          text="<p>J'ai des branches mais pas de feuilles, je brille sans soleil. Que suis-je ?</p>", answers="guirlande\nune guirlande",
          hints=["On m'accroche au sapin."]),
-    dict(kind="enigme", day=2, difficulty="difficile", title="Le mot caché",
+    dict(kind="enigme", day=2, difficulty="difficile", title="Le mot caché", story="<p>Le robot déchiffre une lettre gravée sous l'établi : un N. Comme Noël, comme Nord.</p>",
          text="<p>Je commence la nuit et je finis le jour, mais je ne suis ni l'un ni l'autre. Quelle est ma lettre ?</p>", answers="n\nla lettre n\nlettre n",
          hints=["Regarde le début et la fin des mots « nuit » et « jour »."]),
-    dict(kind="devinette", day=2, difficulty="facile", title="Gourmandise",
+    dict(kind="devinette", day=2, difficulty="facile", title="Gourmandise", story="<p>Une odeur de chocolat flotte dans l'atelier. Le robot n'a pas de nez, mais il sent que le chalet est proche.</p>",
          text="<p>On me coupe en tranches, je suis roulée et je suis en chocolat à Noël.</p>",
          answers="la bûche\nbuche\nla buche\nbûche de noël", hints=["C'est un dessert."]),
 ]

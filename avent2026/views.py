@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import scene, scoring
+from . import robot, scene, scoring
 from .models import Attempt, Hint, HintReveal, Puzzle
 
 
@@ -42,7 +42,21 @@ def home(request):
             "x": scene.LANDSCAPE[day][0], "y": scene.LANDSCAPE[day][1],
             "px": scene.PORTRAIT[day][0], "py": scene.PORTRAIT[day][1],
         })
-    return render(request, "avent2026/home.html", {"nodes": nodes, "scores": _user_scores(request.user)})
+    scores = _user_scores(request.user)
+    unlocked_days = {n["day"] for n in nodes if n["state"] != "locked"}
+    zones = scene.zones_context()
+    for z in zones:
+        z["lit"] = any(d in unlocked_days for d in z["days"])
+    last_day = (Attempt.objects.filter(user=request.user, solved_at__isnull=False)
+                .order_by("-solved_at").values_list("puzzle__day", flat=True).first()) or 1
+    robot_node = next(n for n in nodes if n["day"] == last_day)
+    show_prologue = not request.session.get("avent2026_prologue_seen")
+    request.session["avent2026_prologue_seen"] = True
+    return render(request, "avent2026/home.html", {
+        "nodes": nodes, "scores": scores, "zones": zones, "robot": robot.robot_state(scores["total"]),
+        "robot_node": robot_node, "prologue": robot.PROLOGUE if show_prologue else "",
+        "epilogue": robot.EPILOGUE if _finished(request.user) else "",
+    })
 
 
 @login_required
@@ -64,6 +78,10 @@ def day_view(request, day):
     })
 
 
+def _finished(user):
+    return Attempt.objects.filter(user=user, puzzle__day=24, solved_at__isnull=False).exists()
+
+
 def _puzzle_context(request, puzzle):
     attempt = Attempt.objects.filter(user=request.user, puzzle=puzzle).first()
     hints = list(puzzle.hints.all())
@@ -80,6 +98,8 @@ def _puzzle_context(request, puzzle):
         "errors": errors, "max_points": scoring.puzzle_base_points(puzzle),
         "current_points": scoring.compute_points(puzzle, errors, revealed),
         "siblings": Puzzle.objects.filter(day=puzzle.day, kind=puzzle.kind),
+        # Le fragment d'histoire n'est envoyé au template qu'une fois le puzzle résolu.
+        "story": puzzle.story if attempt and attempt.solved else "",
     }
 
 
@@ -151,4 +171,17 @@ def leaderboard(request):
     return render(request, "avent2026/leaderboard.html", {
         "enigmes": board[Puzzle.ENIGME], "devinettes": board[Puzzle.DEVINETTE], "total": total,
         "me": request.user.username,
+    })
+
+
+@login_required
+def journal(request):
+    """Journal de bord : prologue et fragments d'histoire des puzzles déjà résolus."""
+    solved = (Attempt.objects.filter(user=request.user, solved_at__isnull=False).exclude(puzzle__story="")
+              .select_related("puzzle").order_by("puzzle__day", "puzzle__kind", "puzzle__difficulty"))
+    scores = _user_scores(request.user)
+    return render(request, "avent2026/journal.html", {
+        "entries": [a.puzzle for a in solved], "prologue": robot.PROLOGUE,
+        "epilogue": robot.EPILOGUE if _finished(request.user) else "",
+        "robot": robot.robot_state(scores["total"]),
     })
