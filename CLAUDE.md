@@ -5,7 +5,7 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 ## Apps
 - `accounts` : inscription/connexion, page d'accueil publique (`public_home`), context processor `discord_url`.
 - `avent2026` : calendrier de l'Avent 2026 (squelette vide : page « Bientôt »).
-- `sudoku`, `biblio`, `max_challenge` : autres mini-sites indépendants.
+- `biblio`, `max_challenge` : autres mini-sites indépendants.
 - `mysite` : settings / urls. `templates/` : templates globaux (`home.html`, `base.html`, auth). `static/` : statiques globaux (`static/css/modern-*.css` pour l'accueil et l'auth).
 
 ## Contraintes d'hébergement et d'optimisation

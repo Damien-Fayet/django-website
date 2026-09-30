@@ -32,7 +32,6 @@ ALLOWED_HOSTS = ['*','damienf.pythonanywhere.com']
 
 INSTALLED_APPS = [
     "avent2026.apps.Avent2026Config",
-    "sudoku.apps.SudokuConfig",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

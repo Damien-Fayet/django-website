@@ -24,7 +24,6 @@ from accounts.views import public_home
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("ckeditor5/", include('django_ckeditor_5.urls')),
-    path("sudoku/", include("sudoku.urls")),
     path("avent2026/", include("avent2026.urls")),
     path("biblio/", include("biblio.urls")),    # Nouveau chemin pour biblio
     path("max_challenge/", include("max_challenge.urls")),    # Nouveau chemin pour max_challenge
