@@ -24,11 +24,8 @@ from accounts.views import public_home
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("ckeditor5/", include('django_ckeditor_5.urls')),
-    path("sudoku/", include("sudoku.urls")),
     path("avent2026/", include("avent2026.urls")),
     path("biblio/", include("biblio.urls")),    # Nouveau chemin pour biblio
-    path("chessTrainer/", include("chessTrainer.urls")),      # Nouveau chemin pour chessTrainer
-    path("max_challenge/", include("max_challenge.urls")),    # Nouveau chemin pour max_challenge
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("", public_home, name="home"),  # Page d'accueil publique

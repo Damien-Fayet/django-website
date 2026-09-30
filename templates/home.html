@@ -114,14 +114,6 @@
         background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
     }
 
-    .chess .app-card-header {
-        background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
-    }
-
-    .max-challenge .app-card-header {
-        background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
-    }
-
     .app-icon {
         font-size: 4rem;
         margin-bottom: 1rem;
@@ -307,40 +299,6 @@
                 </p>
                 <a href="{% url 'biblio:book_list' %}" class="app-link">
                     Accéder à la bibliothèque →
-                </a>
-            </div>
-        </div>
-
-        <!-- Analyse d'Échecs -->
-        <div class="app-card chess">
-            <div class="app-card-header">
-                <div class="app-icon">♟️</div>
-                <div class="app-title">Analyse d'Échecs</div>
-                <div class="app-badge">Chess.com</div>
-            </div>
-            <div class="app-card-body">
-                <p class="app-description">
-                    Analysez vos parties Chess.com avec Stockfish. Visualisez vos erreurs sur un échiquier interactif et progressez dans votre jeu.
-                </p>
-                <a href="{% url 'chessTrainer:chess_analysis' %}" class="app-link">
-                    Analyser une partie →
-                </a>
-            </div>
-        </div>
-
-        <!-- Max Challenge -->
-        <div class="app-card max-challenge">
-            <div class="app-card-header">
-                <div class="app-icon">🎯</div>
-                <div class="app-title">Max Challenge</div>
-                <div class="app-badge">Jeu d'équipes</div>
-            </div>
-            <div class="app-card-body">
-                <p class="app-description">
-                    Jeu de devinettes en ASCII Art pour 2 équipes. Révélez progressivement les photos mystères et soyez les premiers à deviner !
-                </p>
-                <a href="{% url 'max_challenge:index' %}" class="app-link">
-                    Jouer au Max Challenge →
                 </a>
             </div>
         </div>
