@@ -98,7 +98,7 @@ class Migration(migrations.Migration):
                         name="uniq_avent2026_puzzle",
                     ),
                     models.CheckConstraint(
-                        condition=models.Q(("day__gte", 1), ("day__lte", 24)),
+                        check=models.Q(("day__gte", 1), ("day__lte", 24)),
                         name="avent2026_day_1_24",
                     ),
                 ],

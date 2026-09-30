@@ -13,6 +13,7 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 - Peu de dépendances ; rien qui nécessite un process de fond (pas de Celery/Redis).
 - SQLite : requêtes simples, `select_related`/`prefetch_related`, pas d'N+1, pas d'écritures lourdes concurrentes.
 - Trafic faible (30 personnes) : pas de sur-ingénierie, pas de cache distribué.
+- Le Django de PythonAnywhere est plus ancien que celui du dev (Python 3.10) : rester compatible Django 4.2 → 5.x (ex. `CheckConstraint(check=...)`, pas `condition=`) et tester aussi avec un venv Django 4.2 avant de pousser.
 - `mysite/settings.py` est dans `.gitignore` mais déjà suivi par git ; la `SECRET_KEY` y est en dur et `DEBUG=True` : à sécuriser (variables d'environnement) avant d'y mettre quoi que ce soit de sensible.
 - Ne pas committer `db.sqlite3`, `__pycache__`, `media/uploads`.
 
