@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "accounts",
     "biblio",
-    "max_challenge.apps.MaxChallengeConfig",
     'django_ckeditor_5',
 ]
 
@@ -158,20 +157,12 @@ DISCORD_INVITE_URL = 'https://discord.gg/votre-invitation'  # Remplacez par votr
 # EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-application'
 # DEFAULT_FROM_EMAIL = 'noreply@calendrieravent.fr'
 
-# Configuration du logging pour réduire la verbosité des requêtes AJAX répétitives
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'filters': {
-        'skip_max_challenge_api': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': lambda record: '/max_challenge/api/' not in record.getMessage()
-        },
-    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'filters': ['skip_max_challenge_api'],
         },
     },
     'loggers': {
