@@ -29,7 +29,7 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 ## avent2026 — architecture
 - Modèles : `Puzzle` (kind enigme/devinette, jour 1-24, difficulté facile/difficile), `Hint` (indices ordonnés, coût), `Attempt` (progression/points par joueur et puzzle), `HintReveal`. Pas de `UserProfile` : les scores se calculent depuis `Attempt`.
 - Règles dans `avent2026/scoring.py` (points de base par type/difficulté, coût d'indice, pénalité d'erreur, déblocage à minuit Europe/Paris, normalisation des réponses). Le staff voit tous les jours ; `AVENT2026_UNLOCK_ALL = True` dans settings débloque tout (tests/démo).
-- Scène d'accueil non linéaire : `avent2026/scene.py` (positions des 24 jours, paysage/portrait) + `static/avent2026/css/avent.css`. Décor et thème à définir ; aucune image pour l'instant.
+- Scène d'accueil non linéaire : `avent2026/scene.py` (positions des 24 jours, paysage/portrait) + `static/avent2026/css/avent.css`. Décors des 4 zones en SVG inline dans `templates/avent2026/_zone_art.html` (viewBox 160x100, `slice` : en portrait seule la bande centrale reste visible) ; aucune image.
 - Contenu : via l'admin (`/admin/`), ou `python manage.py seed_avent2026` (contenu de test sur les jours 1 et 2, idempotent).
 - Énoncés et indices rendus en HTML non échappé (`|safe`) : contenu saisi par l'admin uniquement.
 - Tests : `python manage.py test avent2026`.

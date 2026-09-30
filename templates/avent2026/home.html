@@ -16,6 +16,7 @@
   {% for z in zones %}
   <div class="zone {% if not z.lit %}dark{% endif %}"
        style="--l:{{ z.rect.0 }}%;--t:{{ z.rect.1 }}%;--w:{{ z.rect.2 }}%;--h:{{ z.rect.3 }}%;--pl:{{ z.prect.0 }}%;--pt:{{ z.prect.1 }}%;--pw:{{ z.prect.2 }}%;--ph:{{ z.prect.3 }}%;--from:{{ z.bg_from }};--to:{{ z.bg_to }}">
+    {% include "avent2026/_zone_art.html" %}
     <span class="zone-name" title="{{ z.description }}">{{ z.name }}</span>
   </div>
   {% endfor %}

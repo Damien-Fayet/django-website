@@ -87,3 +87,19 @@ input[type=text] { background: rgba(255,255,255,.1); border: 1px solid var(--mut
   .robot-wrap { left: var(--px); top: var(--py); width: 44px; }
 }
 html { background: var(--bg); }
+
+/* Décors de zone (SVG inline) */
+.zone { overflow: hidden; }
+.zone-art { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .75; z-index: 0; }
+.zone-name { z-index: 1; }
+.twinkle { animation: twinkle 3s ease-in-out infinite; } .twinkle.d2 { animation-delay: 1.4s; }
+@keyframes twinkle { 50% { opacity: .2; } }
+.smoke { animation: smoke 5s ease-in-out infinite; transform-box: fill-box; }
+@keyframes smoke { 50% { transform: translateY(-4px); opacity: .15; } }
+.drift { animation: drift 6s ease-in-out infinite alternate; }
+@keyframes drift { to { transform: translate(4px, 6px); } }
+.aurora { animation: drift 8s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .twinkle, .smoke, .drift, .aurora, .robot-wrap { animation: none; } }
+.node { background: rgba(10, 14, 42, .62); box-shadow: 0 0 0 2px rgba(255,255,255,.12); }
+.node.open { box-shadow: 0 0 18px rgba(255,211,107,.55); }
+.node.done { box-shadow: 0 0 14px rgba(91,227,160,.4); }
