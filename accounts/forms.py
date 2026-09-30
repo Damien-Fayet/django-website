@@ -27,7 +27,7 @@ class UserRegisterForm(UserCreationForm):
     password1 = forms.CharField(
         label='Mot de passe',
         required=True,
-        help_text='Minimum 8 caractères. Pas trop simple !',
+        help_text='Choisis ce que tu veux, tant que tu t\'en souviens.',
         widget=forms.PasswordInput(attrs={
             'class': 'form-input',
             'placeholder': 'Choisissez un mot de passe sécurisé'

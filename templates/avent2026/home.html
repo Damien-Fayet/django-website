@@ -1,11 +1,27 @@
-{% extends "base.html" %}
-
-{% block title %}Calendrier de l'Avent 2026{% endblock %}
-
+{% extends "avent2026/base.html" %}
+{% block title %}Avent 2026 — La scène{% endblock %}
 {% block content %}
-<div style="text-align:center; padding: 4rem 1rem;">
-  <h1>🎄 Calendrier de l'Avent 2026</h1>
-  <p>Bientôt disponible !</p>
-  <p><a href="{% url 'home' %}">← Retour à l'accueil</a></p>
+<section class="scores">
+  <span>🧩 Énigmes <b>{{ scores.enigme }}</b></span>
+  <span>🎭 Devinettes <b>{{ scores.devinette }}</b></span>
+  <span>Total <b>{{ scores.total }}</b></span>
+</section>
+
+{# Scène immersive : fond et décor à remplacer quand le thème sera choisi (image dans static/avent2026/). #}
+<div class="stage">
+  {% for n in nodes %}
+    {% if n.state == "locked" %}
+      <span class="node locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%" title="Pas encore débloqué">
+        <b>{{ n.day }}</b><i>🔒</i>
+      </span>
+    {% else %}
+      <a class="node {{ n.state }}" href="{% url 'avent2026:day' n.day %}"
+         style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
+         title="{% if n.total %}{{ n.solved }}/{{ n.total }} résolus{% else %}Rien de publié{% endif %}">
+        <b>{{ n.day }}</b><i>{% if n.state == "done" %}✔{% elif n.state == "empty" %}·{% else %}✨{% endif %}</i>
+      </a>
+    {% endif %}
+  {% endfor %}
 </div>
+<p class="hint-line">Chaque jour se débloque à minuit (heure de Paris). Joue-les dans l'ordre que tu veux.</p>
 {% endblock %}

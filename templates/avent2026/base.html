@@ -1,0 +1,25 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Avent 2026{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'avent2026/css/avent.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{% url 'avent2026:home' %}">🎄 Avent 2026</a>
+    <nav>
+      <a href="{% url 'avent2026:home' %}">Scène</a>
+      <a href="{% url 'avent2026:leaderboard' %}">Classement</a>
+      <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}
+        <button type="submit" class="link">Quitter ({{ request.user.username }})</button>
+      </form>
+    </nav>
+  </header>
+  {% if messages %}
+  <ul class="messages">{% for m in messages %}<li class="msg {{ m.tags }}">{{ m }}</li>{% endfor %}</ul>
+  {% endif %}
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>
