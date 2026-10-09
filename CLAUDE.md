@@ -27,6 +27,8 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 - Lancer : `python manage.py runserver` ; migrations : `python manage.py migrate` ; tests : `python manage.py test`.
 - Déploiement PythonAnywhere : sauvegarder `db.sqlite3`, `git pull`, `python manage.py migrate`, `python manage.py collectstatic`, puis « Reload » de la web app. Dépendances : `pip install --user -r requirements.txt`. Onglet Web → Static files : `/static/` → `~/django-website/staticfiles` (et `/media/` → `~/django-website/media`). Après la première migration de nettoyage : `sqlite3 db.sqlite3 "VACUUM;"` pour récupérer l'espace.
 
+- Hébergement sur Raspberry Pi (Pi 1 / Pi 3, Cloudflare Tunnel) : voir `DEPLOY_PI.md`.
+
 ## avent2026 — architecture
 - Modèles : `Puzzle` (kind enigme/devinette, jour 1-24, difficulté facile/difficile), `Hint` (indices ordonnés, coût), `Attempt` (progression/points par joueur et puzzle), `HintReveal`. Pas de `UserProfile` : les scores se calculent depuis `Attempt`.
 - Règles dans `avent2026/scoring.py` (points de base par type/difficulté, coût d'indice, pénalité d'erreur, déblocage à minuit Europe/Paris, normalisation des réponses). Le staff voit tous les jours ; `AVENT2026_UNLOCK_ALL = True` dans settings débloque tout (tests/démo).
