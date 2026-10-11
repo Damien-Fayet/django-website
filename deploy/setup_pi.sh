@@ -137,6 +137,13 @@ cloudflared_source() {
   esac
 }
 
+# Extrait le jeton Cloudflare (base64 commençant par eyJ) de n'importe quel texte collé : jeton seul,
+# commande complète « sudo cloudflared service install eyJ… », caractères parasites avant/après, retours chariot.
+extract_token() { printf '%s' "$1" | tr -d '\r' | grep -oE 'eyJ[A-Za-z0-9_=+/.-]{40,}' | head -n 1 || true; }
+
+# Vide les touches tapées pendant les longues étapes précédentes (elles seraient lues comme début du jeton).
+drain_stdin() { local junk; while IFS= read -r -t 0.2 -n 4096 junk; do :; done || true; }
+
 valid_domain() { [[ "$1" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$ ]]; }
 
 # Clé secrète : caractères URL-safe uniquement (aucun $, #, !, % à protéger).
@@ -400,14 +407,26 @@ step_tunnel() {
     run_ok $SUDO cloudflared service uninstall
   fi
   # Jeton : variable d'environnement, sinon saisie masquée. Jamais écrit dans le journal.
-  local token="${CLOUDFLARE_TUNNEL_TOKEN:-}"
-  if [[ -z "$token" ]]; then
+  local token="" raw="${CLOUDFLARE_TUNNEL_TOKEN:-}" attempt
+  if [[ -n "$raw" ]]; then
+    token="$(extract_token "$raw")"
+    [[ -n "$token" ]] || die "CLOUDFLARE_TUNNEL_TOKEN n'a pas le format d'un jeton (il commence par « eyJ »)."
+  else
     if [[ $YES -eq 1 || ! -t 0 ]]; then warn "Pas de jeton : tunnel non configuré (CLOUDFLARE_TUNNEL_TOKEN)."; return; fi
-    info "Collez le jeton du tunnel (Cloudflare Zero Trust → Tunnels), puis Entrée (rien ne s'affiche) ; Entrée seul pour ignorer."
-    read -rs -p "    Jeton : " token; printf '\n'
+    info "Collez le jeton du tunnel (ou la commande complète fournie par Cloudflare), puis Entrée."
+    info "Rien ne s'affiche pendant la saisie ; Entrée seul pour ignorer le tunnel."
+    for attempt in 1 2 3; do
+      drain_stdin
+      read -rs -p "    Jeton : " raw || true; printf '\n'
+      [[ -n "${raw//[[:space:]]/}" ]] || { warn "Tunnel ignoré (pas de jeton)."; return; }
+      token="$(extract_token "$raw")"
+      [[ -n "$token" ]] && break
+      # Diagnostic sans révéler le contenu : seulement la longueur et la présence de « eyJ ».
+      warn "Aucun jeton reconnu dans ce que vous avez collé (${#raw} caractères reçus, « eyJ » $([[ "$raw" == *eyJ* ]] && echo présent || echo absent)). Essai $attempt/3."
+    done
+    unset raw
+    [[ -n "$token" ]] || die "Jeton non reconnu après 3 essais. Copiez-le depuis Cloudflare (Zero Trust → Tunnels → votre tunnel → Install and run connector)."
   fi
-  [[ -n "$token" ]] || { warn "Tunnel ignoré (pas de jeton)."; return; }
-  [[ "$token" =~ ^eyJ[A-Za-z0-9_=+/.-]{40,}$ ]] || die "Ce jeton n'a pas le bon format (il commence par « eyJ » et est long)."
   # Le jeton passe en argument de la commande officielle ; sa sortie est masquée dans le journal.
   $SUDO cloudflared service install "$token" 2>&1 | mask >>"$LOG_FILE" \
     || die "cloudflared service install a échoué (jeton refusé ou service déjà installé)."
