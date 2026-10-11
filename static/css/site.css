@@ -51,7 +51,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-main { flex: 1 0 auto; width: 100%; max-width: var(--page); margin: 0 auto; padding: 2rem 1rem 4rem; }
+main { flex: 1 0 auto; width: 100%; max-width: var(--page); margin: 0 auto; padding: 2.5rem 1rem 4rem; }
 
 h1, h2, h3 { margin: 0 0 .6em; font-weight: 600; line-height: 1.2; letter-spacing: -.011em; text-wrap: balance; }
 h1 { font-size: clamp(1.75rem, 1.35rem + 1.5vw, 2.25rem); }
@@ -77,12 +77,20 @@ a:hover { color: var(--sapin-fonce); }
 .skip-link:focus { top: 1rem; }
 
 /* ---- En-tête ------------------------------------------------------------- */
-.site-header { background: var(--papier); border-bottom: 1px solid var(--filet); }
+.site-header { position: relative; z-index: 5; background: var(--papier); border-bottom: 1px solid var(--filet); }
+
+/* Guirlande : fil et ampoules (sapin, baie, laiton) sous l'en-tête. Décor seul, statique. */
+.site-header::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 18px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='18' viewBox='0 0 64 18'%3E%3Cpath d='M0 1Q32 11 64 1' fill='none' stroke='%238593a0'/%3E%3Cg fill='%238593a0'%3E%3Cpath d='M14.8 4.4h2.4l.5 1.8h-3.4z'/%3E%3Cpath d='M30.8 5.7h2.4l.5 1.8h-3.4z'/%3E%3Cpath d='M46.8 4.4h2.4l.5 1.8h-3.4z'/%3E%3C/g%3E%3Cellipse cx='16' cy='9' rx='2.3' ry='3' fill='%23a8323e'/%3E%3Cellipse cx='32' cy='10.3' rx='2.3' ry='3' fill='%23d9a441'/%3E%3Cellipse cx='48' cy='9' rx='2.3' ry='3' fill='%231d5b49'/%3E%3C/svg%3E") repeat-x left top;
+}
 .site-header__inner {
   max-width: var(--page); margin: 0 auto; padding: .5rem 1rem;
   display: flex; flex-wrap: wrap; align-items: center; gap: 0 1.75rem; min-height: 3.5rem;
 }
 .brand { font-size: 1.0625rem; font-weight: 600; letter-spacing: -.01em; color: var(--encre); text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: .5rem; }
+.brand::before { content: ""; width: 1rem; height: 1rem; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23c08a22' d='M8 0c.6 4.6 2.8 7.4 8 8-5.2.6-7.4 3.4-8 8-.6-4.6-2.8-7.4-8-8 5.2-.6 7.4-3.4 8-8z'/%3E%3C/svg%3E") center / contain no-repeat; }
 .brand span { font-weight: 400; color: var(--brume); }
 .brand:hover { color: var(--encre); }
 
@@ -170,20 +178,45 @@ a:hover { color: var(--sapin-fonce); }
 .hero__actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
 
 @media (min-width: 56rem) {
-  .hero.has-countdown { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 4rem; }
+  .hero { grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: 4rem; }
 }
 
-.countdown { padding: 1.75rem 1.5rem; border-radius: var(--r-panel); background: var(--nuit); color: #e8edf3; }
-.countdown__title { margin: 0 0 1.25rem; font-size: .9375rem; color: #a9b6c4; }
+/* Portes du calendrier : décor de l'accueil. Quelques portes s'ouvrent une fois au chargement. */
+.doors {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none;
+  width: 100%; max-width: 24rem; justify-self: center;
+}
+.door { position: relative; aspect-ratio: 3 / 4; perspective: 500px; font-variant-numeric: tabular-nums; }
+.door__inside, .door__face { position: absolute; inset: 0; border-radius: 1.75rem 1.75rem .3rem .3rem; }
+.door__inside { background: var(--nuit) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23d9a441' d='M8 0c.6 4.6 2.8 7.4 8 8-5.2.6-7.4 3.4-8 8-.6-4.6-2.8-7.4-8-8 5.2-.6 7.4-3.4 8-8z'/%3E%3C/svg%3E") center / 40% no-repeat; }
+.door__face {
+  display: grid; place-items: center; background: var(--sapin); color: #fff; font-size: .875rem; font-weight: 500;
+  transform-origin: left center; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .14);
+}
+.door:nth-child(4n + 3) .door__face { background: var(--baie); }
+.door:is(:nth-child(5), :nth-child(10), :nth-child(15), :nth-child(20), :nth-child(24)) .door__face {
+  animation: porte-ouverte .8s cubic-bezier(.3, .7, .2, 1) both; animation-delay: calc(var(--i) * 60ms + 500ms);
+}
+@keyframes porte-ouverte { to { transform: rotateY(-108deg); } }
+
+.countdown {
+  display: grid; gap: 1rem 2rem; align-items: center; margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  padding: 1.25rem 1.5rem; border-radius: var(--r-panel); background: var(--nuit); color: #e8edf3;
+}
+.countdown__title { margin: 0; font-size: .9375rem; color: #a9b6c4; }
+@media (min-width: 52rem) {
+  .countdown { grid-template-columns: auto minmax(0, 26rem) 1fr; }
+  .countdown__date { margin: 0 !important; padding: 0 !important; border: 0 !important; text-align: right; }
+}
 .countdown__grid { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; }
 .countdown__cell { padding: 0 .5rem 0 .875rem; border-left: 1px solid rgba(255, 255, 255, .16); }
 .countdown__cell:first-child { padding-left: 0; border-left: 0; }
 .countdown__num {
-  display: block; margin: 0; font-size: clamp(1.75rem, 1.1rem + 2.6vw, 3rem); font-weight: 300; line-height: 1;
+  display: block; margin: 0; font-size: clamp(1.5rem, 1.1rem + 1.8vw, 2.25rem); font-weight: 300; line-height: 1;
   font-variant-numeric: tabular-nums; color: #fff;
 }
-.countdown__unit { display: block; margin: .5rem 0 0; font-size: .8125rem; color: #a9b6c4; }
-.countdown__date { margin: 1.5rem 0 0; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, .16); font-size: .9375rem; color: #c9d3dd; }
+.countdown__unit { display: block; margin: .35rem 0 0; font-size: .8125rem; color: #a9b6c4; }
+.countdown__date { margin: .25rem 0 0; padding-top: .75rem; border-top: 1px solid rgba(255, 255, 255, .16); font-size: .9375rem; color: #c9d3dd; }
 .countdown__date strong { font-weight: 500; color: var(--laiton); }
 
 .section { padding: clamp(2rem, 5vw, 3.5rem) 0; border-top: 1px solid var(--filet); }
@@ -199,6 +232,12 @@ a:hover { color: var(--sapin-fonce); }
 /* ---- Connexion et inscription ------------------------------------------- */
 .auth { max-width: 27rem; padding-top: clamp(2rem, 6vw, 4rem); }
 .auth__panel { padding: clamp(1.5rem, 5vw, 2.25rem); border: 1px solid var(--filet); border-radius: var(--r-panel); background: var(--papier); }
+.auth__panel { position: relative; }
+/* Signet rouge en haut à droite, comme un ruban de cadeau */
+.auth__panel::after {
+  content: ""; position: absolute; top: -1px; right: 1.5rem; width: .875rem; height: 2.25rem; background: var(--baie);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+}
 .auth__panel > p.muted { margin-bottom: 1.5rem; }
 .auth__alt { margin: 1.5rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--filet); font-size: .9375rem; color: var(--brume); }
 .auth__alt a { font-weight: 500; }
