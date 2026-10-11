@@ -25,6 +25,8 @@
 .status__scores > div:first-child { border-left: 0; }
 .status dt { font-size: .8125rem; color: var(--brume); }
 .status dd { margin: .1rem 0 0; font-size: 1.5rem; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.status dd small { font-size: .8125rem; font-weight: 400; color: var(--brume); }
+.status dd.status__count { margin-top: .15rem; font-size: .8125rem; font-weight: 400; color: var(--brume); }
 .status__level { padding: .85rem 1.1rem; border-top: 1px solid var(--filet); }
 .status__level p { margin: 0; font-size: .9375rem; }
 .status__level strong { font-weight: 600; }
@@ -34,7 +36,7 @@
 
 @media (min-width: 48rem) {
   .status { grid-template-columns: auto 1fr; }
-  .status__scores > div { min-width: 8.5rem; }
+  .status__scores > div { min-width: 9.5rem; }
   .status__level { border-top: 0; border-left: 1px solid var(--filet); align-self: center; }
 }
 
@@ -58,12 +60,14 @@
 
 .node {
   position: absolute; left: var(--x); top: var(--y); z-index: 2; transform: translate(-50%, -50%);
-  display: grid; place-items: center; width: 2.5rem; height: 3.1rem; border-radius: 1.25rem 1.25rem .3rem .3rem;
+  display: grid; place-items: center; width: 2.5rem; height: 2.5rem;
   background: rgba(14, 26, 40, .78); border: 1px solid rgba(255, 255, 255, .45); color: #fff;
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .1);
   font-size: 1rem; font-weight: 500; font-variant-numeric: tabular-nums; text-decoration: none;
   transition: transform .15s, background-color .15s;
 }
+.node--enigme { border-radius: .55rem; }
+.node--devinette { border-radius: 50%; }
 a.node:hover { transform: translate(-50%, -50%) scale(1.08); color: #fff; }
 .node.open { background: var(--laiton); border-color: var(--laiton); color: var(--nuit); font-weight: 600; box-shadow: inset 0 0 0 3px rgba(14, 26, 40, .22); }
 a.node.open:hover { color: var(--nuit); }
@@ -85,10 +89,22 @@ a.node.open:hover { color: var(--nuit); }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23d3dae1' stroke-width='1.6' stroke-linejoin='round'%3E%3Crect x='2.5' y='5.5' width='7' height='5' rx='1'/%3E%3Cpath d='M4 5.5V4a2 2 0 014 0v1.5'/%3E%3C/svg%3E");
 }
 
+/* Rails des deux sentiers (derrière les étapes) */
+.rail {
+  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: 2px; z-index: 1;
+  transform: translateY(-50%); pointer-events: none;
+}
+.rail--enigme { background: var(--laiton); opacity: .55; }
+.rail--devinette {
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .7) 0 6px, transparent 6px 11px); opacity: .6;
+}
+
+.rail--dark { opacity: .22; }
+
 /* Robot */
 .robot-wrap {
-  position: absolute; left: var(--x); top: var(--y); z-index: 3; width: 3.25rem; pointer-events: none;
-  transform: translate(-50%, -120%); transition: left .8s ease, top .8s ease;
+  position: absolute; left: var(--x); top: var(--y); z-index: 3; width: 2.75rem; pointer-events: none;
+  transform: translate(-50%, -110%); transition: left .8s ease, top .8s ease;
   filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .45));
 }
 .robot { display: block; width: 100%; height: auto; fill: #dfe5ec; stroke: var(--nuit); stroke-width: 2; stroke-linejoin: round; }
@@ -103,7 +119,9 @@ a.node.open:hover { color: var(--nuit); }
 
 .legend { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 1rem 0 .25rem; padding: 0; list-style: none; font-size: .875rem; color: var(--brume); }
 .legend li { display: flex; align-items: center; gap: .5rem; }
-.swatch { width: .8rem; height: 1rem; border-radius: .4rem .4rem .1rem .1rem; background: var(--nuit); border: 1px solid var(--nuit); }
+.swatch { width: .9rem; height: .9rem; border-radius: .25rem; background: var(--nuit); border: 1px solid var(--nuit); }
+.swatch--enigme { border-radius: .25rem; }
+.swatch--devinette { border-radius: 50%; }
 .swatch--open { background: var(--laiton); border-color: var(--laiton); }
 .swatch--done { background: #7fd1b0; border-color: #7fd1b0; }
 .swatch--locked { background: transparent; border-style: dashed; border-color: var(--brume); }
@@ -111,11 +129,12 @@ a.node.open:hover { color: var(--nuit); }
 .stage-note { margin: .5rem 0 0; font-size: .875rem; color: var(--brume); }
 
 @media (max-width: 43.75rem) {
-  .stage { aspect-ratio: 3 / 5; }
+  .stage { aspect-ratio: 1 / 2; }
   .zone { left: var(--pl); top: var(--pt); width: var(--pw); height: var(--ph); }
   .node, .robot-wrap { left: var(--px); top: var(--py); }
-  .node { width: 2.1rem; height: 2.65rem; font-size: .9375rem; border-radius: 1.05rem 1.05rem .25rem .25rem; }
-  .robot-wrap { width: 2.5rem; }
+  .rail { left: var(--px); top: var(--py); width: var(--pw); }
+  .node { width: 2.1rem; height: 2.1rem; font-size: .9375rem; }
+  .robot-wrap { width: 2rem; transform: translate(-50%, -105%); }
 }
 
 /* Neige : flocons fixes au-dessus des décors, sous les portes */
@@ -130,32 +149,6 @@ a.node.open:hover { color: var(--nuit); }
 /* Décor : animations retirées pour une scène calme */
 .zone-art .twinkle, .zone-art .smoke, .zone-art .drift, .zone-art .aurora { animation: none; }
 
-/* ---- Listes (jour, classement) ------------------------------------------ */
-.rows { margin: 0 0 2rem; padding: 0; list-style: none; max-width: 46rem; border-bottom: 1px solid var(--filet); }
-.row {
-  display: grid; grid-template-columns: 5.5rem 1fr auto; align-items: center; gap: 1rem;
-  padding: 1rem .25rem; border-top: 1px solid var(--filet); color: var(--encre); text-decoration: none;
-}
-a.row:hover { background: var(--papier); color: var(--encre); }
-.row__title { font-weight: 600; }
-.row__state { font-size: .9375rem; color: var(--brume); text-align: right; font-variant-numeric: tabular-nums; }
-.row.done .row__state { color: var(--sapin); font-weight: 500; }
-.row.done .row__title { color: var(--brume); }
-
-.level {
-  display: inline-block; padding: .1rem .6rem; border: 1px solid var(--encre); border-radius: 99px;
-  font-size: .8125rem; font-weight: 500; line-height: 1.5; text-decoration: none; color: var(--encre);
-}
-.level--difficile { background: var(--encre); color: #fff; }
-.section-title { margin: 2rem 0 .75rem; font-size: 1.0625rem; }
-
-@media (max-width: 34rem) {
-  .row { grid-template-columns: 1fr auto; }
-  .row .level { grid-column: 1; justify-self: start; }
-  .row__main { grid-column: 1; }
-  .row__state { grid-column: 2; grid-row: 1 / span 2; }
-}
-
 /* ---- Énigme -------------------------------------------------------------- */
 .puzzle { display: grid; gap: 2rem; }
 @media (min-width: 56rem) {
@@ -164,8 +157,7 @@ a.row:hover { background: var(--papier); color: var(--encre); }
 }
 .puzzle__kind { margin: 0 0 .25rem; font-size: .9375rem; color: var(--brume); }
 .puzzle h1 { margin-bottom: 1rem; }
-.levels { display: flex; gap: .5rem; margin: 0 0 1.75rem; padding: 0; list-style: none; }
-.level.is-current { box-shadow: 0 0 0 2px var(--papier), 0 0 0 4px var(--sapin); }
+.other-track { margin: 0 0 1.75rem; font-size: .9375rem; color: var(--brume); }
 
 .statement { max-width: var(--lecture); font: 400 1.0625rem/1.7 var(--font-texte); }
 .statement img { max-width: 100%; height: auto; border-radius: var(--r-ctrl); }

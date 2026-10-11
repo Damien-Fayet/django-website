@@ -10,8 +10,8 @@ class HintInline(admin.TabularInline):
 
 @admin.register(Puzzle)
 class PuzzleAdmin(admin.ModelAdmin):
-    list_display = ("day", "kind", "difficulty", "title")
-    list_filter = ("kind", "difficulty", "day")
+    list_display = ("day", "kind", "title")
+    list_filter = ("kind", "day")
     inlines = [HintInline]
 
 

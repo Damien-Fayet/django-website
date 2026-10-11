@@ -1,9 +1,10 @@
-"""Disposition de la scène : 4 zones de 6 jours, jours mélangés à l'intérieur de chaque zone.
+"""Disposition de la scène : 4 zones de 6 jours, avec deux sentiers (voies) par zone.
+
+Chaque zone a deux voies horizontales : énigmes en haut, devinettes en bas. Les 6 jours de la zone sont rangés
+de gauche à droite, donc une colonne = un jour (l'énigme au-dessus, la devinette en dessous).
 
 Coordonnées en % du cadre. Deux dispositions : paysage (zones en 2x2) et portrait (zones empilées).
-À ajuster à la main quand le décor sera dessiné.
 """
-import random
 
 # (nom, description, jours, fond)
 ZONES = [
@@ -13,27 +14,34 @@ ZONES = [
     ("Le Pôle Nord", "Les aurores boréales guident les derniers pas.", range(19, 25), "#2f6f63,#14304a"),
 ]
 
+# Ordre des voies, de haut en bas.
+KINDS = ("enigme", "devinette")
+
 # Rectangle (gauche, haut, largeur, hauteur) de chaque zone, en %.
 LANDSCAPE_RECTS = [(0, 0, 50, 50), (50, 0, 50, 50), (0, 50, 50, 50), (50, 50, 50, 50)]
 PORTRAIT_RECTS = [(0, 0, 100, 25), (0, 25, 100, 25), (0, 50, 100, 25), (0, 75, 100, 25)]
 
+# Position verticale de chaque voie dans sa zone (fraction de la hauteur) : de la place en haut pour le nom de zone.
+LANDSCAPE_LANES = (0.5, 0.8)
+PORTRAIT_LANES = (0.52, 0.82)
 
-def _place(rects, cols, rows, seed):
-    rng = random.Random(seed)
+PAD = 0.07  # marge gauche/droite des étapes, en fraction de la largeur de la zone
+RAIL_PAD = 0.04  # le rail déborde un peu des étapes extrêmes
+
+
+def _place(rects, lanes):
+    """Position (x, y) de chaque (type, jour)."""
     positions = {}
     for (_name, _desc, days, _bg), (left, top, width, height) in zip(ZONES, rects):
-        days = list(days)
-        rng.shuffle(days)
-        for index, day in enumerate(days):
-            col, row = index % cols, index // cols
-            x = left + (col + 0.5) / cols * width + rng.uniform(-2, 2)
-            y = top + (0.2 + 0.76 * (row + 0.5) / rows) * height + rng.uniform(-1.5, 1.5)  # marge en haut pour le nom de zone
-            positions[day] = (round(x, 1), round(y, 1))
+        for col, day in enumerate(days):
+            x = left + width * (PAD + (1 - 2 * PAD) * (col + 0.5) / len(days))
+            for kind, lane in zip(KINDS, lanes):
+                positions[(kind, day)] = (round(x, 1), round(top + height * lane, 1))
     return positions
 
 
-LANDSCAPE = _place(LANDSCAPE_RECTS, cols=3, rows=2, seed=2026)
-PORTRAIT = _place(PORTRAIT_RECTS, cols=3, rows=2, seed=2027)
+LANDSCAPE = _place(LANDSCAPE_RECTS, LANDSCAPE_LANES)
+PORTRAIT = _place(PORTRAIT_RECTS, PORTRAIT_LANES)
 
 
 def zone_of(day):
@@ -43,11 +51,23 @@ def zone_of(day):
     raise ValueError(day)
 
 
+def _rails(index):
+    """Les deux rails (un par voie) d'une zone, dans les deux dispositions."""
+    (left, top, width, height) = LANDSCAPE_RECTS[index]
+    (pleft, ptop, pwidth, pheight) = PORTRAIT_RECTS[index]
+    return [
+        {"kind": kind,
+         "x": round(left + width * RAIL_PAD, 1), "y": round(top + height * lane, 1), "w": round(width * (1 - 2 * RAIL_PAD), 1),
+         "px": round(pleft + pwidth * RAIL_PAD, 1), "py": round(ptop + pheight * plane, 1), "pw": round(pwidth * (1 - 2 * RAIL_PAD), 1)}
+        for kind, lane, plane in zip(KINDS, LANDSCAPE_LANES, PORTRAIT_LANES)
+    ]
+
+
 def zones_context():
-    """Une entrée par zone, avec ses rectangles (paysage/portrait)."""
+    """Une entrée par zone, avec ses rectangles (paysage/portrait) et ses deux rails."""
     return [
         {"index": i, "name": name, "description": desc, "days": list(days),
          "bg_from": bg.split(",")[0], "bg_to": bg.split(",")[1],
-         "rect": LANDSCAPE_RECTS[i], "prect": PORTRAIT_RECTS[i]}
+         "rect": LANDSCAPE_RECTS[i], "prect": PORTRAIT_RECTS[i], "rails": _rails(i)}
         for i, (name, desc, days, bg) in enumerate(ZONES)
     ]

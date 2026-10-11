@@ -19,67 +19,62 @@ def _locked_response(request, day, puzzle=None):
 
 @login_required
 def home(request):
-    """Scène d'accueil : 24 points d'intérêt, jouables dans n'importe quel ordre une fois débloqués."""
-    content = defaultdict(int)  # jour -> nombre de puzzles publiés
-    for day, total in Puzzle.objects.values_list("day").annotate(n=Count("id")):
-        content[day] = total
-    solved = defaultdict(int)
-    for day in Attempt.objects.filter(user=request.user, solved_at__isnull=False).values_list("puzzle__day", flat=True):
-        solved[day] += 1
+    """Scène d'accueil : deux sentiers (énigmes, devinettes) de 24 étapes, jouables dans n'importe quel ordre."""
+    puzzles = {(p.kind, p.day): p for p in Puzzle.objects.only("id", "kind", "day", "title", "unlock_date")}
+    solved_ids = set(Attempt.objects.filter(user=request.user, solved_at__isnull=False)
+                     .values_list("puzzle_id", flat=True))
 
     nodes = []
     for day in range(1, 25):
-        if not scoring.is_unlocked(day, request.user):
-            state = "locked"
-        elif content[day] and solved[day] >= content[day]:
-            state = "done"
-        elif not content[day]:
-            state = "empty"
-        else:
-            state = "open"
-        nodes.append({
-            "day": day, "state": state, "solved": solved[day], "total": content[day],
-            "x": scene.LANDSCAPE[day][0], "y": scene.LANDSCAPE[day][1],
-            "px": scene.PORTRAIT[day][0], "py": scene.PORTRAIT[day][1],
-        })
+        for kind in scene.KINDS:
+            puzzle = puzzles.get((kind, day))
+            unlocked = scoring.is_unlocked(puzzle or day, request.user)
+            if not unlocked:
+                state = "locked"
+            elif puzzle is None:
+                state = "empty"
+            elif puzzle.id in solved_ids:
+                state = "done"
+            else:
+                state = "open"
+            x, y = scene.LANDSCAPE[(kind, day)]
+            px, py = scene.PORTRAIT[(kind, day)]
+            nodes.append({
+                "kind": kind, "day": day, "state": state, "x": x, "y": y, "px": px, "py": py,
+                "puzzle": puzzle if state in ("open", "done") else None,
+                "kind_label": "Énigme" if kind == Puzzle.ENIGME else "Devinette",
+            })
     scores = _user_scores(request.user)
     unlocked_days = {n["day"] for n in nodes if n["state"] != "locked"}
     zones = scene.zones_context()
     for z in zones:
         z["lit"] = any(d in unlocked_days for d in z["days"])
-    last_day = (Attempt.objects.filter(user=request.user, solved_at__isnull=False)
-                .order_by("-solved_at").values_list("puzzle__day", flat=True).first()) or 1
-    robot_node = next(n for n in nodes if n["day"] == last_day)
+    # Le robot se tient sur le dernier puzzle résolu (n'importe quelle piste), sinon au départ de l'énigme du jour 1.
+    last = (Attempt.objects.filter(user=request.user, solved_at__isnull=False)
+            .order_by("-solved_at").values_list("puzzle__kind", "puzzle__day").first()) or (Puzzle.ENIGME, 1)
+    robot_node = next(n for n in nodes if (n["kind"], n["day"]) == last)
     show_prologue = not request.session.get("avent2026_prologue_seen")
     request.session["avent2026_prologue_seen"] = True
     return render(request, "avent2026/home.html", {
         "nodes": nodes, "scores": scores, "zones": zones, "robot": robot.robot_state(scores["total"]),
         "robot_node": robot_node, "prologue": robot.PROLOGUE if show_prologue else "",
         "epilogue": robot.EPILOGUE if _finished(request.user) else "",
+        "days_total": 24,
     })
 
 
-@login_required
-def day_view(request, day):
-    if not 1 <= day <= 24:
-        return redirect("avent2026:home")
-    if not scoring.is_unlocked(day, request.user):
-        return _locked_response(request, day)
-    puzzles = list(Puzzle.objects.filter(day=day))
-    done_ids = set(Attempt.objects.filter(user=request.user, puzzle__in=puzzles, solved_at__isnull=False)
-                   .values_list("puzzle_id", flat=True))
-    for p in puzzles:
-        p.done = p.id in done_ids
-        p.max_points = scoring.puzzle_base_points(p)
-    return render(request, "avent2026/day.html", {
-        "day": day,
-        "enigmes": [p for p in puzzles if p.kind == Puzzle.ENIGME],
-        "devinettes": [p for p in puzzles if p.kind == Puzzle.DEVINETTE],
-    })
+def old_day_redirect(request, day):
+    """Ancienne page « Jour N », supprimée avec les deux pistes : on renvoie vers la scène."""
+    return redirect("avent2026:home")
 
 
 def _finished(user):
-    return Attempt.objects.filter(user=user, puzzle__day=24, solved_at__isnull=False).exists()
+    """Épilogue : tous les puzzles publiés du jour 24 (les deux pistes) sont résolus."""
+    day24 = list(Puzzle.objects.filter(day=24).values_list("id", flat=True))
+    if not day24:
+        return False
+    solved = Attempt.objects.filter(user=user, puzzle_id__in=day24, solved_at__isnull=False).count()
+    return solved == len(day24)
 
 
 def _puzzle_context(request, puzzle):
@@ -97,10 +92,20 @@ def _puzzle_context(request, puzzle):
         "revealed_hints": revealed, "next_hint": next_hint, "hint_count": len(hints),
         "errors": errors, "max_points": scoring.puzzle_base_points(puzzle),
         "current_points": scoring.compute_points(puzzle, errors, revealed),
-        "siblings": Puzzle.objects.filter(day=puzzle.day, kind=puzzle.kind),
+        "other": _other_track(request, puzzle),
         # Le fragment d'histoire n'est envoyé au template qu'une fois le puzzle résolu.
         "story": puzzle.story if attempt and attempt.solved else "",
     }
+
+
+def _other_track(request, puzzle):
+    """L'autre puzzle du même jour (l'autre piste), avec son état, pour le lien « même jour »."""
+    other = Puzzle.objects.filter(day=puzzle.day).exclude(pk=puzzle.pk).first()
+    if other is None:
+        return None
+    other.unlocked = scoring.is_unlocked(other, request.user)
+    other.done = Attempt.objects.filter(user=request.user, puzzle=other, solved_at__isnull=False).exists()
+    return other
 
 
 @login_required
@@ -151,10 +156,15 @@ def reveal_hint(request, puzzle_id):
 
 
 def _user_scores(user):
-    rows = Attempt.objects.filter(user=user, solved_at__isnull=False).values("puzzle__kind").annotate(total=Sum("points"))
-    scores = {r["puzzle__kind"]: r["total"] for r in rows}
-    return {"enigme": scores.get("enigme", 0), "devinette": scores.get("devinette", 0),
-            "total": sum(scores.values())}
+    """Points et nombre de puzzles résolus par piste, plus le total (l'énergie du robot)."""
+    rows = (Attempt.objects.filter(user=user, solved_at__isnull=False)
+            .values("puzzle__kind").annotate(total=Sum("points"), solved=Count("id")))
+    by_kind = {r["puzzle__kind"]: r for r in rows}
+    scores = {"total": sum(r["total"] for r in rows)}
+    for kind in (Puzzle.ENIGME, Puzzle.DEVINETTE):
+        scores[kind] = by_kind[kind]["total"] if kind in by_kind else 0
+        scores[kind + "_solved"] = by_kind[kind]["solved"] if kind in by_kind else 0
+    return scores
 
 
 @login_required
@@ -178,7 +188,7 @@ def leaderboard(request):
 def journal(request):
     """Journal de bord : prologue et fragments d'histoire des puzzles déjà résolus."""
     solved = (Attempt.objects.filter(user=request.user, solved_at__isnull=False).exclude(puzzle__story="")
-              .select_related("puzzle").order_by("puzzle__day", "puzzle__kind", "puzzle__difficulty"))
+              .select_related("puzzle").order_by("puzzle__day", "-puzzle__kind"))
     scores = _user_scores(request.user)
     return render(request, "avent2026/journal.html", {
         "entries": [a.puzzle for a in solved], "prologue": robot.PROLOGUE,

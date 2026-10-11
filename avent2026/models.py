@@ -3,19 +3,14 @@ from django.db import models
 
 
 class Puzzle(models.Model):
-    """Une énigme ou une devinette attachée à un jour (1-24) et à une difficulté."""
+    """Une énigme ou une devinette attachée à un jour (1-24) : une de chaque au plus par jour (deux pistes)."""
 
     ENIGME = "enigme"
     DEVINETTE = "devinette"
     KINDS = [(ENIGME, "Énigme"), (DEVINETTE, "Devinette")]
 
-    FACILE = "facile"
-    DIFFICILE = "difficile"
-    DIFFICULTIES = [(FACILE, "Facile"), (DIFFICILE, "Difficile")]
-
     kind = models.CharField(max_length=10, choices=KINDS)
     day = models.PositiveSmallIntegerField("Jour", help_text="1 à 24")
-    difficulty = models.CharField(max_length=10, choices=DIFFICULTIES, default=FACILE)
     title = models.CharField("Titre", max_length=120)
     text = models.TextField("Énoncé", help_text="HTML autorisé (contenu saisi par l'admin uniquement).")
     image = models.FileField(
@@ -40,14 +35,14 @@ class Puzzle(models.Model):
     )
 
     class Meta:
-        ordering = ["day", "kind", "difficulty"]
+        ordering = ["day", "kind"]
         constraints = [
-            models.UniqueConstraint(fields=["kind", "day", "difficulty"], name="uniq_avent2026_puzzle"),
+            models.UniqueConstraint(fields=["kind", "day"], name="uniq_avent2026_puzzle"),
             models.CheckConstraint(check=models.Q(day__gte=1, day__lte=24), name="avent2026_day_1_24"),
         ]
 
     def __str__(self):
-        return f"J{self.day} {self.get_kind_display()} ({self.get_difficulty_display()}) — {self.title}"
+        return f"J{self.day} {self.get_kind_display()} — {self.title}"
 
 
 class Hint(models.Model):

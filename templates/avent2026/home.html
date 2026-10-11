@@ -7,8 +7,8 @@
 
 <section class="status" aria-label="Ta progression">
   <dl class="status__scores">
-    <div><dt>Énigmes</dt><dd>{{ scores.enigme }}</dd></div>
-    <div><dt>Devinettes</dt><dd>{{ scores.devinette }}</dd></div>
+    <div><dt>Piste des énigmes</dt><dd>{{ scores.enigme }} <small>pts</small></dd><dd class="status__count">{{ scores.enigme_solved }} sur {{ days_total }} résolues</dd></div>
+    <div><dt>Piste des devinettes</dt><dd>{{ scores.devinette }} <small>pts</small></dd><dd class="status__count">{{ scores.devinette_solved }} sur {{ days_total }} résolues</dd></div>
     <div><dt>Énergie</dt><dd>{{ scores.total }}</dd></div>
   </dl>
   <div class="status__level">
@@ -28,16 +28,23 @@
     {% include "avent2026/_zone_art.html" %}
     <span class="zone-name" title="{{ z.description }}">{{ z.name }}</span>
   </div>
+  {% for r in z.rails %}
+  <span class="rail rail--{{ r.kind }}{% if not z.lit %} rail--dark{% endif %}" aria-hidden="true"
+        style="--x:{{ r.x }}%;--y:{{ r.y }}%;--w:{{ r.w }}%;--px:{{ r.px }}%;--py:{{ r.py }}%;--pw:{{ r.pw }}%"></span>
+  {% endfor %}
   {% endfor %}
   {% for n in nodes %}
     {% if n.state == "locked" %}
-      <span class="node locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
-            title="Pas encore débloqué" role="img" aria-label="Jour {{ n.day }}, pas encore débloqué">{{ n.day }}</span>
-    {% else %}
-      <a class="node {{ n.state }}" href="{% url 'avent2026:day' n.day %}"
+      <span class="node node--{{ n.kind }} locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
+            title="Pas encore débloqué" role="img" aria-label="{{ n.kind_label }} du jour {{ n.day }}, pas encore débloquée">{{ n.day }}</span>
+    {% elif n.puzzle %}
+      <a class="node node--{{ n.kind }} {{ n.state }}" href="{% url 'avent2026:puzzle' n.puzzle.id %}"
          style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
-         title="{% if n.total %}{{ n.solved }}/{{ n.total }} résolus{% else %}Rien de publié{% endif %}"
-         aria-label="Jour {{ n.day }}, {% if n.state == 'done' %}tout est résolu{% elif n.state == 'empty' %}rien de publié{% else %}{{ n.solved }} résolus sur {{ n.total }}{% endif %}">{{ n.day }}</a>
+         title="{{ n.kind_label }} du jour {{ n.day }} : {{ n.puzzle.title }}"
+         aria-label="{{ n.kind_label }} du jour {{ n.day }}, {{ n.puzzle.title }}, {% if n.state == 'done' %}résolue{% else %}à jouer{% endif %}">{{ n.day }}</a>
+    {% else %}
+      <span class="node node--{{ n.kind }} empty" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
+            title="Rien de publié" role="img" aria-label="{{ n.kind_label }} du jour {{ n.day }}, rien de publié">{{ n.day }}</span>
     {% endif %}
   {% endfor %}
   <div class="robot-wrap" style="--x:{{ robot_node.x }}%;--y:{{ robot_node.y }}%;--px:{{ robot_node.px }}%;--py:{{ robot_node.py }}%">
@@ -47,10 +54,12 @@
 {% endlocalize %}
 
 <ul class="legend" aria-label="Légende">
+  <li><span class="swatch swatch--enigme"></span>Piste des énigmes (rangée du haut)</li>
+  <li><span class="swatch swatch--devinette"></span>Piste des devinettes (rangée du bas)</li>
   <li><span class="swatch swatch--open"></span>À jouer</li>
   <li><span class="swatch swatch--done"></span>Résolu</li>
   <li><span class="swatch swatch--locked"></span>Pas encore ouvert</li>
   <li><span class="swatch swatch--empty"></span>Rien de publié</li>
 </ul>
-<p class="stage-note">Chaque jour se débloque à minuit, heure de Paris. Joue-les dans l'ordre que tu veux.</p>
+<p class="stage-note">Chaque jour se débloque à minuit, heure de Paris. Une énigme et une devinette par jour : joue les deux pistes dans l'ordre que tu veux.</p>
 {% endblock %}
