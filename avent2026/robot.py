@@ -1,13 +1,15 @@
 """Le petit robot : niveaux, modules et histoire. Données pures, faciles à modifier."""
 
 # (seuil d'énergie = total des points, clé du module, nom affiché, description)
+# Maximum théorique : 24 jours × (énigme 100 + devinette 50) = 3 600 points. Les seuils restent sous ce plafond
+# avec une marge pour les indices et les erreurs.
 LEVELS = [
     (0,    None,       "Prototype",        "Un petit robot tout juste sorti de l'atelier. Il ne sait encore presque rien faire."),
     (300,  "antenna",   "Antenne radio",    "Il capte enfin un signal lointain… une voix chaleureuse ?"),
-    (900,  "arms",      "Bras articulés",   "Il peut attraper des objets et actionner des leviers."),
-    (2000, "wheels",    "Chenilles renforcées", "Plus rien ne l'arrête sur la glace."),
-    (3500, "radar",     "Radar",            "Il repère les obstacles avant de les heurter."),
-    (5500, "jetpack",   "Jetpack",          "Prêt à décoller vers le Pôle Nord !"),
+    (800,  "arms",      "Bras articulés",   "Il peut attraper des objets et actionner des leviers."),
+    (1400, "wheels",    "Chenilles renforcées", "Plus rien ne l'arrête sur la glace."),
+    (2000, "radar",     "Radar",            "Il repère les obstacles avant de les heurter."),
+    (2600, "jetpack",   "Jetpack",          "Prêt à décoller vers le Pôle Nord !"),
 ]
 
 PROLOGUE = (

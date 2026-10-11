@@ -12,7 +12,7 @@
       <a class="brand" href="{% url 'avent2026:home' %}">Avent <span>2026</span></a>
       {% with current=request.resolver_match.url_name %}
       <nav class="site-nav" aria-label="Navigation principale">
-        <a href="{% url 'avent2026:home' %}"{% if current == "home" or current == "day" or current == "puzzle" %} aria-current="page"{% endif %}>Scène</a>
+        <a href="{% url 'avent2026:home' %}"{% if current == "home" or current == "puzzle" %} aria-current="page"{% endif %}>Scène</a>
         <a href="{% url 'avent2026:journal' %}"{% if current == "journal" %} aria-current="page"{% endif %}>Journal</a>
         <a href="{% url 'avent2026:leaderboard' %}"{% if current == "leaderboard" %} aria-current="page"{% endif %}>Classement</a>
       </nav>

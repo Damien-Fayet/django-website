@@ -1,19 +1,20 @@
 {% extends "avent2026/base.html" %}
 {% block title %}{{ puzzle.title }}{% endblock %}
 {% block content %}
-<a class="crumb" href="{% url 'avent2026:day' puzzle.day %}">Jour {{ puzzle.day }}</a>
+<a class="crumb" href="{% url 'avent2026:home' %}">Retour à la scène</a>
 
 <div class="puzzle">
   <article>
-    <p class="puzzle__kind">{{ puzzle.get_kind_display }}</p>
+    <p class="puzzle__kind">{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}</p>
     <h1>{{ puzzle.title }}</h1>
-    {% if siblings|length > 1 %}
-    <ul class="levels" aria-label="Niveau de difficulté">
-      {% for s in siblings %}
-      <li><a class="level level--{{ s.difficulty }}{% if s.id == puzzle.id %} is-current{% endif %}"
-             href="{% url 'avent2026:puzzle' s.id %}"{% if s.id == puzzle.id %} aria-current="page"{% endif %}>{{ s.get_difficulty_display }}</a></li>
-      {% endfor %}
-    </ul>
+    {% if other %}
+    <p class="other-track">
+      {% if other.unlocked %}
+        <a href="{% url 'avent2026:puzzle' other.id %}">Même jour : {{ other.get_kind_display|lower }} « {{ other.title }} »{% if other.done %}, résolue{% endif %}</a>
+      {% else %}
+        Même jour : {{ other.get_kind_display|lower }}, pas encore débloquée.
+      {% endif %}
+    </p>
     {% endif %}
 
     <div class="statement">

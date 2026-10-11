@@ -9,12 +9,10 @@ from django.utils import timezone
 YEAR = 2026
 TZ = ZoneInfo("Europe/Paris")
 
-# Points de base par type et difficulté (surchargeables par puzzle via base_points).
+# Points de base par type (surchargeables par puzzle via base_points).
 BASE_POINTS = {
-    ("enigme", "facile"): 100,
-    ("enigme", "difficile"): 200,
-    ("devinette", "facile"): 50,
-    ("devinette", "difficile"): 100,
+    "enigme": 100,
+    "devinette": 50,
 }
 DEFAULT_HINT_COST = 15
 ERROR_PENALTY = 5
@@ -37,7 +35,7 @@ def is_correct(puzzle, given):
 def puzzle_base_points(puzzle):
     if puzzle.base_points is not None:
         return puzzle.base_points
-    return BASE_POINTS[(puzzle.kind, puzzle.difficulty)]
+    return BASE_POINTS[puzzle.kind]
 
 
 def hint_cost(hint):

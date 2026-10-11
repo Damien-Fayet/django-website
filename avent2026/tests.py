@@ -2,10 +2,12 @@ from datetime import date
 from unittest import mock
 
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.db import IntegrityError, connection, transaction
+from django.db.migrations.executor import MigrationExecutor
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from . import scoring
+from . import scene, scoring
 from .models import Attempt, Hint, Puzzle
 
 
@@ -25,13 +27,18 @@ class ScoringTests(TestCase):
         self.assertEqual(scoring.compute_points(p, 2, [h]), 100 - 10 - 15)
         self.assertEqual(scoring.compute_points(p, 100, [h]), scoring.MIN_POINTS)
 
+    def test_base_points_depend_on_kind_only(self):
+        e = Puzzle.objects.create(kind="enigme", day=1, title="e", text="x", answers="a")
+        d = Puzzle.objects.create(kind="devinette", day=1, title="d", text="x", answers="a")
+        self.assertEqual((scoring.puzzle_base_points(e), scoring.puzzle_base_points(d)), (100, 50))
+
 
 class FlowTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("alice", password="pw")
         self.client.force_login(self.user)
-        self.enigme = Puzzle.objects.create(kind="enigme", day=1, difficulty="facile", title="E", text="?", answers="Oui")
-        self.devinette = Puzzle.objects.create(kind="devinette", day=1, difficulty="facile", title="D", text="?", answers="Non")
+        self.enigme = Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="Oui")
+        self.devinette = Puzzle.objects.create(kind="devinette", day=1, title="D", text="?", answers="Non")
         Hint.objects.create(puzzle=self.enigme, number=1, text="h1", cost=20)
         Hint.objects.create(puzzle=self.enigme, number=2, text="h2")
 
@@ -41,7 +48,6 @@ class FlowTests(TestCase):
 
     def test_locked_before_date(self):
         with mock.patch("avent2026.scoring.today", return_value=date(2026, 11, 30)):
-            self.assertEqual(self.client.get(reverse("avent2026:day", args=[1])).status_code, 403)
             self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 403)
             r = self.client.post(reverse("avent2026:answer", args=[self.enigme.id]), {"answer": "oui"})
             self.assertEqual(r.status_code, 403)
@@ -51,13 +57,14 @@ class FlowTests(TestCase):
         self.user.is_staff = True
         self.user.save()
         with mock.patch("avent2026.scoring.today", return_value=date(2026, 11, 1)):
-            self.assertEqual(self.client.get(reverse("avent2026:day", args=[1])).status_code, 200)
+            self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
 
     def test_unlocked_day_one(self):
+        day2 = Puzzle.objects.create(kind="enigme", day=2, title="E2", text="?", answers="x")
         with at(1):
             self.assertEqual(self.client.get(reverse("avent2026:home")).status_code, 200)
-            self.assertEqual(self.client.get(reverse("avent2026:day", args=[1])).status_code, 200)
-            self.assertEqual(self.client.get(reverse("avent2026:day", args=[2])).status_code, 403)
+            self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
+            self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[day2.id])).status_code, 403)
 
     def test_wrong_then_right_with_hint(self):
         with at(1):
@@ -102,7 +109,72 @@ class FlowTests(TestCase):
     @override_settings(AVENT2026_UNLOCK_ALL=True)
     def test_unlock_all_setting(self):
         with mock.patch("avent2026.scoring.today", return_value=date(2026, 1, 1)):
-            self.assertEqual(self.client.get(reverse("avent2026:day", args=[24])).status_code, 200)
+            self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
+            nodes = self.client.get(reverse("avent2026:home")).context["nodes"]
+        self.assertNotIn("locked", {n["state"] for n in nodes})
+
+    def test_one_puzzle_per_kind_and_day(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Puzzle.objects.create(kind="enigme", day=1, title="Doublon", text="?", answers="x")
+        Puzzle.objects.create(kind="enigme", day=2, title="Autre jour", text="?", answers="x")
+
+    def test_old_day_url_redirects_to_scene(self):
+        r = self.client.get("/avent2026/jour/3/")
+        self.assertRedirects(r, reverse("avent2026:home"), fetch_redirect_response=False)
+
+    def test_puzzle_links_to_other_track_same_day(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id]))
+        self.assertEqual(r.context["other"], self.devinette)
+        self.assertContains(r, reverse("avent2026:puzzle", args=[self.devinette.id]))
+
+
+class SceneTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("dora", password="pw")
+        self.client.force_login(self.user)
+        self.enigme = Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="oui")
+        self.devinette = Puzzle.objects.create(kind="devinette", day=1, title="D", text="?", answers="non")
+
+    def home(self):
+        return self.client.get(reverse("avent2026:home"))
+
+    def test_two_nodes_per_day_with_states(self):
+        with at(2):
+            nodes = {(n["kind"], n["day"]): n for n in self.home().context["nodes"]}
+        self.assertEqual(len(nodes), 48)
+        self.assertEqual(nodes[("enigme", 1)]["state"], "open")
+        self.assertEqual(nodes[("devinette", 1)]["state"], "open")
+        self.assertEqual(nodes[("enigme", 2)]["state"], "empty")  # jour débloqué mais rien de publié
+        self.assertEqual(nodes[("enigme", 3)]["state"], "locked")
+
+    def test_done_state_and_robot_on_last_solved(self):
+        with at(1):
+            first = self.home().context["robot_node"]
+            self.assertEqual((first["kind"], first["day"]), ("enigme", 1))
+            self.client.post(reverse("avent2026:answer", args=[self.devinette.id]), {"answer": "non"})
+            r = self.home()
+        states = {(n["kind"], n["day"]): n["state"] for n in r.context["nodes"]}
+        self.assertEqual(states[("devinette", 1)], "done")
+        self.assertEqual(states[("enigme", 1)], "open")
+        self.assertEqual((r.context["robot_node"]["kind"], r.context["robot_node"]["day"]), ("devinette", 1))
+        self.assertEqual(r.context["scores"]["devinette"], 50)
+        self.assertEqual(r.context["scores"]["devinette_solved"], 1)
+
+    def test_locked_puzzle_title_not_exposed(self):
+        Puzzle.objects.create(kind="enigme", day=5, title="TITRE-SECRET", text="?", answers="x")
+        with at(1):
+            self.assertNotContains(self.home(), "TITRE-SECRET")
+        with at(5):
+            self.assertContains(self.home(), "TITRE-SECRET")
+
+    def test_layout_covers_all_days_on_two_lanes(self):
+        for positions in (scene.LANDSCAPE, scene.PORTRAIT):
+            self.assertEqual(len(positions), 48)
+            for day in range(1, 25):
+                (ex, ey), (dx, dy) = positions[("enigme", day)], positions[("devinette", day)]
+                self.assertEqual(ex, dx)  # une colonne = un jour
+                self.assertLess(ey, dy)   # énigmes au-dessus des devinettes
 
 
 class RobotTests(TestCase):
@@ -116,10 +188,10 @@ class RobotTests(TestCase):
         self.assertEqual((top["level"], top["progress_pct"], top["next_threshold"]), (6, 100, None))
 
     def test_max_level_reachable(self):
-        """Un joueur parfait sur un calendrier complet (1 énigme f/d + 1 devinette f/j) atteint le niveau max."""
-        from . import robot, scoring
-        per_day = sum(scoring.BASE_POINTS[k] for k in [("enigme", "facile"), ("enigme", "difficile"), ("devinette", "facile")])
-        self.assertGreater(per_day * 24, robot.LEVELS[-1][0])
+        """Un joueur qui perd 20 % en indices et erreurs sur un calendrier complet atteint quand même le niveau max."""
+        from . import robot
+        per_day = sum(scoring.BASE_POINTS.values())  # 1 énigme + 1 devinette
+        self.assertGreater(per_day * 24 * 0.8, robot.LEVELS[-1][0])
 
 
 class StoryTests(TestCase):
@@ -148,9 +220,43 @@ class StoryTests(TestCase):
             r = self.client.get(reverse("avent2026:home"))
             self.assertEqual([z["lit"] for z in r.context["zones"]], [True, True, False, False])
 
-    def test_epilogue_after_day_24(self):
-        p24 = Puzzle.objects.create(kind="devinette", day=24, title="Fin", text="?", answers="x")
+    def test_epilogue_needs_both_tracks_of_day_24(self):
+        e24 = Puzzle.objects.create(kind="enigme", day=24, title="Fin E", text="?", answers="x")
+        d24 = Puzzle.objects.create(kind="devinette", day=24, title="Fin D", text="?", answers="x")
         with at(24):
             self.assertFalse(self.client.get(reverse("avent2026:home")).context["epilogue"])
-            self.client.post(reverse("avent2026:answer", args=[p24.id]), {"answer": "x"})
+            self.client.post(reverse("avent2026:answer", args=[d24.id]), {"answer": "x"})
+            self.assertFalse(self.client.get(reverse("avent2026:home")).context["epilogue"])
+            self.client.post(reverse("avent2026:answer", args=[e24.id]), {"answer": "x"})
             self.assertTrue(self.client.get(reverse("avent2026:home")).context["epilogue"])
+
+
+class TwoTracksMigrationTests(TransactionTestCase):
+    """La migration 0003 garde un puzzle par (type, jour) : le « facile » en priorité."""
+
+    before = [("avent2026", "0002_puzzle_story")]
+    after = [("avent2026", "0003_two_tracks")]
+
+    def tearDown(self):
+        # Remet la base à jour pour les tests suivants.
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
+    def test_duplicates_collapsed_keeping_facile(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.before)
+        old = executor.loader.project_state(self.before).apps
+        OldPuzzle, OldHint = old.get_model("avent2026", "Puzzle"), old.get_model("avent2026", "Hint")
+        hard = OldPuzzle.objects.create(kind="enigme", day=1, difficulty="difficile", title="Dur", text="?", answers="a")
+        easy = OldPuzzle.objects.create(kind="enigme", day=1, difficulty="facile", title="Facile", text="?", answers="a")
+        other = OldPuzzle.objects.create(kind="devinette", day=1, difficulty="facile", title="Devinette", text="?", answers="a")
+        OldHint.objects.create(puzzle=hard, number=1, text="h")
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.after)
+        new = executor.loader.project_state(self.after).apps
+        NewPuzzle, NewHint = new.get_model("avent2026", "Puzzle"), new.get_model("avent2026", "Hint")
+        self.assertEqual(sorted(NewPuzzle.objects.values_list("title", flat=True)), ["Devinette", "Facile"])
+        self.assertEqual(NewPuzzle.objects.get(kind="enigme").pk, easy.pk)
+        self.assertEqual(NewPuzzle.objects.get(kind="devinette").pk, other.pk)
+        self.assertEqual(NewHint.objects.count(), 0)  # indice du puzzle supprimé parti en cascade
