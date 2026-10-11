@@ -1,307 +1,116 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendrier de l'Avent - Bienvenue</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/modern-base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/modern-auth.css' %}">
+    {% include "_head.html" %}
+    <title>Avent 2026, calendrier de l'Avent</title>
 </head>
 <body>
-    <!-- Navigation simple pour non-connectés -->
-    <nav class="nav-bar-container">
-        <div class="nav-bar nav-bar-welcome">
-            <div class="nav-bar-logo">
-                <h1>🎄 Calendrier de l'Avent</h1>
-            </div>
-            <div class="nav-bar-actions">
-                <a href="{% url 'login' %}" class="btn-nav btn-nav-secondary">Se connecter</a>
-                <a href="{% url 'signup' %}" class="btn-nav btn-nav-primary">S'inscrire</a>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand" href="{% url 'home' %}">Avent <span>2026</span></a>
+            <div class="account">
+                <a class="linklike" href="{% url 'login' %}">Se connecter</a>
+                <a class="btn btn--small" href="{% url 'signup' %}">S'inscrire</a>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
-    <section class="hero-welcome">
-        <div class="hero-content">
-            <div class="hero-text">
-                <h1 class="hero-title">
-                    ✨ Bienvenue dans l'aventure <br/>
-                    <span class="hero-highlight">Calendrier de l'Avent</span>
-                </h1>
-                <p class="hero-description">
-                    Relevez 8 énigmes captivantes et 24 devinettes quotidiennes durant le mois de décembre. 
-                    Testez votre logique, votre créativité et grimpez au sommet du classement !
+    <main id="contenu">
+        <section class="hero" id="hero">
+            <div>
+                <h1>Un petit robot à réparer, vingt-quatre jours pour l'aider.</h1>
+                <p class="lead">
+                    Chaque jour de décembre ouvre de nouvelles énigmes et devinettes. Chaque bonne réponse
+                    redonne de l'énergie au robot, pour qu'il arrive au Pôle Nord à temps.
                 </p>
-                
-                <!-- Compte à rebours -->
-                <div id="countdown-container-welcome" style="display: none; margin: 2rem 0;">
-                    <div class="countdown-wrapper">
-                        <div class="countdown-title-modern">
-                            <span class="countdown-emoji">🎄</span>
-                            <span>Ouverture dans</span>
-                            <span class="countdown-emoji">🎄</span>
-                        </div>
-                        <div class="countdown-grid">
-                            <div class="countdown-card">
-                                <div class="countdown-flip">
-                                    <div class="countdown-number" id="days-welcome">00</div>
-                                </div>
-                                <div class="countdown-label-modern">Jours</div>
-                            </div>
-                            <div class="countdown-card">
-                                <div class="countdown-flip">
-                                    <div class="countdown-number" id="hours-welcome">00</div>
-                                </div>
-                                <div class="countdown-label-modern">Heures</div>
-                            </div>
-                            <div class="countdown-card">
-                                <div class="countdown-flip">
-                                    <div class="countdown-number" id="minutes-welcome">00</div>
-                                </div>
-                                <div class="countdown-label-modern">Minutes</div>
-                            </div>
-                            <div class="countdown-card">
-                                <div class="countdown-flip">
-                                    <div class="countdown-number" id="seconds-welcome">00</div>
-                                </div>
-                                <div class="countdown-label-modern">Secondes</div>
-                            </div>
-                        </div>
-                        <div class="countdown-date-info">
-                            <span class="countdown-icon">🎁</span>
-                            Rendez-vous le <strong>1er décembre 2026</strong> à <strong>00h01</strong>
-                            <span class="countdown-icon">🎁</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="hero-cta">
-                    <a href="{% url 'signup' %}" class="btn-cta btn-cta-primary">
-                        🎮 Commencer l'aventure
-                    </a>
-                    <a href="#features" class="btn-cta btn-cta-secondary">
-                        📖 En savoir plus
-                    </a>
-                </div>
-                <p class="hero-note">
-                    ✅ Gratuit • ⚡ Inscription rapide • 🎯 Sans publicité
-                </p>
-            </div>
-            <div class="hero-visual">
-                <div class="stats-preview">
-                    <div class="stat-preview-card">
-                        <div class="stat-preview-icon">🧩</div>
-                        <div class="stat-preview-content">
-                            <div class="stat-preview-number">8</div>
-                            <div class="stat-preview-label">Énigmes</div>
-                        </div>
-                    </div>
-                    <div class="stat-preview-card">
-                        <div class="stat-preview-icon">🎭</div>
-                        <div class="stat-preview-content">
-                            <div class="stat-preview-number">24</div>
-                            <div class="stat-preview-label">Devinettes</div>
-                        </div>
-                    </div>
-                    <div class="stat-preview-card">
-                        <div class="stat-preview-icon">💡</div>
-                        <div class="stat-preview-content">
-                            <div class="stat-preview-number">∞</div>
-                            <div class="stat-preview-label">Indices</div>
-                        </div>
-                    </div>
-                    <div class="stat-preview-card">
-                        <div class="stat-preview-icon">🏆</div>
-                        <div class="stat-preview-content">
-                            <div class="stat-preview-number">1</div>
-                            <div class="stat-preview-label">Gagnant</div>
-                        </div>
-                    </div>
+                <div class="hero__actions">
+                    <a class="btn" href="{% url 'signup' %}">Créer un compte</a>
+                    <a class="btn btn--ghost" href="{% url 'login' %}">Se connecter</a>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Features Section -->
-    <section class="features-welcome" id="features">
-        <div class="section-header">
-            <h2 class="section-title">🎯 Comment ça fonctionne ?</h2>
-            <p class="section-subtitle">Un calendrier de l'Avent nouvelle génération</p>
-        </div>
-        
-        <div class="features-grid-welcome">
-            <div class="feature-card-welcome">
-                <div class="feature-icon-welcome">🧩</div>
-                <h3 class="feature-title-welcome">Énigmes variées</h3>
-                <p class="feature-description-welcome">
-                    8 énigmes uniques mêlant logique, calcul, observation et culture générale. 
-                    Chaque résolution vous rapproche de la victoire.
-                </p>
+            <!-- Compte à rebours : affiché par le script tant que le calendrier n'est pas ouvert -->
+            <div class="countdown" id="countdown-container-welcome" style="display: none;">
+                <p class="countdown__title">Ouverture dans</p>
+                <div class="countdown__grid">
+                    <div class="countdown__cell"><span class="countdown__num" id="days-welcome">00</span><span class="countdown__unit">jours</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" id="hours-welcome">00</span><span class="countdown__unit">heures</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" id="minutes-welcome">00</span><span class="countdown__unit">minutes</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" id="seconds-welcome">00</span><span class="countdown__unit">secondes</span></div>
+                </div>
+                <p class="countdown__date">Le <strong>1er décembre 2026</strong> à 00 h 01</p>
             </div>
-            
-            <div class="feature-card-welcome">
-                <div class="feature-icon-welcome">🎭</div>
-                <h3 class="feature-title-welcome">Devinettes quotidiennes</h3>
-                <p class="feature-description-welcome">
-                    24 devinettes pour tester votre perspicacité chaque jour. 
-                    Plus vous progressez vite, plus vous gagnez de points !
-                </p>
-            </div>
-            
-            <div class="feature-card-welcome">
-                <div class="feature-icon-welcome">💡</div>
-                <h3 class="feature-title-welcome">Système d'indices</h3>
-                <p class="feature-description-welcome">
-                    Bloqué ? Débloquez des indices pour vous aider. 
-                    Chaque indice a un coût en points, choisissez judicieusement !
-                </p>
-            </div>
-            
-            <div class="feature-card-welcome">
-                <div class="feature-icon-welcome">🏆</div>
-                <h3 class="feature-title-welcome">Classement live</h3>
-                <p class="feature-description-welcome">
-                    Suivez votre progression en temps réel et comparez-vous aux autres joueurs. 
-                    Visez le podium !
-                </p>
-            </div>
+        </section>
 
-            <div class="feature-card-welcome">
-                <div class="feature-icon-welcome">⭐</div>
-                <h3 class="feature-title-welcome">Système de points</h3>
-                <p class="feature-description-welcome">
-                    Gagnez des points en résolvant les énigmes et devinettes. 
-                    Les erreurs et indices utilisés impactent votre score.
-                </p>
+        <section class="section" aria-labelledby="fonctionnement">
+            <h2 id="fonctionnement">Comment ça marche</h2>
+            <div class="steps">
+                <article>
+                    <h3>Une scène à explorer</h3>
+                    <p>Le robot traverse quatre zones, chacune cache six jours. Un jour s'ouvre à minuit, heure de Paris, et vous les jouez dans l'ordre que vous voulez.</p>
+                </article>
+                <article>
+                    <h3>Énigmes et devinettes</h3>
+                    <p>Chaque jour propose des énigmes, en version facile ou difficile, et des devinettes. Les points gagnés rechargent l'énergie du robot et lui font gagner de nouveaux modules.</p>
+                </article>
+                <article>
+                    <h3>Des points à gérer</h3>
+                    <p>Les indices débloquent une situation, mais chaque indice et chaque mauvaise réponse réduisent les points gagnés. Le classement montre qui est en tête.</p>
+                </article>
             </div>
+        </section>
 
-            <div class="feature-card-welcome">
-                <div class="feature-icon-welcome">📱</div>
-                <h3 class="feature-title-welcome">100% responsive</h3>
-                <p class="feature-description-welcome">
-                    Jouez depuis votre ordinateur, tablette ou smartphone. 
-                    L'interface s'adapte à tous vos écrans.
-                </p>
+        <section class="section" aria-labelledby="inscription">
+            <div class="closing">
+                <h2 id="inscription">Prêt à jouer ?</h2>
+                <div class="hero__actions">
+                    <a class="btn" href="{% url 'signup' %}">Créer un compte</a>
+                    <a class="btn btn--ghost" href="{% url 'login' %}">J'ai déjà un compte</a>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
-    <!-- Scoring Section -->
-    <section class="scoring-welcome">
-        <div class="section-header">
-            <h2 class="section-title">⭐ Système de points</h2>
-            <p class="section-subtitle">Simple et efficace</p>
-        </div>
-        
-        <div class="scoring-grid">
-            <div class="scoring-card scoring-card-good">
-                <h3 class="scoring-title">✅ Gagnez des points</h3>
-                <p class="scoring-simple">
-                    Résolvez les <strong>énigmes</strong> et les <strong>devinettes</strong> pour accumuler des points et grimper dans le classement !
-                </p>
-            </div>
-            
-            <div class="scoring-card scoring-card-bad">
-                <h3 class="scoring-title">❌ Perdez des points</h3>
-                <p class="scoring-simple">
-                    Attention aux <strong>mauvaises réponses</strong> et à l'utilisation des <strong>indices</strong> qui réduisent votre score.
-                </p>
-            </div>
-        </div>
-
-        <div class="scoring-tip">
-            <div class="scoring-tip-icon">💡</div>
-            <div class="scoring-tip-content">
-                <strong>Conseil de pro :</strong> Réfléchissez bien avant de répondre et n'utilisez les indices qu'en dernier recours. 
-                La stratégie compte autant que la rapidité !
-            </div>
-        </div>
-    </section>
-    <!-- CTA Final -->
-    <section class="cta-final-welcome">
-        <div class="cta-final-content">
-            <h2 class="cta-final-title">Prêt à relever le défi ? 🎄</h2>
-            <p class="cta-final-description">
-                Rejoignez les autres joueurs et commencez votre aventure dès maintenant. 
-                L'inscription ne prend que quelques secondes !
-            </p>
-            <div class="cta-final-actions">
-                <a href="{% url 'signup' %}" class="btn-cta btn-cta-primary btn-cta-large">
-                    🚀 Créer mon compte gratuitement
-                </a>
-                <p class="cta-final-login">
-                    Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer simple -->
-    <footer class="footer-welcome">
-        <p>🎄 Calendrier de l'Avent - Bonne chance à tous les participants ! 🎄</p>
+    <footer class="site-footer">
+        <p>Calendrier de l'Avent 2026, entre proches.</p>
     </footer>
 
     <script>
         // Compte à rebours jusqu'au 1er décembre 2026 à 00h01
-        function initCountdown() {
-            const countdownContainer = document.getElementById('countdown-container-welcome');
-            const targetDate = new Date('2026-12-01T00:01:00').getTime();
-            
-            function updateCountdown() {
-                const now = new Date().getTime();
-                const distance = targetDate - now;
-                
-                // Si la date est passée, masquer le compte à rebours
+        (function () {
+            var container = document.getElementById('countdown-container-welcome');
+            var hero = document.getElementById('hero');
+            var target = new Date('2026-12-01T00:01:00').getTime();
+            var ids = ['days', 'hours', 'minutes', 'seconds'].map(function (k) {
+                return document.getElementById(k + '-welcome');
+            });
+            var timer;
+
+            function pad(n) { return String(n).padStart(2, '0'); }
+
+            function update() {
+                var distance = target - Date.now();
                 if (distance < 0) {
-                    if (countdownContainer) {
-                        countdownContainer.style.display = 'none';
-                    }
+                    container.style.display = 'none';
+                    hero.classList.remove('has-countdown');
+                    clearInterval(timer);
                     return;
                 }
-                
-                // Afficher le compte à rebours
-                if (countdownContainer) {
-                    countdownContainer.style.display = 'block';
-                }
-                
-                // Calculs
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                
-                // Mise à jour de l'affichage avec padding zeros
-                const daysEl = document.getElementById('days-welcome');
-                const hoursEl = document.getElementById('hours-welcome');
-                const minutesEl = document.getElementById('minutes-welcome');
-                const secondsEl = document.getElementById('seconds-welcome');
-                
-                if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
-                if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
-                if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
-                if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+                container.style.display = 'block';
+                hero.classList.add('has-countdown');
+                var values = [
+                    Math.floor(distance / 86400000),
+                    Math.floor(distance % 86400000 / 3600000),
+                    Math.floor(distance % 3600000 / 60000),
+                    Math.floor(distance % 60000 / 1000)
+                ];
+                ids.forEach(function (el, i) { if (el) el.textContent = pad(values[i]); });
             }
-            
-            // Mise à jour initiale
-            updateCountdown();
-            
-            // Mise à jour toutes les secondes
-            const intervalId = setInterval(updateCountdown, 1000);
-            
-            // Nettoyer l'intervalle quand on quitte la page
-            window.addEventListener('beforeunload', () => {
-                clearInterval(intervalId);
-            });
-        }
-        
-        // Démarrer le compte à rebours quand la page est chargée
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initCountdown);
-        } else {
-            initCountdown();
-        }
+
+            update();
+            timer = setInterval(update, 1000);
+        })();
     </script>
 </body>
 </html>

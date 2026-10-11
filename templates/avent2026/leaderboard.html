@@ -1,15 +1,19 @@
 {% extends "avent2026/base.html" %}
 {% block title %}Classement{% endblock %}
 {% block content %}
-<div class="panel">
-  <h1>🏆 Classement</h1>
-  <div class="boards">
-    <section><h2>🧩 Énigmes</h2>
-      <ol>{% for r in enigmes %}<li class="{% if r.name == me %}me{% endif %}"><span>{{ r.name }}</span><b>{{ r.points }}</b></li>{% empty %}<li class="muted">Personne encore.</li>{% endfor %}</ol></section>
-    <section><h2>🎭 Devinettes</h2>
-      <ol>{% for r in devinettes %}<li class="{% if r.name == me %}me{% endif %}"><span>{{ r.name }}</span><b>{{ r.points }}</b></li>{% empty %}<li class="muted">Personne encore.</li>{% endfor %}</ol></section>
-    <section><h2>Total</h2>
-      <ol>{% for r in total %}<li class="{% if r.name == me %}me{% endif %}"><span>{{ r.name }}</span><b>{{ r.points }}</b></li>{% empty %}<li class="muted">Personne encore.</li>{% endfor %}</ol></section>
-  </div>
+<div class="page-head"><h1>Classement</h1></div>
+<div class="boards">
+  <section class="board" aria-labelledby="g-total">
+    <h2 id="g-total">Total</h2>
+    <ol class="rank">{% for r in total %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+  </section>
+  <section class="board" aria-labelledby="g-enigmes">
+    <h2 id="g-enigmes">Énigmes</h2>
+    <ol class="rank">{% for r in enigmes %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+  </section>
+  <section class="board" aria-labelledby="g-devinettes">
+    <h2 id="g-devinettes">Devinettes</h2>
+    <ol class="rank">{% for r in devinettes %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+  </section>
 </div>
 {% endblock %}
