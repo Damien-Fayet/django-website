@@ -1,26 +1,35 @@
 {% load static %}<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% include "_head.html" %}
   <title>{% block title %}Avent 2026{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'avent2026/css/avent.css' %}">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="{% url 'avent2026:home' %}">🎄 Avent 2026</a>
-    <nav>
-      <a href="{% url 'avent2026:home' %}">Scène</a>
-      <a href="{% url 'avent2026:journal' %}">Journal</a>
-      <a href="{% url 'avent2026:leaderboard' %}">Classement</a>
-      <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}
-        <button type="submit" class="link">Quitter ({{ request.user.username }})</button>
-      </form>
-    </nav>
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="{% url 'avent2026:home' %}">Avent <span>2026</span></a>
+      {% with current=request.resolver_match.url_name %}
+      <nav class="site-nav" aria-label="Navigation principale">
+        <a href="{% url 'avent2026:home' %}"{% if current == "home" or current == "day" or current == "puzzle" %} aria-current="page"{% endif %}>Scène</a>
+        <a href="{% url 'avent2026:journal' %}"{% if current == "journal" %} aria-current="page"{% endif %}>Journal</a>
+        <a href="{% url 'avent2026:leaderboard' %}"{% if current == "leaderboard" %} aria-current="page"{% endif %}>Classement</a>
+      </nav>
+      {% endwith %}
+      <div class="account">
+        <span class="account__name">{{ request.user.username }}</span>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+          <button type="submit" class="linklike">Se déconnecter</button>
+        </form>
+      </div>
+    </div>
   </header>
-  {% if messages %}
-  <ul class="messages">{% for m in messages %}<li class="msg {{ m.tags }}">{{ m }}</li>{% endfor %}</ul>
-  {% endif %}
-  <main>{% block content %}{% endblock %}</main>
+  <main id="contenu">
+    {% if messages %}
+    <ul class="messages">{% for m in messages %}<li class="notice notice--{{ m.tags }}" role="status">{{ m }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>

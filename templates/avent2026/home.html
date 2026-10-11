@@ -1,17 +1,26 @@
 {% extends "avent2026/base.html" %}
-{% block title %}Avent 2026 — La scène{% endblock %}
+{% load l10n %}
+{% block title %}Avent 2026, la scène{% endblock %}
 {% block content %}
-{% if prologue %}<div class="panel story"><h2>🤖 Prologue</h2><p>{{ prologue }}</p></div>{% endif %}
-{% if epilogue %}<div class="panel story"><h2>🎅 Épilogue</h2><p>{{ epilogue }}</p></div>{% endif %}
+{% if prologue %}<aside class="note"><h2>Prologue</h2><p>{{ prologue }}</p></aside>{% endif %}
+{% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
-<section class="scores">
-  <span>🧩 Énigmes <b>{{ scores.enigme }}</b></span>
-  <span>🎭 Devinettes <b>{{ scores.devinette }}</b></span>
-  <span>⚡ Énergie <b>{{ scores.total }}</b></span>
-  <span class="lvl">Niveau {{ robot.level }}/{{ robot.max_level }} — {{ robot.title }}
-    {% if robot.next_module %}<progress max="100" value="{{ robot.progress_pct }}"></progress> prochain : {{ robot.next_module }} ({{ robot.next_threshold }}){% endif %}</span>
+<section class="status" aria-label="Ta progression">
+  <dl class="status__scores">
+    <div><dt>Énigmes</dt><dd>{{ scores.enigme }}</dd></div>
+    <div><dt>Devinettes</dt><dd>{{ scores.devinette }}</dd></div>
+    <div><dt>Énergie</dt><dd>{{ scores.total }}</dd></div>
+  </dl>
+  <div class="status__level">
+    <p>Niveau {{ robot.level }} sur {{ robot.max_level }}, <strong>{{ robot.title }}</strong></p>
+    <div class="meter" role="progressbar" aria-label="Progression vers le prochain module"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ robot.progress_pct }}"><span style="width:{{ robot.progress_pct }}%"></span></div>
+    {% if robot.next_module %}<p class="status__next">Prochain module : {{ robot.next_module }}, à {{ robot.next_threshold }} d'énergie</p>{% endif %}
+  </div>
 </section>
 
+{# Les coordonnées sont des décimaux : sans `localize off`, la locale française écrit « 41,5% » et le CSS devient invalide. #}
+{% localize off %}
 <div class="stage">
   {% for z in zones %}
   <div class="zone {% if not z.lit %}dark{% endif %}"
@@ -22,20 +31,26 @@
   {% endfor %}
   {% for n in nodes %}
     {% if n.state == "locked" %}
-      <span class="node locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%" title="Pas encore débloqué">
-        <b>{{ n.day }}</b><i>🔒</i>
-      </span>
+      <span class="node locked" style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
+            title="Pas encore débloqué" role="img" aria-label="Jour {{ n.day }}, pas encore débloqué">{{ n.day }}</span>
     {% else %}
       <a class="node {{ n.state }}" href="{% url 'avent2026:day' n.day %}"
          style="--x:{{ n.x }}%;--y:{{ n.y }}%;--px:{{ n.px }}%;--py:{{ n.py }}%"
-         title="{% if n.total %}{{ n.solved }}/{{ n.total }} résolus{% else %}Rien de publié{% endif %}">
-        <b>{{ n.day }}</b><i>{% if n.state == "done" %}✔{% elif n.state == "empty" %}·{% else %}✨{% endif %}</i>
-      </a>
+         title="{% if n.total %}{{ n.solved }}/{{ n.total }} résolus{% else %}Rien de publié{% endif %}"
+         aria-label="Jour {{ n.day }}, {% if n.state == 'done' %}tout est résolu{% elif n.state == 'empty' %}rien de publié{% else %}{{ n.solved }} résolus sur {{ n.total }}{% endif %}">{{ n.day }}</a>
     {% endif %}
   {% endfor %}
   <div class="robot-wrap" style="--x:{{ robot_node.x }}%;--y:{{ robot_node.y }}%;--px:{{ robot_node.px }}%;--py:{{ robot_node.py }}%">
     {% include "avent2026/_robot.html" %}
   </div>
 </div>
-<p class="hint-line">Chaque jour se débloque à minuit (heure de Paris). Joue-les dans l'ordre que tu veux.</p>
+{% endlocalize %}
+
+<ul class="legend" aria-label="Légende">
+  <li><span class="swatch swatch--open"></span>À jouer</li>
+  <li><span class="swatch swatch--done"></span>Résolu</li>
+  <li><span class="swatch swatch--locked"></span>Pas encore ouvert</li>
+  <li><span class="swatch swatch--empty"></span>Rien de publié</li>
+</ul>
+<p class="stage-note">Chaque jour se débloque à minuit, heure de Paris. Joue-les dans l'ordre que tu veux.</p>
 {% endblock %}

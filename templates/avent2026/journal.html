@@ -1,14 +1,31 @@
 {% extends "avent2026/base.html" %}
 {% block title %}Journal de bord{% endblock %}
 {% block content %}
-<div class="panel">
-  <h1>📖 Journal de bord</h1>
-  <div class="journal-robot">{% include "avent2026/_robot.html" %}
-    <p><b>Niveau {{ robot.level }} — {{ robot.title }}</b><br><span class="muted">{{ robot.description }}</span></p></div>
-  <div class="story"><h2>Prologue</h2><p>{{ prologue }}</p></div>
-  {% for p in entries %}
-  <div class="story"><h2>Jour {{ p.day }} — {{ p.title }}</h2>{{ p.story|safe }}</div>
-  {% empty %}<p class="muted">Résous des énigmes et des devinettes pour débloquer la suite de l'histoire.</p>{% endfor %}
-  {% if epilogue %}<div class="story"><h2>Épilogue</h2><p>{{ epilogue }}</p></div>{% endif %}
+<div class="logbook-head">
+  {% include "avent2026/_robot.html" %}
+  <div>
+    <h1>Journal de bord</h1>
+    <p class="muted"><b>Niveau {{ robot.level }}, {{ robot.title }}.</b> {{ robot.description }}</p>
+  </div>
 </div>
+
+<ol class="logbook">
+  <li class="entry">
+    <span class="entry__day entry__day--word">Prologue</span>
+    <div class="entry__body"><p>{{ prologue }}</p></div>
+  </li>
+  {% for p in entries %}
+  <li class="entry">
+    <span class="entry__day" aria-label="Jour {{ p.day }}">{{ p.day }}</span>
+    <div><h2>{{ p.title }}</h2><div class="entry__body">{{ p.story|safe }}</div></div>
+  </li>
+  {% endfor %}
+  {% if epilogue %}
+  <li class="entry">
+    <span class="entry__day entry__day--word">Épilogue</span>
+    <div class="entry__body"><p>{{ epilogue }}</p></div>
+  </li>
+  {% endif %}
+</ol>
+{% if not entries %}<p class="logbook-empty">Résous des énigmes et des devinettes pour débloquer la suite de l'histoire.</p>{% endif %}
 {% endblock %}

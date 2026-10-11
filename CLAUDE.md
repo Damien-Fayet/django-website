@@ -23,6 +23,12 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 - Les CSS/images communs vont dans `static/`, pas dans l'app de l'année.
 - Les anciennes éditions sont **supprimées** (elles restent dans l'historique git). Avant de retirer une app, ses tables sont supprimées par une migration : voir `accounts/migrations/0001_drop_legacy_avent_tables.py` (modèle à suivre ; faire un backup de `db.sqlite3` avant).
 
+## Design (look « carnet de bord », sobre et professionnel)
+- Fondations partagées dans `static/css/site.css` (variables de couleur, typo, en-tête, boutons, formulaires, pages publiques) ; styles du jeu dans `static/avent2026/css/avent.css`. `templates/_head.html` (métadonnées, polices, `site.css`) est inclus par toutes les pages : à réutiliser pour toute nouvelle page.
+- Polices IBM Plex Sans (interface, chiffres tabulaires) et IBM Plex Serif (énoncés, histoire) chargées depuis Google Fonts ; pas de police à héberger.
+- Une seule couleur d'accent d'interface (sapin `--sapin`) ; le laiton `--laiton` ne sert que dans la scène sombre (jour à jouer). Pas d'émojis comme icônes, pas de halos, pas de rebonds.
+- Coordonnées décimales dans un template (positions de la scène) : toujours dans `{% localize off %}`, sinon la locale française écrit `41,5%` et le CSS devient invalide.
+
 ## Commandes
 - Lancer : `python manage.py runserver` ; migrations : `python manage.py migrate` ; tests : `python manage.py test`.
 - Déploiement PythonAnywhere : sauvegarder `db.sqlite3`, `git pull`, `python manage.py migrate`, `python manage.py collectstatic`, puis « Reload » de la web app. Dépendances : `pip install --user -r requirements.txt`. Onglet Web → Static files : `/static/` → `~/django-website/staticfiles` (et `/media/` → `~/django-website/media`). Après la première migration de nettoyage : `sqlite3 db.sqlite3 "VACUUM;"` pour récupérer l'espace.
