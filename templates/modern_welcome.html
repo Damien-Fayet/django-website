@@ -30,8 +30,14 @@
                 </div>
             </div>
 
-            <!-- Compte à rebours : affiché par le script tant que le calendrier n'est pas ouvert -->
-            <div class="countdown" id="countdown-container-welcome" style="display: none;">
+            <!-- Portes du calendrier (décor) -->
+            <ol class="doors" aria-hidden="true">
+                {% for _ in "x"|ljust:24 %}<li class="door" style="--i:{{ forloop.counter0 }}"><span class="door__inside"></span><span class="door__face">{{ forloop.counter }}</span></li>{% endfor %}
+            </ol>
+        </section>
+
+        <!-- Compte à rebours : affiché par le script tant que le calendrier n'est pas ouvert -->
+        <section class="countdown" id="countdown-container-welcome" style="display: none;">
                 <p class="countdown__title">Ouverture dans</p>
                 <div class="countdown__grid">
                     <div class="countdown__cell"><span class="countdown__num" id="days-welcome">00</span><span class="countdown__unit">jours</span></div>
@@ -40,7 +46,6 @@
                     <div class="countdown__cell"><span class="countdown__num" id="seconds-welcome">00</span><span class="countdown__unit">secondes</span></div>
                 </div>
                 <p class="countdown__date">Le <strong>1er décembre 2026</strong> à 00 h 01</p>
-            </div>
         </section>
 
         <section class="section" aria-labelledby="fonctionnement">
@@ -80,7 +85,6 @@
         // Compte à rebours jusqu'au 1er décembre 2026 à 00h01
         (function () {
             var container = document.getElementById('countdown-container-welcome');
-            var hero = document.getElementById('hero');
             var target = new Date('2026-12-01T00:01:00').getTime();
             var ids = ['days', 'hours', 'minutes', 'seconds'].map(function (k) {
                 return document.getElementById(k + '-welcome');
@@ -93,12 +97,10 @@
                 var distance = target - Date.now();
                 if (distance < 0) {
                     container.style.display = 'none';
-                    hero.classList.remove('has-countdown');
                     clearInterval(timer);
                     return;
                 }
-                container.style.display = 'block';
-                hero.classList.add('has-countdown');
+                container.style.display = 'grid';
                 var values = [
                     Math.floor(distance / 86400000),
                     Math.floor(distance % 86400000 / 3600000),
