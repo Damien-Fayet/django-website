@@ -13,6 +13,29 @@ les différences sont signalées **[Pi 1]** et **[Pi 3]**.
 | Dossier d'installation | `/srv/siteAvent` |
 | Domaine du site | `avent.damienfayet.com` |
 
+## Installation automatique (script)
+
+Le script `deploy/setup_pi.sh` réalise les étapes 2 à 9 ci-dessous pour toi, avec une barre de progression,
+un journal (`~/setup_pi.log`) et la reprise automatique si une étape échoue. Il détecte seul s'il s'agit d'un
+Pi 1 ou d'un Pi 3 (réglages différents : swap, Pillow, workers gunicorn, binaire `cloudflared`, HTTP/2).
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Damien-Fayet/django-website/main/deploy/setup_pi.sh -o setup_pi.sh
+bash setup_pi.sh --dry-run            # simulation : liste les étapes, ne modifie rien
+bash setup_pi.sh --domain avent.damienfayet.com --db ~/db.sqlite3
+```
+
+- Ne le lance **pas** avec `sudo` : il demande les droits quand il en a besoin.
+- Le jeton du tunnel est saisi en lecture masquée (ou via `CLOUDFLARE_TUNNEL_TOKEN`), jamais écrit dans le journal.
+- En cas d'échec, il indique l'étape et la commande de reprise : `bash setup_pi.sh --from N`.
+- Options : `--yes` (sans question), `--skip-tunnel`, `--http2`, `--profile pi1|pi3`, `--only N`, `--reset`, `--help`.
+- Le script n'a pas pu être testé sur un vrai Pi par son auteur : fais d'abord un `--dry-run`, et garde une
+  copie de ta base avant de la fournir avec `--db`.
+
+La procédure manuelle ci-dessous reste valable pour comprendre chaque étape ou dépanner.
+
+---
+
 ## Pi 1 ou Pi 3 : à quoi s'attendre
 
 | | Pi 1 | Pi 3 |
@@ -184,7 +207,7 @@ Active et teste :
 sudo systemctl daemon-reload
 sudo systemctl enable --now avent
 sleep 20     # [Pi 1] laisse le temps de démarrer
-curl -I http://127.0.0.1:8000/accounts/login/    # doit répondre 200
+curl -I -H 'Host: avent.damienfayet.com' http://127.0.0.1:8000/accounts/login/    # doit répondre 200
 sudo systemctl status avent --no-pager
 ```
 
@@ -268,7 +291,7 @@ sudo systemctl restart avent
 |---|---|---|
 | Erreur 502 sur le domaine | gunicorn ne répond pas | `sudo journalctl -u avent -n 50 --no-pager` |
 | Erreur 403 à l'inscription / connexion | `CSRF_TRUSTED_ORIGINS` ne correspond pas au domaine | Vérifier `https://` + domaine exact |
-| Erreur 400 « Invalid host » | domaine absent de `ALLOWED_HOSTS` | Corriger `settings.py`, redémarrer le service |
+| Erreur 400 « Invalid host » | domaine absent de `ALLOWED_HOSTS` (c'est aussi ce que renvoie un `curl` direct sur `127.0.0.1` sans en-tête `Host`) | Corriger `settings.py`, ou tester avec `-H 'Host: ton-domaine'` |
 | Page sans style | `collectstatic` non lancé, ou WhiteNoise absent | Relancer `collectstatic`; le bloc de l'étape 4 doit être en fin de fichier |
 | `NameError: name 'MIDDLEWARE' is not defined` | bloc de l'étape 4 collé trop haut dans `settings.py` | Le déplacer à la toute fin |
 | `-bash: ... event not found` | `!` dans une commande sans guillemets simples | Entourer la valeur de `'...'` |
