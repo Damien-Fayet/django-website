@@ -44,10 +44,14 @@ def home(request):
                 "day": day, "state": state, "x": x, "y": y,
                 "puzzle": puzzle if state in ("open", "done") else None,
             })
-        villages.append({
-            **info, "image": village.image_path(kind), "lights": lights,
-            "lit": sum(1 for light in lights if light["state"] == "done"), "total": village.DAYS,
-        })
+        lit = sum(1 for light in lights if light["state"] == "done")
+        entry = {**info, "lights": lights, "lit": lit, "total": village.DAYS}
+        if kind in village.CARTES:
+            entry["image"] = None
+            entry["carte"] = _carte(request, kind, lit)
+        else:
+            entry["image"] = village.image_path(kind)
+        villages.append(entry)
     scores = _user_scores(request.user)
     finale = _finished(request.user)
     show_prologue = not request.session.get("avent2026_prologue_seen")
@@ -60,10 +64,27 @@ def home(request):
     })
 
 
+def _carte(request, kind, step):
+    """Image « étape `step` » du village dessiné étape par étape, et l'étape vue à la visite précédente.
+
+    `previous` n'est donné que si des puzzles ont été résolus depuis : le template fait alors apparaître
+    en fondu la nouvelle image par-dessus l'ancienne, une seule fois.
+    """
+    key = f"avent2026_carte_{kind}"
+    seen = request.session.get(key)
+    request.session[key] = step
+    previous = seen if isinstance(seen, int) and seen < step else None
+    return {
+        "step": step, "image": village.carte_image_path(kind, step),
+        "previous": village.carte_image_path(kind, previous) if previous is not None else None,
+        "missing": f"static/avent2026/img/{village.CARTES[kind][0]}/{village.CARTES[kind][1].format(step=step)}.webp",
+    }
+
+
 @login_required
 def calibration(request, kind):
     """Page réservée au staff : cliquer sur l'illustration pour relever la position des 24 lumières."""
-    if not request.user.is_staff or kind not in village.KINDS:
+    if not request.user.is_staff or kind not in village.KINDS or kind in village.CARTES:
         raise Http404
     return render(request, "avent2026/calibration.html", {
         **village.village_info(kind), "image": village.image_path(kind),
