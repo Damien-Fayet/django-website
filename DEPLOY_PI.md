@@ -285,6 +285,63 @@ python manage.py collectstatic --noinput
 sudo systemctl restart avent
 ```
 
+## 11. Mise à jour automatique (déploiement continu)
+
+Un timer systemd vérifie toutes les 5 minutes s'il y a un nouveau commit sur `origin/main` et, le cas échéant,
+déploie à ta place (les mêmes étapes que la section 10, avec sauvegarde et retour arrière). Rien à ouvrir côté
+réseau : c'est le Pi qui interroge GitHub, pas l'inverse.
+
+Activation (une seule fois, sur le Pi) :
+
+```bash
+cd /srv/siteAvent/django-website
+git pull origin main                      # récupère deploy/update_pi.sh et deploy/install_autoupdate.sh
+bash deploy/install_autoupdate.sh         # --interval 10 pour vérifier toutes les 10 min
+```
+
+Ce que fait `deploy/update_pi.sh` à chaque passage :
+
+1. `git fetch` ; s'il n'y a rien de nouveau, il s'arrête là (réseau absent : il réessaie plus tard).
+2. Sauvegarde cohérente de la base dans `/srv/siteAvent/backups/pre-deploy-*.sqlite3` (les 10 dernières sont gardées).
+3. Fast-forward du dépôt, `pip install` seulement si `requirements.txt` a changé.
+4. `manage.py check`, `migrate`, `collectstatic`, puis `systemctl restart avent`.
+5. Contrôle HTTP local (`/accounts/login/` doit répondre 200).
+
+En cas d'échec à l'une de ces étapes, le dépôt revient au commit précédent, le site est relancé sur l'ancien code
+et le commit fautif est mis de côté : le Pi n'essaie plus de le déployer tant qu'un **nouveau** commit n'arrive pas
+(pas de boucle de redémarrages). Les migrations déjà appliquées ne sont pas annulées : la sauvegarde
+`pre-deploy-*` sert à revenir en arrière si besoin.
+
+Suivi et commandes :
+
+```bash
+journalctl -u avent-update -n 50 --no-pager     # détail des derniers passages
+cat /srv/siteAvent/last_deploy.txt              # date, résultat (OK / ECHEC), commit
+bash deploy/update_pi.sh --check                # liste les commits en attente sans rien faire
+sudo systemctl start avent-update               # déclenche une vérification tout de suite
+bash deploy/update_pi.sh --retry                # retente un commit mis de côté après correction locale
+sudo systemctl disable --now avent-update.timer # suspendre (reprendre : enable --now)
+bash deploy/install_autoupdate.sh --uninstall   # tout retirer (timer, service, règle sudo)
+```
+
+Points d'attention :
+
+- **Le déploiement part de `main`** : protège la branche sur GitHub (Settings → Branches → exiger la réussite du
+  workflow « Tests » avant de fusionner), sinon un merge cassé arrive en production en quelques minutes.
+- **Coupure brève** : le service redémarre à chaque déploiement (quelques secondes sur un Pi 3). Évite de merger
+  en pleine heure de jeu.
+- **`mysite/settings.py`** porte la configuration de production en local (étape 4). Si un commit le modifie, la
+  mise à jour automatique s'arrête avec un message explicite (rien n'est touché). À faire alors à la main :
+
+  ```bash
+  cd /srv/siteAvent/django-website
+  git update-index --no-skip-worktree mysite/settings.py
+  git stash && git pull origin main && git stash pop     # résoudre les conflits éventuels
+  git update-index --skip-worktree mysite/settings.py
+  sudo systemctl restart avent
+  ```
+- La règle sudo installée (`/etc/sudoers.d/avent-update`) n'autorise que `systemctl restart avent`, sans mot de passe.
+
 ## Dépannage
 
 | Symptôme | Cause probable | Action |
@@ -298,6 +355,9 @@ sudo systemctl restart avent
 | Un jour reste verrouillé alors qu'il est l'heure | heure du Pi incorrecte | `timedatectl` (NTP actif ?) |
 | Images d'énigmes en 404 | avec `DEBUG=False`, Django ne sert plus `media/` | À prévoir quand tu ajouteras des images (service de `media/` à configurer) |
 | `Illegal instruction` en lançant `cloudflared` [Pi 1] | binaire non adapté à ARMv6 | Demander une autre méthode |
+| `last_deploy.txt` indique `ECHEC` | commit refusé par `check`/`migrate` ou site muet après redémarrage | `journalctl -u avent-update -n 80`, corriger sur `main` (nouveau commit), ou `--retry` |
+| Le site n'évolue plus alors que `main` a changé | timer arrêté, commit mis de côté, ou `settings.py` modifié | `systemctl list-timers avent-update.timer`, `update_pi.sh --check`, `journalctl -u avent-update` |
+| `sudo: a password is required` dans `journalctl -u avent-update` | règle sudo absente | Relancer `bash deploy/install_autoupdate.sh` |
 
 ## Limites à connaître
 
