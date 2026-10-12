@@ -27,6 +27,10 @@ VILLAGES = [
 KINDS = tuple(kind for kind, *_ in VILLAGES)
 IMAGE_EXTENSIONS = ("webp", "jpg", "jpeg", "png")
 
+# Villages dessinés étape par étape : une image par nombre de puzzles résolus (0 à 24), au lieu de 24 lumières
+# posées sur une seule image. Clé = type de puzzle ; valeur = (dossier sous static/avent2026/img/, nom du fichier).
+CARTES = {"devinette": ("carte-devinettes", "village-iso-etape-{step:02d}")}
+
 # (nombre de lumières allumées, titre du palier, description)
 LEVELS = [
     (0,  "Villages éteints",       "La tempête a tout éteint. Seuls quelques flocons accrochent encore un peu de clarté."),
@@ -86,6 +90,16 @@ def image_path(kind):
         path = f"avent2026/img/{base}.{ext}"
         if finders.find(path):
             return path
+    return None
+
+
+def carte_image_path(kind, step):
+    """Chemin statique de l'image « étape `step` » (0 à 24 bâtiments allumés), ou None si le fichier manque."""
+    folder, pattern = CARTES[kind]
+    base = f"avent2026/img/{folder}/{pattern.format(step=max(0, min(DAYS, step)))}"
+    for ext in IMAGE_EXTENSIONS:
+        if finders.find(f"{base}.{ext}"):
+            return f"{base}.{ext}"
     return None
 
 

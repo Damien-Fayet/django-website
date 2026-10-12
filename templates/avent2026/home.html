@@ -26,6 +26,43 @@
 {% localize off %}
 <div class="villages">
   {% for v in villages %}
+  {% if v.carte %}
+  {# Village dessiné étape par étape : l'image change avec le nombre de puzzles résolus, les jours sont listés dessous. #}
+  <section class="village-block" aria-labelledby="village-{{ v.kind }}">
+    <div class="village-head">
+      <h2 id="village-{{ v.kind }}">{{ v.name }}</h2>
+      <p>{{ v.lit }} bâtiment{{ v.lit|pluralize }} allumé{{ v.lit|pluralize }} sur {{ v.total }}</p>
+    </div>
+    <div class="carte">
+      <div class="carte__frame{% if not v.carte.image %} carte__frame--placeholder{% endif %}">
+        {% if v.carte.previous %}<img class="carte__img" src="{% static v.carte.previous %}" alt="">{% endif %}
+        {% if v.carte.image %}<img class="carte__img{% if v.carte.previous %} carte__img--reveal{% endif %}" src="{% static v.carte.image %}"
+             alt="{{ v.name }} : {{ v.lit }} bâtiment{{ v.lit|pluralize }} allumé{{ v.lit|pluralize }} sur {{ v.total }}."
+             width="1600" height="1080">{% endif %}
+      </div>
+      <ol class="days" aria-label="Les 24 jours, {{ v.name|lower }}">
+        {% for l in v.lights %}
+        <li>
+          {% if l.state == "locked" %}
+          <span class="day is-locked" title="Pas encore débloqué"
+                role="img" aria-label="Jour {{ l.day }}, pas encore débloqué">{{ l.day }}</span>
+          {% elif l.puzzle %}
+          <a class="day is-{{ l.state }}" href="{% url 'avent2026:puzzle' l.puzzle.id %}"
+             title="Jour {{ l.day }} : {{ l.puzzle.title }}"
+             aria-label="Jour {{ l.day }}, {{ l.puzzle.title }}, {% if l.state == 'done' %}résolue, bâtiment allumé{% else %}à résoudre{% endif %}">{{ l.day }}</a>
+          {% else %}
+          <span class="day is-empty" title="Rien de publié"
+                role="img" aria-label="Jour {{ l.day }}, rien de publié">{{ l.day }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% if request.user.is_staff and not v.carte.image %}
+    <p class="village__todo">Staff : image manquante, dépose <code>{{ v.carte.missing }}</code>.</p>
+    {% endif %}
+  </section>
+  {% else %}
   <section class="village-block" aria-labelledby="village-{{ v.kind }}">
     <div class="village-head">
       <h2 id="village-{{ v.kind }}">{{ v.name }}</h2>
@@ -56,6 +93,7 @@
       <a href="{% url 'avent2026:calibration' v.kind %}">Régler la position des lumières</a>.</p>
     {% endif %}
   </section>
+  {% endif %}
   {% endfor %}
 </div>
 {% endlocalize %}
@@ -66,5 +104,5 @@
   <li><span class="swatch swatch--locked"></span>Pas encore ouverte</li>
   <li><span class="swatch swatch--empty"></span>Rien de publié</li>
 </ul>
-<p class="stage-note">Chaque jour se débloque à minuit, heure de Paris. Une énigme rallume le village des énigmes, une devinette celui des devinettes : joue les deux dans l'ordre que tu veux.</p>
+<p class="stage-note">Chaque jour se débloque à minuit, heure de Paris. Une énigme rallume une lumière du village des énigmes, une devinette allume un bâtiment de la carte des devinettes : joue les deux dans l'ordre que tu veux.</p>
 {% endblock %}

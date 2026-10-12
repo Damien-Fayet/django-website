@@ -4,6 +4,12 @@ Le jeu affiche deux villages enneigés, un par piste : **le village des énigmes
 Chacun porte 24 lumières (une par jour) qui s'allument quand on résout le puzzle du jour.
 Ce document dit quoi fournir, comment le fournir et comment régler les lumières.
 
+> **Village des devinettes : déjà fait.** Il n'utilise pas une image unique mais 25 images « étape »
+> (`static/avent2026/img/carte-devinettes/village-iso-etape-00.webp` à `-24.webp`, 1600 × 1080), une par nombre de
+> devinettes résolues. Pas de lumières ni de calibrage pour ce village. Pour les remplacer : mêmes noms, mêmes
+> dimensions, et exporter en webp (`Pillow` : `Image.open(png).save(webp, "WEBP", quality=80, method=6)`, ~80 Ko chacune).
+> Tout ce qui suit ne concerne donc que **le village des énigmes**.
+
 ## 1. Les deux images
 
 | Fichier à déposer | Village |

@@ -3,6 +3,10 @@
    Les fondations (couleurs, typo, boutons, formulaires) sont dans static/css/site.css.
    ========================================================================== */
 
+:root {
+  --icone-cadenas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23d3dae1' stroke-width='1.6' stroke-linejoin='round'%3E%3Crect x='2.5' y='5.5' width='7' height='5' rx='1'/%3E%3Cpath d='M4 5.5V4a2 2 0 014 0v1.5'/%3E%3C/svg%3E");
+}
+
 /* ---- En-tête de page ----------------------------------------------------- */
 .page-head { margin-bottom: 1.75rem; }
 .page-head h1 { margin-bottom: .25rem; }
@@ -41,7 +45,8 @@
 }
 
 /* ---- Les deux villages --------------------------------------------------- */
-.villages { display: grid; gap: 2.5rem; margin-bottom: 1rem; }
+/* minmax(0, 1fr) : sans lui la colonne ne descend pas sous la largeur du village des énigmes (46rem) et la page déborde */
+.villages { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; margin-bottom: 1rem; }
 .village-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
 .village-head h2 { margin: 0; font-size: 1.125rem; }
 .village-head p { margin: 0; font-size: .9375rem; color: var(--brume); font-variant-numeric: tabular-nums; }
@@ -100,7 +105,47 @@ a.light:hover .light__num, a.light:focus-visible .light__num { transform: transl
 .light.is-locked .light__num { border-style: dashed; color: rgba(255, 255, 255, .6); padding-left: .55rem; }
 .light.is-locked .light__num::before {
   content: ""; position: absolute; left: .18rem; top: 50%; width: .62rem; height: .62rem; transform: translateY(-50%);
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23d3dae1' stroke-width='1.6' stroke-linejoin='round'%3E%3Crect x='2.5' y='5.5' width='7' height='5' rx='1'/%3E%3Cpath d='M4 5.5V4a2 2 0 014 0v1.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  background: var(--icone-cadenas) center / contain no-repeat;
+}
+
+/* ---- Carte étape par étape (village des devinettes) ----------------------
+   Une image par nombre de devinettes résolues ; les 24 jours sont listés sous l'image, dans le même cadre sombre. */
+.carte { overflow: hidden; border-radius: var(--r-panel); background: var(--nuit); }
+.carte__frame { position: relative; aspect-ratio: 1600 / 1080; background: var(--nuit); }
+.carte__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Nouveau bâtiment allumé depuis la dernière visite : la nouvelle image se fond par-dessus l'ancienne, une seule fois */
+.carte__img--reveal { animation: carte-reveal 1.6s ease-out .3s both; }
+@keyframes carte-reveal { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .carte__img--reveal { animation: none; } }
+/* Image absente : même nuit neigeuse que le village des énigmes */
+.carte__frame--placeholder {
+  background:
+    radial-gradient(ellipse 70% 22% at 50% 100%, #e3ebf8 0 60%, transparent 61%),
+    linear-gradient(180deg, #0b1330 0%, #1a2352 52%, #2c3768 78%, #aebcd8 78.2%, #8fa0c4 100%);
+}
+
+.days {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: .5rem; margin: 0; padding: .9rem; list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+@media (min-width: 40rem) { .days { grid-template-columns: repeat(12, 1fr); } }
+.day {
+  position: relative; display: flex; align-items: center; justify-content: center; min-height: 2.75rem;
+  border: 1px solid rgba(255, 255, 255, .4); border-radius: var(--r-ctrl); color: #fff; text-decoration: none;
+  font-size: .9375rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+a.day:hover { background: rgba(255, 255, 255, .12); }
+a.day:focus-visible { outline: 2px solid var(--laiton); outline-offset: 2px; }
+/* À résoudre : cadre laiton */
+.day.is-open { border: 2px solid var(--laiton); color: #f3d58a; }
+/* Allumé : plein laiton, comme la lumière sur l'image */
+.day.is-done { background: var(--laiton); border-color: #f3d58a; color: var(--nuit); }
+a.day.is-done:hover { background: #e6b653; }
+.day.is-empty { border-color: rgba(255, 255, 255, .22); color: rgba(255, 255, 255, .6); }
+.day.is-locked { border-style: dashed; color: rgba(255, 255, 255, .6); cursor: not-allowed; }
+.day.is-locked::before {
+  content: ""; position: absolute; left: .3rem; top: .3rem; width: .6rem; height: .6rem;
+  background: var(--icone-cadenas) center / contain no-repeat;
 }
 
 .legend { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 1rem 0 .25rem; padding: 0; list-style: none; font-size: .875rem; color: var(--brume); }

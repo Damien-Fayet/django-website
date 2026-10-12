@@ -191,6 +191,47 @@ class VillagesPageTests(TestCase):
         with mock.patch("avent2026.village.finders.find", return_value="/x/village-enigmes.webp"):
             self.assertEqual(village.image_path("enigme"), "avent2026/img/village-enigmes.webp")
 
+    def carte(self, response):
+        return next(v for v in response.context["villages"] if v["kind"] == "devinette")["carte"]
+
+    def test_all_25_steps_of_the_devinette_map_are_present(self):
+        for step in range(village.DAYS + 1):
+            self.assertIsNotNone(village.carte_image_path("devinette", step), f"étape {step} manquante")
+
+    def test_devinette_map_follows_solved_count(self):
+        with at(1):
+            self.assertEqual(self.carte(self.home())["image"], "avent2026/img/carte-devinettes/village-iso-etape-00.webp")
+            self.client.post(reverse("avent2026:answer", args=[self.devinette.id]), {"answer": "non"})
+            carte = self.carte(self.home())
+        self.assertEqual((carte["step"], carte["image"]),
+                         (1, "avent2026/img/carte-devinettes/village-iso-etape-01.webp"))
+
+    def test_devinette_map_only_counts_devinettes(self):
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.enigme.id]), {"answer": "oui"})
+            self.assertEqual(self.carte(self.home())["step"], 0)
+
+    def test_devinette_map_reveals_new_step_once(self):
+        with at(1):
+            self.assertIsNone(self.carte(self.home())["previous"])  # première visite : rien à animer
+            self.client.post(reverse("avent2026:answer", args=[self.devinette.id]), {"answer": "non"})
+            r = self.home()
+            self.assertEqual(self.carte(r)["previous"], "avent2026/img/carte-devinettes/village-iso-etape-00.webp")
+            self.assertContains(r, "carte__img--reveal")
+            self.assertIsNone(self.carte(self.home())["previous"])  # déjà vu, plus d'animation
+
+    def test_devinette_map_without_image_falls_back(self):
+        with at(1), mock.patch("avent2026.village.finders.find", return_value=None):
+            r = self.home()
+        self.assertIsNone(self.carte(r)["image"])
+        self.assertContains(r, "carte__frame--placeholder")
+        self.assertContains(r, "Jour 1")  # les 24 jours restent jouables
+
+    def test_calibration_not_available_for_step_map(self):
+        self.user.is_staff = True
+        self.user.save()
+        self.assertEqual(self.client.get(reverse("avent2026:calibration", args=["devinette"])).status_code, 404)
+
     def test_calibration_is_staff_only(self):
         url = reverse("avent2026:calibration", args=["enigme"])
         self.assertEqual(self.client.get(url).status_code, 404)
