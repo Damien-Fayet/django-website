@@ -2,10 +2,10 @@
 {% block title %}Journal de bord{% endblock %}
 {% block content %}
 <div class="logbook-head">
-  {% include "avent2026/_robot.html" %}
+  {% include "avent2026/_lantern.html" %}
   <div>
     <h1>Journal de bord</h1>
-    <p class="muted"><b>Niveau {{ robot.level }}, {{ robot.title }}.</b> {{ robot.description }}</p>
+    <p class="muted"><b>{{ village.lit }} lumière{{ village.lit|pluralize }} sur {{ village.total }}, {{ village.title }}.</b> {{ village.description }}</p>
   </div>
 </div>
 
@@ -27,5 +27,5 @@
   </li>
   {% endif %}
 </ol>
-{% if not entries %}<p class="logbook-empty">Résous des énigmes et des devinettes pour débloquer la suite de l'histoire.</p>{% endif %}
+{% if not entries %}<p class="logbook-empty">Rallume des fenêtres et des lanternes : chaque lumière dévoile un morceau de l'histoire du village.</p>{% endif %}
 {% endblock %}
