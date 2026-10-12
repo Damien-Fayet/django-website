@@ -6,6 +6,5 @@ db.sqlite3
 *.pyc
 media/uploads
 __pycache__
-.github
 /media/max_challenge/photos*
 /staticfiles
