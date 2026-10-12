@@ -7,7 +7,7 @@ from django.db.migrations.executor import MigrationExecutor
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from . import scene, scoring
+from . import scoring, village
 from .models import Attempt, Hint, Puzzle
 
 
@@ -110,8 +110,9 @@ class FlowTests(TestCase):
     def test_unlock_all_setting(self):
         with mock.patch("avent2026.scoring.today", return_value=date(2026, 1, 1)):
             self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
-            nodes = self.client.get(reverse("avent2026:home")).context["nodes"]
-        self.assertNotIn("locked", {n["state"] for n in nodes})
+            villages = self.client.get(reverse("avent2026:home")).context["villages"]
+        states = {light["state"] for v in villages for light in v["lights"]}
+        self.assertNotIn("locked", states)
 
     def test_one_puzzle_per_kind_and_day(self):
         with self.assertRaises(IntegrityError), transaction.atomic():
@@ -129,7 +130,7 @@ class FlowTests(TestCase):
         self.assertContains(r, reverse("avent2026:puzzle", args=[self.devinette.id]))
 
 
-class SceneTests(TestCase):
+class VillagesPageTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("dora", password="pw")
         self.client.force_login(self.user)
@@ -139,25 +140,30 @@ class SceneTests(TestCase):
     def home(self):
         return self.client.get(reverse("avent2026:home"))
 
-    def test_two_nodes_per_day_with_states(self):
-        with at(2):
-            nodes = {(n["kind"], n["day"]): n for n in self.home().context["nodes"]}
-        self.assertEqual(len(nodes), 48)
-        self.assertEqual(nodes[("enigme", 1)]["state"], "open")
-        self.assertEqual(nodes[("devinette", 1)]["state"], "open")
-        self.assertEqual(nodes[("enigme", 2)]["state"], "empty")  # jour débloqué mais rien de publié
-        self.assertEqual(nodes[("enigme", 3)]["state"], "locked")
+    def lights(self, response):
+        return {(v["kind"], light["day"]): light for v in response.context["villages"] for light in v["lights"]}
 
-    def test_done_state_and_robot_on_last_solved(self):
+    def test_two_villages_with_24_lights_each_and_states(self):
+        with at(2):
+            r = self.home()
+        self.assertEqual([v["kind"] for v in r.context["villages"]], ["enigme", "devinette"])
+        lights = self.lights(r)
+        self.assertEqual(len(lights), 48)
+        self.assertEqual(lights[("enigme", 1)]["state"], "open")
+        self.assertEqual(lights[("devinette", 1)]["state"], "open")
+        self.assertEqual(lights[("enigme", 2)]["state"], "empty")  # jour débloqué mais rien de publié
+        self.assertEqual(lights[("enigme", 3)]["state"], "locked")
+
+    def test_solving_lights_only_its_own_village(self):
         with at(1):
-            first = self.home().context["robot_node"]
-            self.assertEqual((first["kind"], first["day"]), ("enigme", 1))
+            self.assertEqual(self.home().context["village"]["lit"], 0)
             self.client.post(reverse("avent2026:answer", args=[self.devinette.id]), {"answer": "non"})
             r = self.home()
-        states = {(n["kind"], n["day"]): n["state"] for n in r.context["nodes"]}
-        self.assertEqual(states[("devinette", 1)], "done")
-        self.assertEqual(states[("enigme", 1)], "open")
-        self.assertEqual((r.context["robot_node"]["kind"], r.context["robot_node"]["day"]), ("devinette", 1))
+        lights = self.lights(r)
+        self.assertEqual(lights[("devinette", 1)]["state"], "done")
+        self.assertEqual(lights[("enigme", 1)]["state"], "open")
+        self.assertEqual({v["kind"]: v["lit"] for v in r.context["villages"]}, {"enigme": 0, "devinette": 1})
+        self.assertEqual(r.context["village"]["lit"], 1)
         self.assertEqual(r.context["scores"]["devinette"], 50)
         self.assertEqual(r.context["scores"]["devinette_solved"], 1)
 
@@ -168,30 +174,56 @@ class SceneTests(TestCase):
         with at(5):
             self.assertContains(self.home(), "TITRE-SECRET")
 
-    def test_layout_covers_all_days_on_two_lanes(self):
-        for positions in (scene.LANDSCAPE, scene.PORTRAIT):
-            self.assertEqual(len(positions), 48)
-            for day in range(1, 25):
-                (ex, ey), (dx, dy) = positions[("enigme", day)], positions[("devinette", day)]
-                self.assertEqual(ex, dx)  # une colonne = un jour
-                self.assertLess(ey, dy)   # énigmes au-dessus des devinettes
+    def test_light_positions_cover_every_day_inside_the_image(self):
+        for kind in village.KINDS:
+            positions = [village.light_position(kind, day) for day in range(1, village.DAYS + 1)]
+            self.assertEqual(len(set(positions)), village.DAYS)  # deux lumières ne se superposent pas
+            for x, y in positions:
+                self.assertTrue(0 <= x <= 100 and 0 <= y <= 100)
+
+    def test_page_works_without_illustration(self):
+        with at(1):
+            r = self.home()
+        self.assertTrue(all(v["image"] is None for v in r.context["villages"]))  # aucune image déposée dans le dépôt
+        self.assertContains(r, "village--placeholder")
+
+    def test_illustration_is_used_when_present(self):
+        with mock.patch("avent2026.village.finders.find", return_value="/x/village-enigmes.webp"):
+            self.assertEqual(village.image_path("enigme"), "avent2026/img/village-enigmes.webp")
+
+    def test_calibration_is_staff_only(self):
+        url = reverse("avent2026:calibration", args=["enigme"])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.user.is_staff = True
+        self.user.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "lights-data")
+        self.assertEqual(self.client.get(reverse("avent2026:calibration", args=["inconnu"])).status_code, 404)
 
 
-class RobotTests(TestCase):
-    def test_thresholds_and_modules(self):
-        from . import robot
-        self.assertEqual(robot.robot_state(0)["level"], 1)
-        self.assertEqual(robot.robot_state(0)["module_keys"], [])
-        s = robot.robot_state(900)
-        self.assertEqual((s["level"], s["module_keys"]), (3, ["antenna", "arms"]))
-        top = robot.robot_state(10 ** 6)
-        self.assertEqual((top["level"], top["progress_pct"], top["next_threshold"]), (6, 100, None))
+class VillageTests(TestCase):
+    def test_thresholds_and_levels(self):
+        from . import village
+        start = village.village_state(0)
+        self.assertEqual((start["level"], start["lit"], start["next_threshold"], start["progress_pct"]), (1, 0, 6, 0))
+        self.assertEqual(village.village_state(5)["level"], 1)
+        self.assertEqual(village.village_state(6)["level"], 2)
+        top = village.village_state(10 ** 6)  # plafonné au nombre de lumières du village
+        self.assertEqual((top["lit"], top["level"], top["progress_pct"], top["next_threshold"]),
+                         (village.TOTAL, len(village.LEVELS), 100, None))
 
-    def test_max_level_reachable(self):
-        """Un joueur qui perd 20 % en indices et erreurs sur un calendrier complet atteint quand même le niveau max."""
-        from . import robot
-        per_day = sum(scoring.BASE_POINTS.values())  # 1 énigme + 1 devinette
-        self.assertGreater(per_day * 24 * 0.8, robot.LEVELS[-1][0])
+    def test_each_light_makes_the_village_calmer(self):
+        from . import village
+        calms = [village.village_state(n)["calm"] for n in range(village.TOTAL + 1)]
+        self.assertEqual(calms, sorted(calms))
+        self.assertEqual((calms[0], calms[-1]), (0, 1))
+
+    def test_last_level_reachable(self):
+        """Le dernier palier se franchit sans avoir tout résolu, et le village a bien 24 jours × 2 pistes."""
+        from . import village
+        self.assertEqual(village.TOTAL, village.DAYS * len(village.KINDS))
+        self.assertLess(village.LEVELS[-1][0], village.TOTAL)
 
 
 class StoryTests(TestCase):
@@ -210,15 +242,10 @@ class StoryTests(TestCase):
             self.assertContains(self.client.get(url), "SECRET-FRAGMENT")
             self.assertContains(self.client.get(reverse("avent2026:journal")), "SECRET-FRAGMENT")
 
-    def test_zone_lit_by_date_and_prologue_once(self):
+    def test_prologue_shown_once(self):
         with at(1):
-            r = self.client.get(reverse("avent2026:home"))
-            self.assertTrue(r.context["prologue"])
-            self.assertEqual([z["lit"] for z in r.context["zones"]], [True, False, False, False])
+            self.assertTrue(self.client.get(reverse("avent2026:home")).context["prologue"])
             self.assertFalse(self.client.get(reverse("avent2026:home")).context["prologue"])
-        with at(8):
-            r = self.client.get(reverse("avent2026:home"))
-            self.assertEqual([z["lit"] for z in r.context["zones"]], [True, True, False, False])
 
     def test_epilogue_needs_both_tracks_of_day_24(self):
         e24 = Puzzle.objects.create(kind="enigme", day=24, title="Fin E", text="?", answers="x")
@@ -228,7 +255,9 @@ class StoryTests(TestCase):
             self.client.post(reverse("avent2026:answer", args=[d24.id]), {"answer": "x"})
             self.assertFalse(self.client.get(reverse("avent2026:home")).context["epilogue"])
             self.client.post(reverse("avent2026:answer", args=[e24.id]), {"answer": "x"})
-            self.assertTrue(self.client.get(reverse("avent2026:home")).context["epilogue"])
+            r = self.client.get(reverse("avent2026:home"))
+            self.assertTrue(r.context["epilogue"])
+            self.assertTrue(r.context["finale"])  # l'étoile du grand sapin s'allume
 
 
 class TwoTracksMigrationTests(TransactionTestCase):

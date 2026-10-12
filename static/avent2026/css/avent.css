@@ -40,114 +40,90 @@
   .status__level { border-top: 0; border-left: 1px solid var(--filet); align-self: center; }
 }
 
-/* ---- Scène --------------------------------------------------------------- */
-.stage {
-  position: relative; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; isolation: isolate;
+/* ---- Les deux villages --------------------------------------------------- */
+.villages { display: grid; gap: 2.5rem; margin-bottom: 1rem; }
+.village-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.village-head h2 { margin: 0; font-size: 1.125rem; }
+.village-head p { margin: 0; font-size: .9375rem; color: var(--brume); font-variant-numeric: tabular-nums; }
+.village-scroll { overflow-x: auto; border-radius: var(--r-panel); }
+.village__hint { margin: .4rem 0 0; font-size: .8125rem; color: var(--brume); }
+@media (min-width: 48rem) { .village__hint { display: none; } }
+.village__todo { margin: .5rem 0 0; font-size: .8125rem; color: var(--brume); }
+
+.village {
+  --calm: 0;  /* 0 : pleine tempête, 1 : tout est allumé (posé par le template) */
+  position: relative; min-width: 46rem; aspect-ratio: 3 / 2; overflow: hidden; isolation: isolate;
   border-radius: var(--r-panel); background: var(--nuit);
 }
-.zone {
-  position: absolute; left: var(--l); top: var(--t); width: var(--w); height: var(--h); z-index: 0; overflow: hidden;
-  background: linear-gradient(160deg, var(--from), var(--to));
-  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .14);
+/* L'image s'éclaircit un peu à mesure que le village se rallume */
+.village__img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  filter: brightness(calc(.72 + var(--calm) * .28)) saturate(calc(.8 + var(--calm) * .2));
 }
-.zone.dark { filter: brightness(.45) saturate(.5); }
-.zone-art { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; filter: saturate(.65); }
-.zone::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(14, 26, 40, .55), rgba(14, 26, 40, .12) 45%, rgba(14, 26, 40, .4));
+/* Sans illustration : une nuit neigeuse dessinée en CSS, pour que le jeu reste jouable */
+.village--placeholder {
+  background:
+    radial-gradient(ellipse 70% 22% at 50% 100%, #e3ebf8 0 60%, transparent 61%),
+    linear-gradient(180deg, #0b1330 0%, #1a2352 52%, #2c3768 78%, #aebcd8 78.2%, #8fa0c4 100%);
 }
-.zone-name { position: absolute; left: .9rem; top: .7rem; z-index: 2; font-size: .8125rem; font-weight: 500; color: rgba(255, 255, 255, .85); }
-
-.node {
-  position: absolute; left: var(--x); top: var(--y); z-index: 2; transform: translate(-50%, -50%);
-  display: grid; place-items: center; width: 2.5rem; height: 2.5rem;
-  background: rgba(14, 26, 40, .78); border: 1px solid rgba(255, 255, 255, .45); color: #fff;
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .1);
-  font-size: 1rem; font-weight: 500; font-variant-numeric: tabular-nums; text-decoration: none;
-  transition: transform .15s, background-color .15s;
-}
-.node--enigme { border-radius: .55rem; }
-.node--devinette { border-radius: 50%; }
-a.node:hover { transform: translate(-50%, -50%) scale(1.08); color: #fff; }
-.node.open { background: var(--laiton); border-color: var(--laiton); color: var(--nuit); font-weight: 600; box-shadow: inset 0 0 0 3px rgba(14, 26, 40, .22); }
-a.node.open:hover { color: var(--nuit); }
-.node.done { border-color: #7fd1b0; color: #9fe3c7; }
-.node.empty { border-color: rgba(255, 255, 255, .3); color: rgba(255, 255, 255, .78); }
-.node.locked { border-style: dashed; border-color: rgba(255, 255, 255, .35); color: rgba(255, 255, 255, .6); cursor: not-allowed; }
-
-/* Pastille de statut : coche pour résolu, cadenas pour verrouillé */
-.node.done::after, .node.locked::after {
-  content: ""; position: absolute; right: -4px; bottom: -4px; width: 1.05rem; height: 1.05rem; border-radius: 50%;
-  background-repeat: no-repeat; background-position: center; background-size: .65rem;
-}
-.node.done::after {
-  background-color: #7fd1b0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%230e1a28' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.5l2.5 2.5 4.5-5.5'/%3E%3C/svg%3E");
-}
-.node.locked::after {
-  background-color: #324357;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23d3dae1' stroke-width='1.6' stroke-linejoin='round'%3E%3Crect x='2.5' y='5.5' width='7' height='5' rx='1'/%3E%3Cpath d='M4 5.5V4a2 2 0 014 0v1.5'/%3E%3C/svg%3E");
-}
-
-/* Rails des deux sentiers (derrière les étapes) */
-.rail {
-  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: 2px; z-index: 1;
-  transform: translateY(-50%); pointer-events: none;
-}
-.rail--enigme { background: var(--laiton); opacity: .55; }
-.rail--devinette {
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .7) 0 6px, transparent 6px 11px); opacity: .6;
-}
-
-.rail--dark { opacity: .22; }
-
-/* Robot */
-.robot-wrap {
-  position: absolute; left: var(--x); top: var(--y); z-index: 3; width: 2.75rem; pointer-events: none;
-  transform: translate(-50%, -110%); transition: left .8s ease, top .8s ease;
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .45));
-}
-.robot { display: block; width: 100%; height: auto; fill: #dfe5ec; stroke: var(--nuit); stroke-width: 2; stroke-linejoin: round; }
-.robot .eye { fill: var(--laiton); }
-.robot .panel { fill: #8a99ab; }
-.robot .led { fill: var(--laiton); }
-.robot .m-antenna line { stroke: #cfd8e2; stroke-width: 3; }
-.robot .m-radar path { fill: none; stroke: var(--laiton); stroke-width: 3; stroke-linecap: round; }
-.robot .m-jetpack rect { fill: #9fb0c2; }
-.robot .flame { fill: var(--laiton); }
-.robot .m-wheels rect, .robot .m-wheels circle { fill: #4a5b70; }
-
-.legend { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 1rem 0 .25rem; padding: 0; list-style: none; font-size: .875rem; color: var(--brume); }
-.legend li { display: flex; align-items: center; gap: .5rem; }
-.swatch { width: .9rem; height: .9rem; border-radius: .25rem; background: var(--nuit); border: 1px solid var(--nuit); }
-.swatch--enigme { border-radius: .25rem; }
-.swatch--devinette { border-radius: 50%; }
-.swatch--open { background: var(--laiton); border-color: var(--laiton); }
-.swatch--done { background: #7fd1b0; border-color: #7fd1b0; }
-.swatch--locked { background: transparent; border-style: dashed; border-color: var(--brume); }
-.swatch--empty { background: transparent; border-color: var(--brume); }
-.stage-note { margin: .5rem 0 0; font-size: .875rem; color: var(--brume); }
-
-@media (max-width: 43.75rem) {
-  .stage { aspect-ratio: 1 / 2; }
-  .zone { left: var(--pl); top: var(--pt); width: var(--pw); height: var(--ph); }
-  .node, .robot-wrap { left: var(--px); top: var(--py); }
-  .rail { left: var(--px); top: var(--py); width: var(--pw); }
-  .node { width: 2.1rem; height: 2.1rem; font-size: .9375rem; }
-  .robot-wrap { width: 2rem; transform: translate(-50%, -105%); }
-}
-
-/* Neige : flocons fixes au-dessus des décors, sous les portes */
-.stage::after {
-  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .55;
+/* Neige : flocons fixes au-dessus de l'image, sous les lumières */
+.village::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: calc(.6 - var(--calm) * .45);
   background:
     radial-gradient(circle, #fff 1px, transparent 1.6px) 0 0 / 83px 71px,
     radial-gradient(circle, #fff 1.2px, transparent 2px) 31px 23px / 127px 109px,
     radial-gradient(circle, rgba(255, 255, 255, .8) .8px, transparent 1.4px) 57px 49px / 61px 53px;
 }
 
-/* Décor : animations retirées pour une scène calme */
-.zone-art .twinkle, .zone-art .smoke, .zone-art .drift, .zone-art .aurora { animation: none; }
+/* Une lumière : point d'ancrage sur l'image (la fenêtre ou la lanterne), lueur centrée, numéro dessous */
+.light { position: absolute; z-index: 2; width: 0; height: 0; text-decoration: none; }
+.light::before { content: ""; position: absolute; left: -1.4rem; top: -1.4rem; width: 2.8rem; height: 2.8rem; border-radius: 50%; }
+.light__glow {
+  position: absolute; left: -2.6rem; top: -2.6rem; width: 5.2rem; height: 5.2rem; border-radius: 50%;
+  pointer-events: none; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255, 226, 150, .95) 0, rgba(255, 190, 80, .55) 28%, rgba(255, 170, 60, 0) 68%);
+}
+.light.is-done .light__glow { opacity: 1; }
+.light__num {
+  position: absolute; left: 0; top: .85rem; transform: translateX(-50%); min-width: 1.5rem; padding: .05rem .4rem;
+  border-radius: 99px; background: rgba(14, 26, 40, .8); border: 1px solid rgba(255, 255, 255, .4); color: #fff;
+  font-size: .75rem; font-weight: 600; line-height: 1.4; text-align: center; font-variant-numeric: tabular-nums;
+  transition: transform .15s;
+}
+a.light:hover .light__num, a.light:focus-visible .light__num { transform: translateX(-50%) scale(1.12); }
+/* À rallumer : numéro cerclé de laiton */
+.light.is-open .light__num { border-color: var(--laiton); color: #f3d58a; box-shadow: 0 0 0 3px rgba(217, 164, 65, .28); }
+/* Allumée : numéro plein laiton, lueur sur l'image */
+.light.is-done .light__num { background: var(--laiton); border-color: #f3d58a; color: var(--nuit); }
+.light.is-empty .light__num { color: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .3); }
+.light.is-locked { cursor: not-allowed; }
+.light.is-locked .light__num { border-style: dashed; color: rgba(255, 255, 255, .6); padding-left: .55rem; }
+.light.is-locked .light__num::before {
+  content: ""; position: absolute; left: .18rem; top: 50%; width: .62rem; height: .62rem; transform: translateY(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23d3dae1' stroke-width='1.6' stroke-linejoin='round'%3E%3Crect x='2.5' y='5.5' width='7' height='5' rx='1'/%3E%3Cpath d='M4 5.5V4a2 2 0 014 0v1.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 1rem 0 .25rem; padding: 0; list-style: none; font-size: .875rem; color: var(--brume); }
+.legend li { display: flex; align-items: center; gap: .5rem; }
+.swatch { min-width: 1.5rem; height: 1rem; border-radius: 99px; background: rgba(14, 26, 40, .85); border: 1px solid var(--nuit); }
+.swatch--done { background: var(--laiton); border-color: var(--laiton); }
+.swatch--open { border: 2px solid var(--laiton); }
+.swatch--locked { background: transparent; border-style: dashed; border-color: var(--brume); }
+.swatch--empty { background: transparent; border-color: var(--brume); }
+.stage-note { margin: .5rem 0 0; font-size: .875rem; color: var(--brume); }
+
+/* Page de calibrage (staff) */
+.calib { display: grid; gap: 1.5rem; }
+.calib__stage { position: relative; aspect-ratio: 3 / 2; max-width: 60rem; cursor: crosshair; }
+.calib__marker {
+  position: absolute; transform: translate(-50%, -50%); min-width: 1.4rem; height: 1.4rem; padding: 0 .3rem; border-radius: 99px;
+  background: rgba(14, 26, 40, .85); border: 1px solid #fff; color: #fff; font-size: .75rem; line-height: 1.3rem; text-align: center;
+  pointer-events: none;
+}
+.calib__marker.is-current { background: var(--laiton); border-color: #fff3c9; color: var(--nuit); }
+.calib__days { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0; padding: 0; list-style: none; }
+.calib__days button { min-width: 2.4rem; }
+.calib__out { width: 100%; max-width: 60rem; min-height: 9rem; font: 400 .8125rem/1.5 ui-monospace, Consolas, monospace; }
 
 /* ---- Énigme -------------------------------------------------------------- */
 .puzzle { display: grid; gap: 2rem; }
@@ -181,7 +157,11 @@ a.node.open:hover { color: var(--nuit); }
 
 /* ---- Journal ------------------------------------------------------------- */
 .logbook-head { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2.5rem; }
-.logbook-head .robot { width: 4.5rem; flex: none; padding: .5rem; border-radius: var(--r-panel); background: var(--nuit); }
+.logbook-head .lantern { width: 2.25rem; flex: none; padding: .6rem 1rem; box-sizing: content-box; border-radius: var(--r-panel); background: var(--nuit); }
+.lantern__ring, .lantern__bars { fill: none; stroke: #8a99ab; stroke-width: 2; stroke-linecap: round; }
+.lantern__cap { fill: #8a99ab; }
+.lantern__glass { fill: var(--laiton); }
+.lantern__bars { stroke: var(--nuit); }
 .logbook-head h1 { margin-bottom: .15rem; }
 .logbook-head p { margin: 0; }
 .logbook { max-width: 46rem; margin: 0; padding: 0; list-style: none; }
