@@ -34,6 +34,7 @@ Monorepo Django (5.1) de sites perso pour la famille (~30 utilisateurs). Héberg
 - Déploiement PythonAnywhere : sauvegarder `db.sqlite3`, `git pull`, `python manage.py migrate`, `python manage.py collectstatic`, puis « Reload » de la web app. Dépendances : `pip install --user -r requirements.txt`. Onglet Web → Static files : `/static/` → `~/django-website/staticfiles` (et `/media/` → `~/django-website/media`). Après la première migration de nettoyage : `sqlite3 db.sqlite3 "VACUUM;"` pour récupérer l'espace.
 
 - Hébergement sur Raspberry Pi (Pi 1 / Pi 3, Cloudflare Tunnel) : voir `DEPLOY_PI.md` (script d'installation automatique : `deploy/setup_pi.sh`).
+- Production actuelle : **Pi 3 uniquement**, qui se met à jour seul depuis `main` (timer systemd `avent-update`, toutes les 5 min : `deploy/update_pi.sh`, installé par `deploy/install_autoupdate.sh`, doc en section 11 de `DEPLOY_PI.md`). Donc tout ce qui est fusionné dans `main` part en production en quelques minutes : CI GitHub (`.github/workflows/tests.yml`) à garder verte, migrations compatibles avec l'ancien code, et un commit qui touche `mysite/settings.py` bloque le déploiement automatique (config de prod locale en `skip-worktree`).
 
 ## avent2026 — architecture
 - Deux pistes par jour : au plus une énigme et une devinette par jour (contrainte unique `(kind, day)`), pas de difficulté. Soit 24 énigmes + 24 devinettes.
