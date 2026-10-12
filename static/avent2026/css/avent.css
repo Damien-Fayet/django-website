@@ -115,6 +115,8 @@ a.light:hover .light__num, a.light:focus-visible .light__num { transform: transl
 .carte__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* Nouveau bâtiment allumé depuis la dernière visite : la nouvelle image se fond par-dessus l'ancienne, une seule fois */
 .carte__img--reveal { animation: carte-reveal 1.6s ease-out .3s both; }
+/* Posé par le script de la page tant que la nouvelle image n'est pas chargée : le fondu démarre au retrait de la classe */
+.carte__img--reveal.is-waiting { animation: none; opacity: 0; }
 @keyframes carte-reveal { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .carte__img--reveal { animation: none; } }
 /* Image absente : même nuit neigeuse que le village des énigmes */

@@ -211,14 +211,43 @@ class VillagesPageTests(TestCase):
             self.client.post(reverse("avent2026:answer", args=[self.enigme.id]), {"answer": "oui"})
             self.assertEqual(self.carte(self.home())["step"], 0)
 
-    def test_devinette_map_reveals_new_step_once(self):
+    def seen_url(self):
+        return reverse("avent2026:carte_seen", args=["devinette"])
+
+    def test_devinette_map_reveals_new_step_until_browser_confirms(self):
         with at(1):
             self.assertIsNone(self.carte(self.home())["previous"])  # première visite : rien à animer
             self.client.post(reverse("avent2026:answer", args=[self.devinette.id]), {"answer": "non"})
             r = self.home()
             self.assertEqual(self.carte(r)["previous"], "avent2026/img/carte-devinettes/village-iso-etape-00.webp")
-            self.assertContains(r, "carte__img--reveal")
-            self.assertIsNone(self.carte(self.home())["previous"])  # déjà vu, plus d'animation
+            self.assertContains(r, "carte__img carte__img--reveal")  # la classe sur l'<img>, pas le sélecteur du script
+            self.assertContains(r, self.seen_url())
+            # Un rendu qui n'a pas été affiché (préchargement, connexion coupée) ne consomme pas le fondu.
+            self.assertIsNotNone(self.carte(self.home())["previous"])
+            self.assertEqual(self.client.post(self.seen_url(), {"step": "1"}).status_code, 204)
+            r = self.home()
+        self.assertIsNone(self.carte(r)["previous"])  # vu, plus d'animation
+        self.assertNotContains(r, "carte__img carte__img--reveal")
+
+    def test_carte_seen_validates_input(self):
+        self.assertEqual(self.client.get(self.seen_url()).status_code, 405)
+        self.assertEqual(self.client.post(self.seen_url(), {"step": "abc"}).status_code, 400)
+        self.assertEqual(self.client.post(self.seen_url(), {"step": "25"}).status_code, 400)
+        self.assertEqual(self.client.post(self.seen_url(), {"step": "-1"}).status_code, 400)
+        self.assertEqual(self.client.post(reverse("avent2026:carte_seen", args=["enigme"]), {"step": "1"}).status_code, 404)
+
+    def test_carte_seen_never_goes_backwards(self):
+        with at(1):
+            self.home()  # étape 0 enregistrée
+            self.client.post(self.seen_url(), {"step": "5"})
+            self.client.post(self.seen_url(), {"step": "2"})
+        self.assertEqual(self.client.session["avent2026_carte_devinette"], 5)
+
+    def test_counter_is_singular_for_zero_and_one(self):
+        with at(1):
+            self.assertContains(self.home(), "0 bâtiment allumé sur 24")
+            self.client.post(reverse("avent2026:answer", args=[self.devinette.id]), {"answer": "non"})
+            self.assertContains(self.home(), "1 bâtiment allumé sur 24")
 
     def test_devinette_map_without_image_falls_back(self):
         with at(1), mock.patch("avent2026.village.finders.find", return_value=None):

@@ -31,13 +31,14 @@
   <section class="village-block" aria-labelledby="village-{{ v.kind }}">
     <div class="village-head">
       <h2 id="village-{{ v.kind }}">{{ v.name }}</h2>
-      <p>{{ v.lit }} bâtiment{{ v.lit|pluralize }} allumé{{ v.lit|pluralize }} sur {{ v.total }}</p>
+      <p>{{ v.lit }} bâtiment{% if v.lit > 1 %}s{% endif %} allumé{% if v.lit > 1 %}s{% endif %} sur {{ v.total }}</p>
     </div>
     <div class="carte">
       <div class="carte__frame{% if not v.carte.image %} carte__frame--placeholder{% endif %}">
         {% if v.carte.previous %}<img class="carte__img" src="{% static v.carte.previous %}" alt="">{% endif %}
         {% if v.carte.image %}<img class="carte__img{% if v.carte.previous %} carte__img--reveal{% endif %}" src="{% static v.carte.image %}"
-             alt="{{ v.name }} : {{ v.lit }} bâtiment{{ v.lit|pluralize }} allumé{{ v.lit|pluralize }} sur {{ v.total }}."
+             {% if v.carte.previous %}data-seen-url="{% url 'avent2026:carte_seen' v.kind %}" data-step="{{ v.carte.step }}"
+             {% endif %}alt="{{ v.name }} : {{ v.lit }} bâtiment{% if v.lit > 1 %}s{% endif %} allumé{% if v.lit > 1 %}s{% endif %} sur {{ v.total }}."
              width="1600" height="1080">{% endif %}
       </div>
       <ol class="days" aria-label="Les 24 jours, {{ v.name|lower }}">
@@ -66,7 +67,7 @@
   <section class="village-block" aria-labelledby="village-{{ v.kind }}">
     <div class="village-head">
       <h2 id="village-{{ v.kind }}">{{ v.name }}</h2>
-      <p>{{ v.lit }} lumière{{ v.lit|pluralize }} sur {{ v.total }}</p>
+      <p>{{ v.lit }} lumière{% if v.lit > 1 %}s{% endif %} sur {{ v.total }}</p>
     </div>
     <div class="village-scroll">
       <div class="village{% if not v.image %} village--placeholder{% endif %}" style="--calm:{{ village.calm }}" role="group" aria-label="{{ v.alt }}">
@@ -97,6 +98,30 @@
   {% endfor %}
 </div>
 {% endlocalize %}
+
+{# Révélation d'un nouveau bâtiment : le fondu ne démarre qu'une fois la nouvelle image chargée, puis le serveur #}
+{# est prévenu (une seule fois) que l'étape a été vue. Sans JavaScript, le fondu joue à chaque visite. #}
+<script>
+(function () {
+  var csrf = "{{ csrf_token }}";
+  document.querySelectorAll("img.carte__img--reveal").forEach(function (img) {
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      img.classList.remove("is-waiting");
+      var body = new FormData();
+      body.append("step", img.dataset.step);
+      fetch(img.dataset.seenUrl, {method: "POST", body: body, headers: {"X-CSRFToken": csrf},
+                                  credentials: "same-origin", keepalive: true}).catch(function () {});
+    }
+    img.classList.add("is-waiting");
+    if (img.complete && img.naturalWidth > 0) { start(); return; }
+    img.addEventListener("load", start);
+    img.addEventListener("error", function () { img.classList.remove("is-waiting"); });
+  });
+})();
+</script>
 
 <ul class="legend" aria-label="Légende">
   <li><span class="swatch swatch--done"></span>Lumière allumée</li>
