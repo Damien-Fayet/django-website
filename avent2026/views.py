@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, Sum
-from django.http import Http404
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -55,7 +55,8 @@ def home(request):
     scores = _user_scores(request.user)
     finale = _finished(request.user)
     show_prologue = not request.session.get("avent2026_prologue_seen")
-    request.session["avent2026_prologue_seen"] = True
+    if show_prologue:  # n'écrire la session qu'une fois : sinon un UPDATE par visite
+        request.session["avent2026_prologue_seen"] = True
     return render(request, "avent2026/home.html", {
         "villages": villages, "scores": scores,
         "village": village.village_state(scores["lit"]), "finale": finale,
@@ -68,17 +69,37 @@ def _carte(request, kind, step):
     """Image « étape `step` » du village dessiné étape par étape, et l'étape vue à la visite précédente.
 
     `previous` n'est donné que si des puzzles ont été résolus depuis : le template fait alors apparaître
-    en fondu la nouvelle image par-dessus l'ancienne, une seule fois.
+    en fondu la nouvelle image par-dessus l'ancienne. L'étape n'est enregistrée comme « vue » qu'au moment où
+    le navigateur confirme l'avoir affichée (`carte_seen`) : un rendu perdu ou préchargé ne consomme pas le fondu.
     """
     key = f"avent2026_carte_{kind}"
     seen = request.session.get(key)
-    request.session[key] = step
-    previous = seen if isinstance(seen, int) and seen < step else None
+    if not isinstance(seen, int) or seen > step:  # première visite, ou étape en recul : rien à animer
+        request.session[key] = seen = step
+    previous = seen if seen < step else None
     return {
         "step": step, "image": village.carte_image_path(kind, step),
         "previous": village.carte_image_path(kind, previous) if previous is not None else None,
         "missing": f"static/avent2026/img/{village.CARTES[kind][0]}/{village.CARTES[kind][1].format(step=step)}.webp",
     }
+
+
+@login_required
+@require_POST
+def carte_seen(request, kind):
+    """Le navigateur a affiché la nouvelle étape de la carte : le fondu ne sera plus rejoué."""
+    if kind not in village.CARTES:
+        raise Http404
+    try:
+        step = int(request.POST.get("step", ""))
+    except ValueError:
+        return HttpResponseBadRequest()
+    if not 0 <= step <= village.DAYS:
+        return HttpResponseBadRequest()
+    key = f"avent2026_carte_{kind}"
+    seen = request.session.get(key)
+    request.session[key] = max(step, seen) if isinstance(seen, int) else step
+    return HttpResponse(status=204)
 
 
 @login_required
