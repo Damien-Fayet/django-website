@@ -4,14 +4,18 @@ from datetime import date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import competition, scoring, village
-from .models import Attempt, Hint, HintReveal, Puzzle
+from accounts.utils import client_ip
+
+from . import competition, scoring, suivi, village
+from .models import Attempt, Hint, HintReveal, Puzzle, Submission
 
 
 def _locked_response(request, day, puzzle=None):
@@ -170,6 +174,8 @@ def puzzle_view(request, puzzle_id):
     puzzle = get_object_or_404(Puzzle, pk=puzzle_id)
     if not scoring.is_unlocked(puzzle, request.user):
         return _locked_response(request, puzzle.day, puzzle)
+    # Premier affichage (suivi anti-triche) : une seule écriture, à la création de la progression.
+    Attempt.objects.get_or_create(user=request.user, puzzle=puzzle, defaults={"first_seen_at": timezone.now()})
     return render(request, "avent2026/puzzle.html", _puzzle_context(request, puzzle))
 
 
@@ -183,22 +189,28 @@ def answer(request, puzzle_id):
         attempt, _ = Attempt.objects.select_for_update().get_or_create(user=request.user, puzzle=puzzle)
         if attempt.solved:
             messages.info(request, "Tu as déjà résolu celle-ci.")
-        elif scoring.is_correct(puzzle, request.POST.get("answer", "")):
-            revealed = list(Hint.objects.filter(puzzle=puzzle, reveals__user=request.user))
-            # Écrire la résolution avant de compter les précédentes : l'écriture prend le verrou de SQLite, donc
-            # deux résolutions simultanées ne reçoivent pas la même place.
-            attempt.solved_at = timezone.now()
-            attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed)
-            attempt.save()
-            if puzzle.kind in scoring.BONUS_KINDS:
-                attempt.rank = competition.rank_of(attempt)
-                attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed, attempt.rank)
-                attempt.save(update_fields=["rank", "points"])
-            messages.success(request, f"Bravo ! +{attempt.points} points.")
         else:
-            attempt.errors += 1
-            attempt.save(update_fields=["errors"])
-            messages.error(request, "Ce n'est pas ça, essaie encore.")
+            given = request.POST.get("answer", "")
+            correct = scoring.is_correct(puzzle, given)
+            # Journal des réponses envoyées (suivi staff), conservé même si la progression est remise à zéro.
+            Submission.objects.create(user=request.user, puzzle=puzzle, answer=given.strip()[:200], correct=correct,
+                                      ip=client_ip(request))
+            if correct:
+                revealed = list(Hint.objects.filter(puzzle=puzzle, reveals__user=request.user))
+                # Écrire la résolution avant de compter les précédentes : l'écriture prend le verrou de SQLite, donc
+                # deux résolutions simultanées ne reçoivent pas la même place.
+                attempt.solved_at = timezone.now()
+                attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed)
+                attempt.save()
+                if puzzle.kind in scoring.BONUS_KINDS:
+                    attempt.rank = competition.rank_of(attempt)
+                    attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed, attempt.rank)
+                    attempt.save(update_fields=["rank", "points"])
+                messages.success(request, f"Bravo ! +{attempt.points} points.")
+            else:
+                attempt.errors += 1
+                attempt.save(update_fields=["errors"])
+                messages.error(request, "Ce n'est pas ça, essaie encore.")
     return redirect("avent2026:puzzle", puzzle_id=puzzle.id)
 
 
@@ -260,3 +272,51 @@ def journal(request):
         "epilogue": village.EPILOGUE if _finished(request.user) else "",
         "village": village.village_state(scores["lit"]),
     })
+
+
+SUIVI_VUES = [("temps", "Temps de réponse"), ("reponses", "Réponses"), ("connexions", "Connexions")]
+SUIVI_PAR_PAGE = 50
+
+
+def _int_param(request, name, default=None):
+    try:
+        return int(request.GET.get(name, ""))
+    except ValueError:
+        return default
+
+
+@login_required
+def tracking(request):
+    """Suivi staff : temps de réponse (détection de triche), réponses envoyées, connexions."""
+    if not request.user.is_staff:
+        raise Http404
+    vue = request.GET.get("vue")
+    if vue not in dict(SUIVI_VUES):
+        vue = SUIVI_VUES[0][0]
+    include_staff = request.GET.get("staff") == "1"
+    user_id = _int_param(request, "joueur")
+    puzzle_id = _int_param(request, "puzzle")
+    seuil = max(1, _int_param(request, "seuil", suivi.SEUIL_DEFAUT))
+    order = "recent" if request.GET.get("tri") == "recent" else "rapide"
+
+    ctx = {"vue": vue, "vues": SUIVI_VUES, "include_staff": include_staff, "user_id": user_id,
+           "puzzle_id": puzzle_id, "seuil": seuil, "order": order}
+    if vue == "temps":
+        items = suivi.response_times(include_staff, seuil, user_id, puzzle_id, order)
+    elif vue == "reponses":
+        items = suivi.submissions(include_staff, user_id, puzzle_id)
+    else:
+        items = suivi.login_events(include_staff, user_id)
+        ctx["summary"] = suivi.users_summary(include_staff)
+        ctx["shared_ips"] = suivi.shared_ips(include_staff)
+    page = Paginator(items, SUIVI_PAR_PAGE).get_page(request.GET.get("page"))
+    if vue == "reponses":
+        page.object_list = suivi.with_delay(list(page.object_list))
+    query = request.GET.copy()
+    query.pop("page", None)
+    ctx.update({
+        "page": page, "query": query.urlencode(),
+        "players": get_user_model().objects.order_by("username").values_list("id", "username"),
+        "puzzles": Puzzle.objects.only("id", "kind", "day", "title"),
+    })
+    return render(request, "avent2026/suivi.html", ctx)

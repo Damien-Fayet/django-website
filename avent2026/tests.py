@@ -8,7 +8,7 @@ from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
 from . import competition, scoring, village
-from .models import Attempt, Hint, HintReveal, Puzzle
+from .models import Attempt, Hint, HintReveal, Puzzle, Submission
 
 
 def on(month, day, hour=12):
@@ -129,9 +129,11 @@ class FlowTests(TestCase):
             self.assertEqual(self.client.post(reverse("avent2026:hint", args=[self.enigme.id])).status_code, 403)
         with at(1, hour=5):
             self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 403)
+        # Les accès refusés (page, réponse, indice) ne laissent aucune trace, pas même un « premier affichage ».
+        self.assertFalse(Attempt.objects.filter(puzzle=self.enigme).exists())
         with at(1, hour=6):
             self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
-        self.assertFalse(Attempt.objects.exists())
+        self.assertIsNotNone(Attempt.objects.get(puzzle=self.enigme).first_seen_at)
 
     def test_wrong_then_right_with_hint(self):
         with at(1):
@@ -585,3 +587,131 @@ class TwoTracksMigrationTests(TransactionTestCase):
         self.assertEqual(NewPuzzle.objects.get(kind="enigme").pk, easy.pk)
         self.assertEqual(NewPuzzle.objects.get(kind="devinette").pk, other.pk)
         self.assertEqual(NewHint.objects.count(), 0)  # indice du puzzle supprimé parti en cascade
+
+
+class TrackingTests(TestCase):
+    """Suivi staff : connexions, réponses envoyées, premier affichage et temps de réponse."""
+
+    def setUp(self):
+        self.alice = User.objects.create_user("alice", password="pw")
+        self.boss = User.objects.create_user("boss", password="pw", is_staff=True)
+        self.puzzle = Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="Oui")
+        self.url = reverse("avent2026:tracking")
+
+    def test_login_is_recorded(self):
+        from accounts.models import LoginEvent
+        self.assertTrue(self.client.login(username="alice", password="pw"))
+        self.assertEqual(LoginEvent.objects.filter(user=self.alice).count(), 1)
+
+    def test_first_display_recorded_once(self):
+        self.client.force_login(self.alice)
+        with at(1):
+            self.client.get(reverse("avent2026:puzzle", args=[self.puzzle.id]))
+            first = Attempt.objects.get().first_seen_at
+            self.assertIsNotNone(first)
+            self.client.get(reverse("avent2026:puzzle", args=[self.puzzle.id]))
+        self.assertEqual(Attempt.objects.get().first_seen_at, first)
+
+    def test_answers_are_logged(self):
+        self.client.force_login(self.alice)
+        with at(1):
+            url = reverse("avent2026:answer", args=[self.puzzle.id])
+            self.client.post(url, {"answer": "  Non  "})
+            self.client.post(url, {"answer": "oui"})
+            self.client.post(url, {"answer": "encore"})  # déjà résolu : non journalisé
+        rows = list(Submission.objects.order_by("id").values_list("answer", "correct"))
+        self.assertEqual(rows, [("Non", False), ("oui", True)])
+        # Répondre sans avoir ouvert la page : pas de premier affichage.
+        self.assertIsNone(Attempt.objects.get().first_seen_at)
+
+    def test_staff_only(self):
+        self.assertEqual(self.client.get(self.url).status_code, 302)  # anonyme → connexion
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.client.force_login(self.boss)
+        for vue in ("temps", "reponses", "connexions", "inconnue"):
+            self.assertEqual(self.client.get(self.url, {"vue": vue}).status_code, 200)
+
+    def test_response_time_and_flags(self):
+        from datetime import datetime, timedelta, timezone as tz
+        t0 = datetime(2026, 12, 1, 10, 0, 0, tzinfo=tz.utc)
+        bob = User.objects.create_user("bob", password="pw")
+        Attempt.objects.create(user=self.alice, puzzle=self.puzzle, first_seen_at=t0,
+                               solved_at=t0 + timedelta(seconds=20), points=100)
+        Attempt.objects.create(user=bob, puzzle=self.puzzle, first_seen_at=t0,
+                               solved_at=t0 + timedelta(minutes=5), points=100)
+        Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="oui", correct=True)
+        self.client.force_login(self.boss)
+        resp = self.client.get(self.url, {"vue": "temps", "seuil": 60})
+        rows = resp.context["page"].object_list
+        self.assertEqual([r["user"].username for r in rows], ["alice", "bob"])  # plus rapide d'abord
+        self.assertEqual([r["duration_text"] for r in rows], ["20 s", "5 min 00 s"])
+        self.assertEqual(len(rows[0]["flags"]), 1)
+        self.assertEqual(rows[1]["flags"], [])
+        self.assertContains(resp, "Résolu en moins de 60 s")
+
+    def test_answer_without_display_is_flagged(self):
+        Attempt.objects.create(user=self.alice, puzzle=self.puzzle)
+        Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="x", correct=False)
+        self.client.force_login(self.boss)
+        row = self.client.get(self.url, {"vue": "temps"}).context["page"].object_list[0]
+        self.assertEqual(row["flags"], ["Réponse envoyée sans avoir ouvert la page"])
+
+    def test_staff_hidden_unless_requested(self):
+        Submission.objects.create(user=self.boss, puzzle=self.puzzle, answer="test", correct=False)
+        Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="x", correct=False)
+        self.client.force_login(self.boss)
+        self.assertEqual(len(self.client.get(self.url, {"vue": "reponses"}).context["page"].object_list), 1)
+        self.assertEqual(len(self.client.get(self.url, {"vue": "reponses", "staff": "1"}).context["page"].object_list), 2)
+
+    def test_answer_is_escaped(self):
+        Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="<script>alert(1)</script>", correct=False)
+        self.client.force_login(self.boss)
+        self.assertNotContains(self.client.get(self.url, {"vue": "reponses"}), "<script>alert(1)</script>")
+
+    def test_bad_params_do_not_crash(self):
+        self.client.force_login(self.boss)
+        r = self.client.get(self.url, {"vue": "temps", "joueur": "x", "puzzle": "y", "seuil": "abc", "page": "zzz"})
+        self.assertEqual(r.status_code, 200)
+
+
+class ClientIpTests(TestCase):
+    """IP enregistrée avec les connexions et réponses, et IP partagées entre comptes."""
+
+    def setUp(self):
+        self.alice = User.objects.create_user("alice", password="pw")
+        self.bob = User.objects.create_user("bob", password="pw")
+        self.boss = User.objects.create_user("boss", password="pw", is_staff=True)
+        self.puzzle = Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="Oui")
+
+    def test_cloudflare_header_trusted_only_from_loopback(self):
+        from accounts.utils import client_ip
+        from django.test import RequestFactory
+        rf = RequestFactory()
+        behind_tunnel = rf.get("/", REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(client_ip(behind_tunnel), "203.0.113.7")
+        spoofed = rf.get("/", REMOTE_ADDR="198.51.100.2", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(client_ip(spoofed), "198.51.100.2")
+        self.assertEqual(client_ip(rf.get("/", REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="n'importe quoi")), None)
+        self.assertIsNone(client_ip(None))
+
+    def test_login_and_answer_record_ip(self):
+        from accounts.models import LoginEvent
+        self.client.post(reverse("login"), {"username": "alice", "password": "pw"},
+                         REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(LoginEvent.objects.get(user=self.alice).ip, "203.0.113.7")
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "non"},
+                             REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(Submission.objects.get().ip, "203.0.113.7")
+
+    def test_shared_ips(self):
+        from accounts.models import LoginEvent
+        LoginEvent.objects.create(user=self.alice, ip="203.0.113.7")
+        Submission.objects.create(user=self.bob, puzzle=self.puzzle, answer="x", correct=False, ip="203.0.113.7")
+        LoginEvent.objects.create(user=self.alice, ip="203.0.113.8")
+        LoginEvent.objects.create(user=self.boss, ip="203.0.113.8")  # staff : ignoré par défaut
+        self.client.force_login(self.boss)
+        resp = self.client.get(reverse("avent2026:tracking"), {"vue": "connexions"})
+        self.assertEqual(resp.context["shared_ips"], [{"ip": "203.0.113.7", "users": ["alice", "bob"]}])
+        self.assertContains(resp, "203.0.113.7")

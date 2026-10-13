@@ -14,4 +14,5 @@ urlpatterns = [
     path("journal/", views.journal, name="journal"),
     path("classement/", views.leaderboard, name="leaderboard"),
     path("carte/<str:kind>/vue/", views.carte_seen, name="carte_seen"),
+    path("suivi/", views.tracking, name="tracking"),
 ]

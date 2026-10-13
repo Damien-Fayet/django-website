@@ -82,6 +82,10 @@ class Attempt(models.Model):
     errors = models.PositiveIntegerField(default=0)
     solved_at = models.DateTimeField(null=True, blank=True)
     points = models.IntegerField("Points obtenus", default=0)
+    first_seen_at = models.DateTimeField(
+        "Premier affichage", null=True, blank=True,
+        help_text="Première ouverture de la page du puzzle (vide : avant le suivi, ou réponse envoyée sans l'avoir ouverte).",
+    )
     rank = models.PositiveSmallIntegerField(
         "Place à la résolution", null=True, blank=True,
         help_text="Rang parmi les joueurs (hors staff) qui ont résolu ce puzzle ; sert au bonus de podium.",
@@ -109,3 +113,28 @@ class HintReveal(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["user", "hint"], name="uniq_avent2026_reveal"),
         ]
+
+
+class Submission(models.Model):
+    """Journal des réponses envoyées (texte tel que saisi), pour le suivi staff.
+
+    Indépendant d'`Attempt` (pas de clé vers elle) : remettre une progression à zéro dans l'admin
+    ne doit pas effacer la trace.
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="avent2026_submissions")
+    puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE, related_name="submissions")
+    answer = models.CharField("Réponse saisie", max_length=200)
+    correct = models.BooleanField("Correcte")
+    created_at = models.DateTimeField("Envoyée le", auto_now_add=True)
+    ip = models.GenericIPAddressField("Adresse IP", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["user", "puzzle"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.puzzle} — {self.answer!r}"
