@@ -242,3 +242,24 @@ a.day.is-done:hover { background: #e6b653; }
 /* ---- Jour verrouillé ----------------------------------------------------- */
 .locked-page { max-width: 30rem; padding-top: 3rem; }
 .locked-page p { color: var(--brume); }
+
+/* ---- Suivi staff ---------------------------------------------------------- */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.subnav { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin: 0 0 1.5rem; border-bottom: 1px solid var(--filet); }
+.subnav a { padding: .5rem 0; color: var(--brume); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.subnav a:hover { color: var(--encre); }
+.subnav a[aria-current="page"] { color: var(--encre); font-weight: 600; border-bottom-color: var(--sapin); }
+.filters { display: flex; flex-wrap: wrap; gap: 0 1rem; align-items: end; margin-bottom: 1rem; }
+.filters .field { margin-bottom: .75rem; }
+.filters .field--check label { display: flex; gap: .4rem; align-items: center; min-height: 2.75rem; margin: 0; }
+.table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
+table.data { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+table.data th, table.data td { padding: .55rem .75rem; text-align: left; vertical-align: top; border-top: 1px solid var(--filet); }
+table.data thead th { font-size: .8125rem; font-weight: 500; color: var(--brume); border-top: 0; border-bottom: 1px solid var(--encre); white-space: nowrap; }
+table.data tbody th { font-weight: 600; }
+table.data td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.data tr.flag { background: var(--baie-teinte); }
+.tag { display: inline-block; padding: .05rem .45rem; border: 1px solid var(--filet); border-radius: 4px; font-size: .75rem; font-weight: 500; color: var(--brume); }
+.tag--alert { border-color: var(--baie); color: var(--baie); background: var(--papier); }
+.tag--ok { border-color: var(--sapin); color: var(--sapin); }
+.pager { display: flex; gap: 1.25rem; align-items: baseline; margin: 1rem 0 2rem; }

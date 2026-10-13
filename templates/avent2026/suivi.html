@@ -1,0 +1,146 @@
+{% extends "avent2026/base.html" %}
+{% load tz %}
+{% block title %}Suivi{% endblock %}
+{% block content %}
+{% timezone "Europe/Paris" %}
+<div class="page-head">
+  <h1>Suivi des joueurs</h1>
+  <p>Heures de Paris. Un temps très court ou une réponse sans affichage préalable est un indice, pas une preuve : le joueur a pu ouvrir l'énigme ailleurs ou la connaître déjà.</p>
+</div>
+
+<nav class="subnav" aria-label="Vues du suivi">
+  {% for key, label in vues %}<a href="?vue={{ key }}{% if include_staff %}&amp;staff=1{% endif %}"{% if key == vue %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+
+<form class="filters" method="get">
+  <input type="hidden" name="vue" value="{{ vue }}">
+  <div class="field">
+    <label for="f-joueur">Joueur</label>
+    <select class="input" id="f-joueur" name="joueur">
+      <option value="">Tous</option>
+      {% for id, name in players %}<option value="{{ id }}"{% if id == user_id %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </div>
+  {% if vue != "connexions" %}
+  <div class="field">
+    <label for="f-puzzle">Puzzle</label>
+    <select class="input" id="f-puzzle" name="puzzle">
+      <option value="">Tous</option>
+      {% for p in puzzles %}<option value="{{ p.id }}"{% if p.id == puzzle_id %} selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  {% if vue == "temps" %}
+  <div class="field">
+    <label for="f-seuil">Signaler sous (secondes)</label>
+    <input class="input" id="f-seuil" type="number" min="1" name="seuil" value="{{ seuil }}">
+  </div>
+  <div class="field">
+    <label for="f-tri">Tri</label>
+    <select class="input" id="f-tri" name="tri">
+      <option value="rapide"{% if order == "rapide" %} selected{% endif %}>Plus rapides d'abord</option>
+      <option value="recent"{% if order == "recent" %} selected{% endif %}>Plus récents d'abord</option>
+    </select>
+  </div>
+  {% endif %}
+  <div class="field field--check">
+    <label><input type="checkbox" name="staff" value="1"{% if include_staff %} checked{% endif %}> Inclure le staff</label>
+  </div>
+  <div class="field"><button class="btn btn--small" type="submit">Filtrer</button></div>
+</form>
+
+{% if vue == "temps" %}
+<div class="table-wrap">
+<table class="data">
+  <caption class="sr-only">Temps de réponse par joueur et par puzzle</caption>
+  <thead><tr>
+    <th scope="col">Joueur</th><th scope="col">Puzzle</th><th scope="col">Premier affichage</th>
+    <th scope="col">Résolu le</th><th scope="col">Durée</th><th scope="col">Médiane du puzzle</th>
+    <th scope="col">Réponses</th><th scope="col">Signalement</th>
+  </tr></thead>
+  <tbody>
+  {% for r in page %}
+    <tr{% if r.flags %} class="flag"{% endif %}>
+      <th scope="row">{{ r.user.username }}{% if r.user.is_staff %} <span class="tag">staff</span>{% endif %}</th>
+      <td>{{ r.puzzle }}</td>
+      <td>{% if r.attempt.first_seen_at %}{{ r.attempt.first_seen_at|date:"d/m H:i:s" }}{% else %}—{% endif %}</td>
+      <td>{% if r.attempt.solved_at %}{{ r.attempt.solved_at|date:"d/m H:i:s" }}{% else %}non résolu{% endif %}</td>
+      <td class="num">{{ r.duration_text }}</td>
+      <td class="num">{{ r.median_text }}</td>
+      <td class="num">{{ r.n_sub }}{% if r.attempt.errors %} <span class="muted">({{ r.attempt.errors }} ratée{{ r.attempt.errors|pluralize }})</span>{% endif %}</td>
+      <td>{% for f in r.flags %}<span class="tag tag--alert">{{ f }}</span> {% endfor %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="8" class="muted">Aucune donnée. Le premier affichage n'est enregistré que depuis la mise en place du suivi.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% elif vue == "reponses" %}
+<div class="table-wrap">
+<table class="data">
+  <caption class="sr-only">Réponses envoyées</caption>
+  <thead><tr>
+    <th scope="col">Envoyée le</th><th scope="col">Joueur</th><th scope="col">Puzzle</th>
+    <th scope="col">Réponse saisie</th><th scope="col">Résultat</th><th scope="col">Depuis l'affichage</th>
+  </tr></thead>
+  <tbody>
+  {% for s in page %}
+    <tr>
+      <td>{{ s.created_at|date:"d/m H:i:s" }}</td>
+      <th scope="row">{{ s.user.username }}{% if s.user.is_staff %} <span class="tag">staff</span>{% endif %}</th>
+      <td>{{ s.puzzle }}</td>
+      <td><code>{{ s.answer }}</code></td>
+      <td>{% if s.correct %}<span class="tag tag--ok">correcte</span>{% else %}fausse{% endif %}</td>
+      <td class="num">{{ s.delay }}{% if s.unseen %} <span class="tag tag--alert">page jamais ouverte</span>{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">Aucune réponse enregistrée.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% else %}
+<h2>Par joueur</h2>
+<div class="table-wrap">
+<table class="data">
+  <caption class="sr-only">Connexions par joueur</caption>
+  <thead><tr><th scope="col">Joueur</th><th scope="col">Dernière connexion</th><th scope="col">Connexions suivies</th></tr></thead>
+  <tbody>
+  {% for r in summary %}
+    <tr>
+      <th scope="row">{{ r.user.username }}{% if r.user.is_staff %} <span class="tag">staff</span>{% endif %}</th>
+      <td>{% if r.last %}{{ r.last|date:"d/m/Y H:i:s" }}{% else %}jamais{% endif %}</td>
+      <td class="num">{{ r.logins }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<h2>Journal des connexions</h2>
+<div class="table-wrap">
+<table class="data">
+  <caption class="sr-only">Journal des connexions</caption>
+  <thead><tr><th scope="col">Date</th><th scope="col">Joueur</th></tr></thead>
+  <tbody>
+  {% for e in page %}
+    <tr><td>{{ e.at|date:"d/m/Y H:i:s" }}</td><th scope="row">{{ e.user.username }}{% if e.user.is_staff %} <span class="tag">staff</span>{% endif %}</th></tr>
+  {% empty %}
+    <tr><td colspan="2" class="muted">Aucune connexion enregistrée depuis la mise en place du suivi.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% if page.paginator.num_pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  {% if page.has_previous %}<a href="?{% if query %}{{ query }}&amp;{% endif %}page={{ page.previous_page_number }}">Précédent</a>{% endif %}
+  <span>Page {{ page.number }} sur {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{% if query %}{{ query }}&amp;{% endif %}page={{ page.next_page_number }}">Suivant</a>{% endif %}
+</nav>
+{% endif %}
+{% endtimezone %}
+{% endblock %}
