@@ -2,15 +2,15 @@ from django.core.management.base import BaseCommand
 
 from avent2026.models import Hint, Puzzle
 
-# Contenu de test, à remplacer par le vrai contenu (via l'admin) une fois le thème choisi.
+# Contenu de test, à remplacer par le vrai contenu (via l'admin). Énigmes = verrous de la cellule, devinettes = village.
 SAMPLES = [
-    dict(kind="enigme", day=1, title="Le compte est bon", story="<p>La fenêtre de la ferme s'allume : un vieux fermier compte ses sacs de grain à la lueur d'une bougie, 2, 4, 8, 16, 32… Il sourit : il y en aura assez pour le festin.</p>",
+    dict(kind="enigme", day=1, title="Le compte est bon", story="<p>Un premier verrou cède avec un claquement sec. Une chaîne glisse au sol, et le Père Noël relève la tête : « Il en reste sept. Comptez bien, 2, 4, 8, 16, 32… »</p>",
          text="<p>Je suis le prochain nombre : 2, 4, 8, 16, …</p>", answers="32\ntrente deux",
          hints=["Chaque nombre est le double du précédent.", "16 × 2 = ?"]),
     dict(kind="devinette", day=1, title="Qui suis-je ?", story="<p>Une lanterne grésille au bout du chemin. Sous sa lueur, un enfant se dresse sur la pointe des pieds : « Il est passé par là, j'ai vu du rouge et du blanc ! »</p>",
          text="<p>Je suis rouge et blanc, j'apporte des cadeaux et je n'aime pas la cheminée trop étroite.</p>",
          answers="le père noël\npere noel\nle pere noel", hints=["Il a une grande barbe blanche."]),
-    dict(kind="enigme", day=2, title="Dans le sapin", story="<p>La vitrine du magasin se rallume : une guirlande clignote derrière la vitre, et une souris en profite pour grignoter un bout de pain d'épices.</p>",
+    dict(kind="enigme", day=2, title="Dans le sapin", story="<p>Le deuxième verrou tourne et passe au vert. Dans la cellule, une guirlande de secours se rallume et éclaire un fil sectionné : la tempête n'avait rien de naturel.</p>",
          text="<p>J'ai des branches mais pas de feuilles, je brille sans soleil. Que suis-je ?</p>", answers="guirlande\nune guirlande",
          hints=["On m'accroche au sapin."]),
     dict(kind="devinette", day=2, title="Gourmandise", story="<p>La lanterne devant la pâtisserie s'allume, et l'odeur de chocolat fait sortir le pâtissier en tablier, la louche à la main.</p>",

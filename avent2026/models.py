@@ -1,5 +1,8 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+
+from . import village
 
 
 class Puzzle(models.Model):
@@ -10,7 +13,8 @@ class Puzzle(models.Model):
     KINDS = [(ENIGME, "Énigme"), (DEVINETTE, "Devinette")]
 
     kind = models.CharField(max_length=10, choices=KINDS)
-    day = models.PositiveSmallIntegerField("Jour", help_text="1 à 24")
+    day = models.PositiveSmallIntegerField(
+        "Jour", help_text="Jour du mois, de 1 à 24. Énigmes : 1, 2, 5, 9, 12, 16, 19 ou 23 (un verrou chacune).")
     title = models.CharField("Titre", max_length=120)
     text = models.TextField("Énoncé", help_text="HTML autorisé (contenu saisi par l'admin uniquement).")
     image = models.FileField(
@@ -31,7 +35,7 @@ class Puzzle(models.Model):
     )
     unlock_date = models.DateField(
         "Date de déblocage", null=True, blank=True,
-        help_text="Laisser vide : 1er + jour décembre 2026.",
+        help_text="Laisser vide : le jour de décembre 2026 (à 6 h pour les énigmes, à minuit pour les devinettes).",
     )
 
     class Meta:
@@ -43,6 +47,12 @@ class Puzzle(models.Model):
 
     def __str__(self):
         return f"J{self.day} {self.get_kind_display()} — {self.title}"
+
+    def clean(self):
+        """Les énigmes ne se publient que les jours de la cellule (mardi 1er, mercredis et samedis)."""
+        if self.kind == self.ENIGME and self.day not in village.ENIGME_DAYS:
+            days = ", ".join(str(d) for d in village.ENIGME_DAYS)
+            raise ValidationError({"day": f"Les énigmes sortent les jours suivants : {days}."})
 
 
 class Hint(models.Model):
@@ -75,6 +85,10 @@ class Attempt(models.Model):
     first_seen_at = models.DateTimeField(
         "Premier affichage", null=True, blank=True,
         help_text="Première ouverture de la page du puzzle (vide : avant le suivi, ou réponse envoyée sans l'avoir ouverte).",
+    )
+    rank = models.PositiveSmallIntegerField(
+        "Place à la résolution", null=True, blank=True,
+        help_text="Rang parmi les joueurs (hors staff) qui ont résolu ce puzzle ; sert au bonus de podium.",
     )
 
     class Meta:

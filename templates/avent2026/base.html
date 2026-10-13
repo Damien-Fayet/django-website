@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static i18n %}<!DOCTYPE html>
 <html lang="fr">
 <head>
   {% include "_head.html" %}
@@ -30,7 +30,8 @@
     {% if messages %}
     <ul class="messages">{% for m in messages %}<li class="notice notice--{{ m.tags }}" role="status">{{ m }}</li>{% endfor %}</ul>
     {% endif %}
-    {% block content %}{% endblock %}
+    {# Le site est en français : sans cela, un navigateur en anglais affiche « Tuesday 1 December ». #}
+    {% language "fr" %}{% block content %}{% endblock %}{% endlanguage %}
   </main>
 </body>
 </html>

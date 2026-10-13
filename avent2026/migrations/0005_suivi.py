@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("avent2026", "0003_two_tracks"),
+        ("avent2026", "0004_enigme_rank_and_help"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

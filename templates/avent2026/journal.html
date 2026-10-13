@@ -5,7 +5,7 @@
   {% include "avent2026/_lantern.html" %}
   <div>
     <h1>Journal de bord</h1>
-    <p class="muted"><b>{{ village.lit }} lumière{{ village.lit|pluralize }} sur {{ village.total }}, {{ village.title }}.</b> {{ village.description }}</p>
+    <p class="muted"><b>{{ village.lit }} étape{{ village.lit|pluralize }} franchie{{ village.lit|pluralize }} sur {{ village.total }}, {{ village.title }}.</b> {{ village.description }}</p>
   </div>
 </div>
 
@@ -27,5 +27,5 @@
   </li>
   {% endif %}
 </ol>
-{% if not entries %}<p class="logbook-empty">Rallume des fenêtres et des lanternes : chaque lumière dévoile un morceau de l'histoire du village.</p>{% endif %}
+{% if not entries %}<p class="logbook-empty">Résous des devinettes et des énigmes : chaque étape franchie dévoile un morceau de l'histoire.</p>{% endif %}
 {% endblock %}

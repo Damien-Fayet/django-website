@@ -17,7 +17,7 @@ class PuzzleAdmin(admin.ModelAdmin):
 
 @admin.register(Attempt)
 class AttemptAdmin(admin.ModelAdmin):
-    list_display = ("user", "puzzle", "errors", "points", "first_seen_at", "solved_at")
+    list_display = ("user", "puzzle", "errors", "points", "rank", "first_seen_at", "solved_at")
     list_filter = ("puzzle__kind", "puzzle__day")
     raw_id_fields = ("user", "puzzle")
 
