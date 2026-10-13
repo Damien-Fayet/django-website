@@ -1,11 +1,12 @@
 {% extends "avent2026/base.html" %}
+{% load tz %}
 {% block title %}{{ puzzle.title }}{% endblock %}
 {% block content %}
 <a class="crumb" href="{% url 'avent2026:home' %}">Retour à la scène</a>
 
 <div class="puzzle">
   <article>
-    <p class="puzzle__kind">{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}</p>
+    <p class="puzzle__kind">{% if competitive and step %}Verrou {{ step }} sur {{ steps }}, énigme du {{ date|date:"l j F" }}{% else %}{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}{% endif %}</p>
     <h1>{{ puzzle.title }}</h1>
     {% if other %}
     <p class="other-track">
@@ -32,8 +33,11 @@
       <h2 id="reponse">Réponse</h2>
       {% if solved %}
         <p class="answer-solved">Résolue : <b>+{{ attempt.points }}</b> points.</p>
+        {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>{% endif %}
       {% else %}
-        <p class="points">Vaut actuellement <b>{{ current_points }}</b> points sur {{ max_points }}, {{ errors }} erreur{{ errors|pluralize }}.</p>
+        <p class="points">Vaut actuellement <b>{{ current_points }}</b> points{% if not competitive %} sur {{ max_points }}{% endif %}, {{ errors }} erreur{{ errors|pluralize }}.</p>
+        {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>
+        <p class="muted bonus-note">Bonus déjà inclus, à perdre si tu te trompes ou prends un indice.{% if podium_open %} Le podium se joue à la première bonne réponse.{% endif %}</p>{% endif %}
         <form method="post" action="{% url 'avent2026:answer' puzzle.id %}" class="answer">{% csrf_token %}
           <label for="answer">Ta réponse</label>
           <input class="input" id="answer" type="text" name="answer" autocomplete="off" autofocus required>
@@ -47,12 +51,21 @@
       {% for h in revealed_hints %}<p class="hint"><small>Indice {{ h.number }}</small>{{ h.text|safe }}</p>{% endfor %}
       {% if not solved and next_hint %}
         <form method="post" action="{% url 'avent2026:hint' puzzle.id %}">{% csrf_token %}
-          <button class="btn btn--ghost btn--block" type="submit">Révéler l'indice {{ next_hint.number }} (−{{ next_hint.display_cost }} pts)</button>
+          <button class="btn btn--ghost btn--block" type="submit">Révéler l'indice {{ next_hint.number }} (−{{ next_hint.display_cost }} pts{% if competitive and not revealed_hints %}, bonus « sans indice » perdu{% endif %})</button>
         </form>
       {% elif not hint_count %}<p class="muted" style="margin:0">Pas d'indice pour celle-ci.</p>
       {% elif not next_hint and not solved %}<p class="muted" style="margin:0">Tous les indices sont révélés.</p>
       {% elif solved and not revealed_hints %}<p class="muted" style="margin:0">Aucun indice utilisé.</p>{% endif %}
     </section>
+
+    {% if competitive and podium %}
+    <section class="aside-block" aria-labelledby="podium">
+      <h2 id="podium">Podium</h2>
+      {% timezone "Europe/Paris" %}
+      <ol class="rank">{% for place, name, when in podium %}<li{% if name == request.user.username %} class="me"{% endif %}><span>{{ name }}</span><b>{{ when|date:"j M, G:i" }}</b></li>{% endfor %}</ol>
+      {% endtimezone %}
+    </section>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

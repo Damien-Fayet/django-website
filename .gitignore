@@ -9,5 +9,6 @@ __pycache__
 /media/max_challenge/photos*
 /staticfiles
 
-# Originaux PNG de la carte des devinettes (seuls les webp sont versionnés)
+# Originaux PNG des cartes (devinettes, énigmes) (seuls les webp sont versionnés)
 static/avent2026/img/carte-devinettes/*.png
+static/avent2026/img/carte-enigmes/*.png

@@ -1,37 +1,40 @@
 from collections import defaultdict
+from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import scoring, village
+from . import competition, scoring, village
 from .models import Attempt, Hint, HintReveal, Puzzle
 
 
 def _locked_response(request, day, puzzle=None):
     target = scoring.unlock_date(puzzle) if puzzle else None
-    return render(request, "avent2026/locked.html", {"day": day, "unlock_date": target}, status=403)
+    hour = scoring.RELEASE_HOUR[puzzle.kind] if puzzle else None
+    return render(request, "avent2026/locked.html", {"day": day, "unlock_date": target, "hour": hour}, status=403)
 
 
 @login_required
 def home(request):
-    """Accueil : les deux villages (énigmes, devinettes), chacun avec 24 lumières à rallumer, une par jour."""
+    """Accueil : les deux cartes (cellule du Père Noël pour les énigmes, village pour les devinettes) et la progression."""
     puzzles = {(p.kind, p.day): p for p in Puzzle.objects.only("id", "kind", "day", "title", "unlock_date")}
     solved_ids = set(Attempt.objects.filter(user=request.user, solved_at__isnull=False)
                      .values_list("puzzle_id", flat=True))
 
-    villages = []
+    cartes = []
     for kind in village.KINDS:
-        info = village.village_info(kind)
-        lights = []
-        for day in range(1, village.DAYS + 1):
+        info = village.CARTES[kind]
+        steps = []
+        for number, day in enumerate(info.days, start=1):
             puzzle = puzzles.get((kind, day))
-            if not scoring.is_unlocked(puzzle or day, request.user):
+            if not (scoring.is_unlocked(puzzle, request.user) if puzzle
+                    else scoring.is_day_unlocked(kind, day, request.user)):
                 state = "locked"
             elif puzzle is None:
                 state = "empty"
@@ -39,26 +42,23 @@ def home(request):
                 state = "done"
             else:
                 state = "open"
-            x, y = village.light_position(kind, day)
-            lights.append({
-                "day": day, "state": state, "x": x, "y": y,
+            steps.append({
+                "number": number, "day": day, "state": state,
+                "date": scoring.unlock_date(puzzle) if puzzle else date(scoring.YEAR, 12, day),
                 "puzzle": puzzle if state in ("open", "done") else None,
             })
-        lit = sum(1 for light in lights if light["state"] == "done")
-        entry = {**info, "lights": lights, "lit": lit, "total": village.DAYS}
-        if kind in village.CARTES:
-            entry["image"] = None
-            entry["carte"] = _carte(request, kind, lit)
-        else:
-            entry["image"] = village.image_path(kind)
-        villages.append(entry)
+        solved = sum(1 for step in steps if step["state"] == "done")
+        cartes.append({
+            "kind": kind, **info._asdict(), "hour": scoring.RELEASE_HOUR[kind], "steps": steps, "solved": solved, "total": len(info.days),
+            "counter": village.counter(kind, solved), "carte": _carte(request, kind, solved),
+        })
     scores = _user_scores(request.user)
     finale = _finished(request.user)
     show_prologue = not request.session.get("avent2026_prologue_seen")
     if show_prologue:  # n'écrire la session qu'une fois : sinon un UPDATE par visite
         request.session["avent2026_prologue_seen"] = True
     return render(request, "avent2026/home.html", {
-        "villages": villages, "scores": scores,
+        "cartes": cartes, "scores": scores,
         "village": village.village_state(scores["lit"]), "finale": finale,
         "prologue": village.PROLOGUE if show_prologue else "",
         "epilogue": village.EPILOGUE if finale else "",
@@ -66,7 +66,7 @@ def home(request):
 
 
 def _carte(request, kind, step):
-    """Image « étape `step` » du village dessiné étape par étape, et l'étape vue à la visite précédente.
+    """Image « étape `step` » de la carte de la piste, et l'étape vue à la visite précédente.
 
     `previous` n'est donné que si des puzzles ont été résolus depuis : le template fait alors apparaître
     en fondu la nouvelle image par-dessus l'ancienne. L'étape n'est enregistrée comme « vue » qu'au moment où
@@ -77,10 +77,11 @@ def _carte(request, kind, step):
     if not isinstance(seen, int) or seen > step:  # première visite, ou étape en recul : rien à animer
         request.session[key] = seen = step
     previous = seen if seen < step else None
+    carte = village.CARTES[kind]
     return {
         "step": step, "image": village.carte_image_path(kind, step),
         "previous": village.carte_image_path(kind, previous) if previous is not None else None,
-        "missing": f"static/avent2026/img/{village.CARTES[kind][0]}/{village.CARTES[kind][1].format(step=step)}.webp",
+        "missing": f"static/avent2026/img/{carte.folder}/{carte.pattern.format(step=step)}.webp",
     }
 
 
@@ -94,25 +95,12 @@ def carte_seen(request, kind):
         step = int(request.POST.get("step", ""))
     except ValueError:
         return HttpResponseBadRequest()
-    if not 0 <= step <= village.DAYS:
+    if not 0 <= step <= len(village.CARTES[kind].days):
         return HttpResponseBadRequest()
     key = f"avent2026_carte_{kind}"
     seen = request.session.get(key)
     request.session[key] = max(step, seen) if isinstance(seen, int) else step
     return HttpResponse(status=204)
-
-
-@login_required
-def calibration(request, kind):
-    """Page réservée au staff : cliquer sur l'illustration pour relever la position des 24 lumières."""
-    if not request.user.is_staff or kind not in village.KINDS or kind in village.CARTES:
-        raise Http404
-    return render(request, "avent2026/calibration.html", {
-        **village.village_info(kind), "image": village.image_path(kind),
-        # Les deux villages : le texte à coller dans lights.json contient les deux listes.
-        "all_lights": {k: [list(village.light_position(k, d)) for d in range(1, village.DAYS + 1)]
-                       for k in village.KINDS},
-    })
 
 
 def old_day_redirect(request, day):
@@ -121,12 +109,15 @@ def old_day_redirect(request, day):
 
 
 def _finished(user):
-    """Épilogue : tous les puzzles publiés du jour 24 (les deux pistes) sont résolus."""
-    day24 = list(Puzzle.objects.filter(day=24).values_list("id", flat=True))
-    if not day24:
+    """Épilogue : tous les derniers puzzles publiés (un par piste : devinette du 24, énigme du 23) sont résolus."""
+    finals = Q()
+    for kind, day in village.FINAL_DAYS.items():
+        finals |= Q(kind=kind, day=day)
+    final_ids = list(Puzzle.objects.filter(finals).values_list("id", flat=True))
+    if not final_ids:
         return False
-    solved = Attempt.objects.filter(user=user, puzzle_id__in=day24, solved_at__isnull=False).count()
-    return solved == len(day24)
+    solved = Attempt.objects.filter(user=user, puzzle_id__in=final_ids, solved_at__isnull=False).count()
+    return solved == len(final_ids)
 
 
 def _puzzle_context(request, puzzle):
@@ -139,11 +130,25 @@ def _puzzle_context(request, puzzle):
     revealed = [h for h in hints if h.revealed]
     next_hint = next((h for h in hints if not h.revealed), None)
     errors = attempt.errors if attempt else 0
+    solved = bool(attempt and attempt.solved)
+    # Course (énigmes) : bonus obtenus une fois résolue, sinon bonus en jeu si on résolvait maintenant.
+    competitive = puzzle.kind in scoring.BONUS_KINDS
+    if solved:
+        rank = attempt.rank
+    else:
+        rank = None if request.user.is_staff else competition.next_rank(puzzle)
+    days = village.CARTES[puzzle.kind].days
     return {
-        "puzzle": puzzle, "attempt": attempt, "solved": bool(attempt and attempt.solved),
+        "puzzle": puzzle, "attempt": attempt, "solved": solved,
         "revealed_hints": revealed, "next_hint": next_hint, "hint_count": len(hints),
         "errors": errors, "max_points": scoring.puzzle_base_points(puzzle),
-        "current_points": scoring.compute_points(puzzle, errors, revealed),
+        "current_points": scoring.compute_points(puzzle, errors, revealed, rank),
+        "competitive": competitive,
+        "bonuses": scoring.bonuses(puzzle, rank, errors, revealed) if competitive else [],
+        "podium": competition.podium(puzzle) if competitive else [],
+        "podium_open": competition.next_rank(puzzle) <= len(scoring.PODIUM_BONUS) if competitive else False,
+        "step": days.index(puzzle.day) + 1 if puzzle.day in days else None, "steps": len(days),
+        "date": scoring.unlock_date(puzzle), "hour": scoring.RELEASE_HOUR[puzzle.kind],
         "other": _other_track(request, puzzle),
         # Le fragment d'histoire n'est envoyé au template qu'une fois le puzzle résolu.
         "story": puzzle.story if attempt and attempt.solved else "",
@@ -179,10 +184,16 @@ def answer(request, puzzle_id):
         if attempt.solved:
             messages.info(request, "Tu as déjà résolu celle-ci.")
         elif scoring.is_correct(puzzle, request.POST.get("answer", "")):
-            revealed = Hint.objects.filter(puzzle=puzzle, reveals__user=request.user)
-            attempt.points = scoring.compute_points(puzzle, attempt.errors, list(revealed))
+            revealed = list(Hint.objects.filter(puzzle=puzzle, reveals__user=request.user))
+            # Écrire la résolution avant de compter les précédentes : l'écriture prend le verrou de SQLite, donc
+            # deux résolutions simultanées ne reçoivent pas la même place.
             attempt.solved_at = timezone.now()
+            attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed)
             attempt.save()
+            if puzzle.kind in scoring.BONUS_KINDS:
+                attempt.rank = competition.rank_of(attempt)
+                attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed, attempt.rank)
+                attempt.save(update_fields=["rank", "points"])
             messages.success(request, f"Bravo ! +{attempt.points} points.")
         else:
             attempt.errors += 1
@@ -203,7 +214,8 @@ def reveal_hint(request, puzzle_id):
     hint = puzzle.hints.exclude(reveals__user=request.user).order_by("number").first()
     if hint:
         HintReveal.objects.get_or_create(user=request.user, hint=hint)
-        messages.info(request, f"Indice révélé (−{scoring.hint_cost(hint)} points si tu trouves).")
+        lost = " et le bonus « sans indice »" if puzzle.kind in scoring.BONUS_KINDS else ""
+        messages.info(request, f"Indice révélé (−{scoring.hint_cost(hint)} points{lost} si tu trouves).")
     return redirect("avent2026:puzzle", puzzle_id=puzzle.id)
 
 
@@ -216,7 +228,7 @@ def _user_scores(user):
     for kind in (Puzzle.ENIGME, Puzzle.DEVINETTE):
         scores[kind] = by_kind[kind]["total"] if kind in by_kind else 0
         scores[kind + "_solved"] = by_kind[kind]["solved"] if kind in by_kind else 0
-    scores["lit"] = scores["enigme_solved"] + scores["devinette_solved"]  # lumières allumées dans le village
+    scores["lit"] = scores["enigme_solved"] + scores["devinette_solved"]  # étapes franchies (sur village.TOTAL)
     return scores
 
 
@@ -233,7 +245,7 @@ def leaderboard(request):
     total = sorted(({"name": n, "points": p} for n, p in board["total"].items()), key=lambda r: (-r["points"], r["name"]))
     return render(request, "avent2026/leaderboard.html", {
         "enigmes": board[Puzzle.ENIGME], "devinettes": board[Puzzle.DEVINETTE], "total": total,
-        "me": request.user.username,
+        "me": request.user.username, "verrous": competition.verrous(), "titles": competition.titles(),
     })
 
 

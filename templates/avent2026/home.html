@@ -1,105 +1,72 @@
 {% extends "avent2026/base.html" %}
-{% load l10n static %}
-{% block title %}Avent 2026, les villages{% endblock %}
+{% load static %}
+{% block title %}Avent 2026, la scène{% endblock %}
 {% block content %}
 {% if prologue %}<aside class="note"><h2>Prologue</h2><p>{{ prologue }}</p></aside>{% endif %}
 {% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
 <section class="status" aria-label="Ta progression">
   <dl class="status__scores">
-    <div><dt>Lumières allumées</dt><dd>{{ village.lit }} <small>sur {{ village.total }}</small></dd></div>
-    {% for v in villages %}
-    <div><dt>{{ v.name }}</dt><dd>{{ v.lit }} <small>sur {{ v.total }}</small></dd>
-      <dd class="status__count">{% if v.kind == "enigme" %}{{ scores.enigme }}{% else %}{{ scores.devinette }}{% endif %} points</dd></div>
+    <div><dt>Étapes franchies</dt><dd>{{ village.lit }} <small>sur {{ village.total }}</small></dd></div>
+    {% for c in cartes %}
+    <div><dt>{{ c.name }}</dt><dd>{{ c.solved }} <small>sur {{ c.total }}</small></dd>
+      <dd class="status__count">{% if c.kind == "enigme" %}{{ scores.enigme }}{% else %}{{ scores.devinette }}{% endif %} points</dd></div>
     {% endfor %}
   </dl>
   <div class="status__level">
     <p>Palier {{ village.level }} sur {{ village.max_level }}, <strong>{{ village.title }}</strong></p>
     <div class="meter" role="progressbar" aria-label="Progression vers le prochain palier"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ village.progress_pct }}"><span style="width:{{ village.progress_pct }}%"></span></div>
-    {% if village.next_title %}<p class="status__next">Prochain palier : {{ village.next_title }}, à {{ village.next_threshold }} lumières. Total : {{ scores.total }} points.</p>
+    {% if village.next_title %}<p class="status__next">Prochain palier : {{ village.next_title }}, à {{ village.next_threshold }} étapes. Total : {{ scores.total }} points.</p>
     {% else %}<p class="status__next">Tous les paliers sont atteints. Total : {{ scores.total }} points.</p>{% endif %}
   </div>
 </section>
 
-{# Les coordonnées sont des décimaux : sans `localize off`, la locale française écrit « 41,5% » et le CSS devient invalide. #}
-{% localize off %}
 <div class="villages">
-  {% for v in villages %}
-  {% if v.carte %}
-  {# Village dessiné étape par étape : l'image change avec le nombre de puzzles résolus, les jours sont listés dessous. #}
-  <section class="village-block" aria-labelledby="village-{{ v.kind }}">
+  {% for c in cartes %}
+  {# Carte étape par étape : l'image change avec le nombre de puzzles résolus, les étapes sont listées dessous. #}
+  <section class="village-block" aria-labelledby="village-{{ c.kind }}">
     <div class="village-head">
-      <h2 id="village-{{ v.kind }}">{{ v.name }}</h2>
-      <p>{{ v.lit }} bâtiment{% if v.lit > 1 %}s{% endif %} allumé{% if v.lit > 1 %}s{% endif %} sur {{ v.total }}</p>
+      <h2 id="village-{{ c.kind }}">{{ c.name }}</h2>
+      <p>{{ c.counter }} sur {{ c.total }}</p>
     </div>
     <div class="carte">
-      <div class="carte__frame{% if not v.carte.image %} carte__frame--placeholder{% endif %}">
-        {% if v.carte.previous %}<img class="carte__img" src="{% static v.carte.previous %}" alt="">{% endif %}
-        {% if v.carte.image %}<img class="carte__img{% if v.carte.previous %} carte__img--reveal{% endif %}" src="{% static v.carte.image %}"
-             {% if v.carte.previous %}data-seen-url="{% url 'avent2026:carte_seen' v.kind %}" data-step="{{ v.carte.step }}"
-             {% endif %}alt="{{ v.name }} : {{ v.lit }} bâtiment{% if v.lit > 1 %}s{% endif %} allumé{% if v.lit > 1 %}s{% endif %} sur {{ v.total }}."
+      <div class="carte__frame carte__frame--{{ c.kind }}{% if not c.carte.image %} carte__frame--placeholder{% endif %}">
+        {% if c.carte.previous %}<img class="carte__img" src="{% static c.carte.previous %}" alt="">{% endif %}
+        {% if c.carte.image %}<img class="carte__img{% if c.carte.previous %} carte__img--reveal{% endif %}" src="{% static c.carte.image %}"
+             {% if c.carte.previous %}data-seen-url="{% url 'avent2026:carte_seen' c.kind %}" data-step="{{ c.carte.step }}"
+             {% endif %}alt="{{ c.alt }} : {{ c.counter }} sur {{ c.total }}."
              width="1600" height="1080">{% endif %}
       </div>
-      <ol class="days" aria-label="Les 24 jours, {{ v.name|lower }}">
-        {% for l in v.lights %}
+      <ol class="days{% if c.dated %} days--dated{% endif %}" aria-label="Les {{ c.total }} étapes, {{ c.name|lower }}">
+        {% for l in c.steps %}
         <li>
           {% if l.state == "locked" %}
           <span class="day is-locked" title="Pas encore débloqué"
-                role="img" aria-label="Jour {{ l.day }}, pas encore débloqué">{{ l.day }}</span>
+                role="img" aria-label="{{ c.step }} {% if c.dated %}{{ l.number }}{% else %}{{ l.day }}{% endif %}, pas encore débloqué, sort le {{ l.date|date:'l j F' }} à {{ c.hour }} h">
+            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}</span>
           {% elif l.puzzle %}
           <a class="day is-{{ l.state }}" href="{% url 'avent2026:puzzle' l.puzzle.id %}"
-             title="Jour {{ l.day }} : {{ l.puzzle.title }}"
-             aria-label="Jour {{ l.day }}, {{ l.puzzle.title }}, {% if l.state == 'done' %}résolue, bâtiment allumé{% else %}à résoudre{% endif %}">{{ l.day }}</a>
+             title="{{ c.step }} {% if c.dated %}{{ l.number }}{% else %}{{ l.day }}{% endif %} : {{ l.puzzle.title }}"
+             aria-label="{{ c.step }} {% if c.dated %}{{ l.number }}, {{ l.date|date:'l j F' }}{% else %}{{ l.day }}{% endif %}, {{ l.puzzle.title }}, {% if l.state == 'done' %}résolue, {{ c.noun }} {{ c.done }}{% else %}à résoudre{% endif %}">
+            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}</a>
           {% else %}
           <span class="day is-empty" title="Rien de publié"
-                role="img" aria-label="Jour {{ l.day }}, rien de publié">{{ l.day }}</span>
+                role="img" aria-label="{{ c.step }} {% if c.dated %}{{ l.number }}{% else %}{{ l.day }}{% endif %}, rien de publié">
+            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}</span>
           {% endif %}
         </li>
         {% endfor %}
       </ol>
     </div>
-    {% if request.user.is_staff and not v.carte.image %}
-    <p class="village__todo">Staff : image manquante, dépose <code>{{ v.carte.missing }}</code>.</p>
+    {% if request.user.is_staff and not c.carte.image %}
+    <p class="village__todo">Staff : image manquante, dépose <code>{{ c.carte.missing }}</code>.</p>
     {% endif %}
   </section>
-  {% else %}
-  <section class="village-block" aria-labelledby="village-{{ v.kind }}">
-    <div class="village-head">
-      <h2 id="village-{{ v.kind }}">{{ v.name }}</h2>
-      <p>{{ v.lit }} lumière{% if v.lit > 1 %}s{% endif %} sur {{ v.total }}</p>
-    </div>
-    <div class="village-scroll">
-      <div class="village{% if not v.image %} village--placeholder{% endif %}" style="--calm:{{ village.calm }}" role="group" aria-label="{{ v.alt }}">
-        {% if v.image %}<img class="village__img" src="{% static v.image %}" alt="" loading="lazy">{% endif %}
-        {% for l in v.lights %}
-          {% if l.state == "locked" %}
-          <span class="light is-locked" style="left:{{ l.x }}%;top:{{ l.y }}%" title="Pas encore débloqué"
-                role="img" aria-label="Jour {{ l.day }}, pas encore débloqué"><span class="light__num">{{ l.day }}</span></span>
-          {% elif l.puzzle %}
-          <a class="light is-{{ l.state }}" href="{% url 'avent2026:puzzle' l.puzzle.id %}" style="left:{{ l.x }}%;top:{{ l.y }}%"
-             title="Jour {{ l.day }} : {{ l.puzzle.title }}"
-             aria-label="Jour {{ l.day }}, {{ l.puzzle.title }}, {% if l.state == 'done' %}résolue, lumière allumée{% else %}à rallumer{% endif %}"><span class="light__glow"></span><span class="light__num">{{ l.day }}</span></a>
-          {% else %}
-          <span class="light is-empty" style="left:{{ l.x }}%;top:{{ l.y }}%" title="Rien de publié"
-                role="img" aria-label="Jour {{ l.day }}, rien de publié"><span class="light__num">{{ l.day }}</span></span>
-          {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    <p class="village__hint">Fais défiler l'image pour voir tout le village.</p>
-    {% if request.user.is_staff %}
-    <p class="village__todo">Staff :
-      {% if not v.image %}illustration manquante, dépose <code>static/avent2026/img/{{ v.stem }}.webp</code>. {% endif %}
-      <a href="{% url 'avent2026:calibration' v.kind %}">Régler la position des lumières</a>.</p>
-    {% endif %}
-  </section>
-  {% endif %}
   {% endfor %}
 </div>
-{% endlocalize %}
 
-{# Révélation d'un nouveau bâtiment : le fondu ne démarre qu'une fois la nouvelle image chargée, puis le serveur #}
+{# Révélation d'une nouvelle étape : le fondu ne démarre qu'une fois la nouvelle image chargée, puis le serveur #}
 {# est prévenu (une seule fois) que l'étape a été vue. Sans JavaScript, le fondu joue à chaque visite. #}
 <script>
 (function () {
@@ -124,10 +91,10 @@
 </script>
 
 <ul class="legend" aria-label="Légende">
-  <li><span class="swatch swatch--done"></span>Lumière allumée</li>
-  <li><span class="swatch swatch--open"></span>À rallumer</li>
+  <li><span class="swatch swatch--done"></span>Résolu</li>
+  <li><span class="swatch swatch--open"></span>À résoudre</li>
   <li><span class="swatch swatch--locked"></span>Pas encore ouverte</li>
   <li><span class="swatch swatch--empty"></span>Rien de publié</li>
 </ul>
-<p class="stage-note">Chaque jour se débloque à minuit, heure de Paris. Une énigme rallume une lumière du village des énigmes, une devinette allume un bâtiment de la carte des devinettes : joue les deux dans l'ordre que tu veux.</p>
+<p class="stage-note">Les devinettes se débloquent chaque jour à minuit, les énigmes à 6 h, heure de Paris. Une devinette rallume un bâtiment du village, une énigme brise un verrou de la cellule du Père Noël : joue les deux dans l'ordre que tu veux, chacun à son rythme.</p>
 {% endblock %}

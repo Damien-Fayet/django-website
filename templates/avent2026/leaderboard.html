@@ -1,4 +1,5 @@
 {% extends "avent2026/base.html" %}
+{% load tz %}
 {% block title %}Classement{% endblock %}
 {% block content %}
 <div class="page-head"><h1>Classement</h1></div>
@@ -16,4 +17,24 @@
     <ol class="rank">{% for r in devinettes %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
   </section>
 </div>
+
+<section class="verrous" aria-labelledby="g-verrous">
+  <h2 id="g-verrous">Les briseurs de verrous</h2>
+  <p class="muted">Les trois premiers à résoudre chaque énigme gagnent un bonus de podium. Les comptes de test (staff) ne comptent pas.</p>
+  <dl class="titles">
+    <div><dt>Libérateur</dt><dd>{% if titles.liberateur %}{{ titles.liberateur.user__username }}{% else %}<span class="muted">Personne n'a encore libéré le Père Noël.</span>{% endif %}</dd></div>
+    <div><dt>Sans filet</dt><dd>{% if titles.sans_filet %}{{ titles.sans_filet|join:", " }}{% else %}<span class="muted">Aucun, pour l'instant.</span>{% endif %}</dd></div>
+  </dl>
+  {% timezone "Europe/Paris" %}
+  <ol class="verrou-list">
+    {% for v in verrous %}
+    <li>
+      <h3>Verrou {{ v.step }}, {{ v.puzzle.title }}</h3>
+      <ol class="rank">{% for place, name, when in v.podium %}<li{% if name == me %} class="me"{% endif %}><span>{{ name }}{% if name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ when|date:"j M, G:i" }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+    </li>
+    {% empty %}<li class="empty">Aucune énigme n'est encore sortie.</li>
+    {% endfor %}
+  </ol>
+  {% endtimezone %}
+</section>
 {% endblock %}
