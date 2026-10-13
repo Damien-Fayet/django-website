@@ -93,8 +93,9 @@ def now():
 
 
 def _sees_everything(user):
-    """Les admins (staff) et AVENT2026_UNLOCK_ALL voient tout."""
-    return getattr(settings, "AVENT2026_UNLOCK_ALL", False) or (user is not None and user.is_staff)
+    """Les admins (staff ou superutilisateurs) et AVENT2026_UNLOCK_ALL voient tout, sans limite de date."""
+    return getattr(settings, "AVENT2026_UNLOCK_ALL", False) or (
+        user is not None and (user.is_staff or user.is_superuser))
 
 
 def is_unlocked(puzzle, user=None):

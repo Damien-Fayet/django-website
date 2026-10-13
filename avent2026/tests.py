@@ -111,6 +111,14 @@ class FlowTests(TestCase):
         with on(11, 1):
             self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
 
+    def test_superuser_bypasses_lock_even_without_staff_flag(self):
+        self.user.is_superuser = True
+        self.user.save()
+        with on(11, 1):
+            self.assertEqual(self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id])).status_code, 200)
+            self.assertEqual(self.client.post(reverse("avent2026:answer", args=[self.enigme.id]),
+                                              {"answer": "oui"}).status_code, 302)
+
     def test_unlocked_day_one(self):
         day2 = Puzzle.objects.create(kind="enigme", day=2, title="E2", text="?", answers="x")
         with at(1):
