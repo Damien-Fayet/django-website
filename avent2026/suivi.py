@@ -52,6 +52,23 @@ def login_events(include_staff, user_id=None):
     return qs.filter(user_id=user_id) if user_id else qs
 
 
+def shared_ips(include_staff):
+    """Adresses IP vues avec plusieurs comptes (connexions ou réponses) : {ip, users}, les plus partagées d'abord.
+
+    Un foyer partage légitimement une IP : c'est un point de départ pour regarder de plus près, pas une preuve.
+    """
+    players = _players(include_staff)
+    pairs = set(LoginEvent.objects.filter(user__in=players, ip__isnull=False)
+                .values_list("ip", "user__username").distinct())
+    pairs |= set(Submission.objects.filter(user__in=players, ip__isnull=False)
+                 .values_list("ip", "user__username").distinct())
+    by_ip = {}
+    for ip, name in pairs:
+        by_ip.setdefault(ip, []).append(name)
+    shared = [{"ip": ip, "users": sorted(names)} for ip, names in by_ip.items() if len(names) > 1]
+    return sorted(shared, key=lambda r: (-len(r["users"]), r["ip"]))
+
+
 def submissions(include_staff, user_id=None, puzzle_id=None):
     qs = Submission.objects.select_related("user", "puzzle").filter(user__in=_players(include_staff))
     if user_id:

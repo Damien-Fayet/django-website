@@ -11,6 +11,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.utils import client_ip
+
 from . import scoring, suivi, village
 from .models import Attempt, Hint, HintReveal, Puzzle, Submission
 
@@ -186,7 +188,8 @@ def answer(request, puzzle_id):
             given = request.POST.get("answer", "")
             correct = scoring.is_correct(puzzle, given)
             # Journal des réponses envoyées (suivi staff), conservé même si la progression est remise à zéro.
-            Submission.objects.create(user=request.user, puzzle=puzzle, answer=given.strip()[:200], correct=correct)
+            Submission.objects.create(user=request.user, puzzle=puzzle, answer=given.strip()[:200], correct=correct,
+                                      ip=client_ip(request))
             if correct:
                 revealed = Hint.objects.filter(puzzle=puzzle, reveals__user=request.user)
                 attempt.points = scoring.compute_points(puzzle, attempt.errors, list(revealed))
@@ -293,6 +296,7 @@ def tracking(request):
     else:
         items = suivi.login_events(include_staff, user_id)
         ctx["summary"] = suivi.users_summary(include_staff)
+        ctx["shared_ips"] = suivi.shared_ips(include_staff)
     page = Paginator(items, SUIVI_PAR_PAGE).get_page(request.GET.get("page"))
     if vue == "reponses":
         page.object_list = suivi.with_delay(list(page.object_list))

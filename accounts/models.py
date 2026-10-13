@@ -11,6 +11,7 @@ class LoginEvent(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="login_events")
     at = models.DateTimeField("Connexion", auto_now_add=True)
+    ip = models.GenericIPAddressField("Adresse IP", null=True, blank=True)
 
     class Meta:
         ordering = ["-at", "-id"]

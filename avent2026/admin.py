@@ -26,7 +26,7 @@ class AttemptAdmin(admin.ModelAdmin):
 class SubmissionAdmin(admin.ModelAdmin):
     """Journal des réponses en lecture seule ; la vue de synthèse est dans « Suivi » (/avent2026/suivi/)."""
 
-    list_display = ("created_at", "user", "puzzle", "answer", "correct")
+    list_display = ("created_at", "user", "puzzle", "answer", "correct", "ip")
     list_filter = ("correct", "puzzle__kind", "puzzle__day")
     search_fields = ("user__username", "answer")
     date_hierarchy = "created_at"

@@ -7,7 +7,7 @@ from .models import LoginEvent
 class LoginEventAdmin(admin.ModelAdmin):
     """Journal en lecture seule ; la vue de synthèse est dans « Suivi » (/avent2026/suivi/)."""
 
-    list_display = ("user", "at")
+    list_display = ("user", "at", "ip")
     list_filter = ("user",)
     date_hierarchy = "at"
 

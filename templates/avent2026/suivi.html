@@ -83,7 +83,7 @@
   <caption class="sr-only">Réponses envoyées</caption>
   <thead><tr>
     <th scope="col">Envoyée le</th><th scope="col">Joueur</th><th scope="col">Puzzle</th>
-    <th scope="col">Réponse saisie</th><th scope="col">Résultat</th><th scope="col">Depuis l'affichage</th>
+    <th scope="col">Réponse saisie</th><th scope="col">Résultat</th><th scope="col">Depuis l'affichage</th><th scope="col">IP</th>
   </tr></thead>
   <tbody>
   {% for s in page %}
@@ -94,15 +94,27 @@
       <td><code>{{ s.answer }}</code></td>
       <td>{% if s.correct %}<span class="tag tag--ok">correcte</span>{% else %}fausse{% endif %}</td>
       <td class="num">{{ s.delay }}{% if s.unseen %} <span class="tag tag--alert">page jamais ouverte</span>{% endif %}</td>
+      <td class="num">{{ s.ip|default:"—" }}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="6" class="muted">Aucune réponse enregistrée.</td></tr>
+    <tr><td colspan="7" class="muted">Aucune réponse enregistrée.</td></tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
 
 {% else %}
+{% if shared_ips %}
+<h2>Adresses IP partagées entre comptes</h2>
+<p class="muted">Un foyer partage la même IP : à regarder de plus près, pas une preuve.</p>
+<div class="table-wrap">
+<table class="data">
+  <caption class="sr-only">Adresses IP utilisées par plusieurs comptes</caption>
+  <thead><tr><th scope="col">IP</th><th scope="col">Comptes</th></tr></thead>
+  <tbody>{% for r in shared_ips %}<tr><td class="num">{{ r.ip }}</td><td>{{ r.users|join:", " }}</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+{% endif %}
 <h2>Par joueur</h2>
 <div class="table-wrap">
 <table class="data">
@@ -123,12 +135,12 @@
 <div class="table-wrap">
 <table class="data">
   <caption class="sr-only">Journal des connexions</caption>
-  <thead><tr><th scope="col">Date</th><th scope="col">Joueur</th></tr></thead>
+  <thead><tr><th scope="col">Date</th><th scope="col">Joueur</th><th scope="col">IP</th></tr></thead>
   <tbody>
   {% for e in page %}
-    <tr><td>{{ e.at|date:"d/m/Y H:i:s" }}</td><th scope="row">{{ e.user.username }}{% if e.user.is_staff %} <span class="tag">staff</span>{% endif %}</th></tr>
+    <tr><td>{{ e.at|date:"d/m/Y H:i:s" }}</td><th scope="row">{{ e.user.username }}{% if e.user.is_staff %} <span class="tag">staff</span>{% endif %}</th><td class="num">{{ e.ip|default:"—" }}</td></tr>
   {% empty %}
-    <tr><td colspan="2" class="muted">Aucune connexion enregistrée depuis la mise en place du suivi.</td></tr>
+    <tr><td colspan="3" class="muted">Aucune connexion enregistrée depuis la mise en place du suivi.</td></tr>
   {% endfor %}
   </tbody>
 </table>

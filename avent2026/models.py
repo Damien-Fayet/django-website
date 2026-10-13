@@ -113,6 +113,7 @@ class Submission(models.Model):
     answer = models.CharField("Réponse saisie", max_length=200)
     correct = models.BooleanField("Correcte")
     created_at = models.DateTimeField("Envoyée le", auto_now_add=True)
+    ip = models.GenericIPAddressField("Adresse IP", null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at", "-id"]

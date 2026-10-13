@@ -445,3 +445,45 @@ class TrackingTests(TestCase):
         self.client.force_login(self.boss)
         r = self.client.get(self.url, {"vue": "temps", "joueur": "x", "puzzle": "y", "seuil": "abc", "page": "zzz"})
         self.assertEqual(r.status_code, 200)
+
+
+class ClientIpTests(TestCase):
+    """IP enregistrée avec les connexions et réponses, et IP partagées entre comptes."""
+
+    def setUp(self):
+        self.alice = User.objects.create_user("alice", password="pw")
+        self.bob = User.objects.create_user("bob", password="pw")
+        self.boss = User.objects.create_user("boss", password="pw", is_staff=True)
+        self.puzzle = Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="Oui")
+
+    def test_cloudflare_header_trusted_only_from_loopback(self):
+        from accounts.utils import client_ip
+        from django.test import RequestFactory
+        rf = RequestFactory()
+        behind_tunnel = rf.get("/", REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(client_ip(behind_tunnel), "203.0.113.7")
+        spoofed = rf.get("/", REMOTE_ADDR="198.51.100.2", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(client_ip(spoofed), "198.51.100.2")
+        self.assertEqual(client_ip(rf.get("/", REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="n'importe quoi")), None)
+        self.assertIsNone(client_ip(None))
+
+    def test_login_and_answer_record_ip(self):
+        from accounts.models import LoginEvent
+        self.client.post(reverse("login"), {"username": "alice", "password": "pw"},
+                         REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(LoginEvent.objects.get(user=self.alice).ip, "203.0.113.7")
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "non"},
+                             REMOTE_ADDR="127.0.0.1", HTTP_CF_CONNECTING_IP="203.0.113.7")
+        self.assertEqual(Submission.objects.get().ip, "203.0.113.7")
+
+    def test_shared_ips(self):
+        from accounts.models import LoginEvent
+        LoginEvent.objects.create(user=self.alice, ip="203.0.113.7")
+        Submission.objects.create(user=self.bob, puzzle=self.puzzle, answer="x", correct=False, ip="203.0.113.7")
+        LoginEvent.objects.create(user=self.alice, ip="203.0.113.8")
+        LoginEvent.objects.create(user=self.boss, ip="203.0.113.8")  # staff : ignoré par défaut
+        self.client.force_login(self.boss)
+        resp = self.client.get(reverse("avent2026:tracking"), {"vue": "connexions"})
+        self.assertEqual(resp.context["shared_ips"], [{"ip": "203.0.113.7", "users": ["alice", "bob"]}])
+        self.assertContains(resp, "203.0.113.7")
