@@ -15,7 +15,8 @@
         <a href="{% url 'avent2026:home' %}"{% if current == "home" or current == "puzzle" %} aria-current="page"{% endif %}>Scène</a>
         <a href="{% url 'avent2026:journal' %}"{% if current == "journal" %} aria-current="page"{% endif %}>Journal</a>
         <a href="{% url 'avent2026:leaderboard' %}"{% if current == "leaderboard" %} aria-current="page"{% endif %}>Classement</a>
-        {% if request.user.is_staff %}<a href="{% url 'avent2026:tracking' %}"{% if current == "tracking" %} aria-current="page"{% endif %}>Suivi</a>{% endif %}
+        {% if request.user.is_staff %}<a href="{% url 'avent2026:tracking' %}"{% if current == "tracking" %} aria-current="page"{% endif %}>Suivi</a>
+        <a href="{% url 'admin:avent2026_puzzle_changelist' %}">Contenu</a>{% endif %}
       </nav>
       {% endwith %}
       <div class="account">
