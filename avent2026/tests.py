@@ -119,6 +119,14 @@ class FlowTests(TestCase):
             self.assertEqual(self.client.post(reverse("avent2026:answer", args=[self.enigme.id]),
                                               {"answer": "oui"}).status_code, 302)
 
+    def test_staff_nav_links_to_the_admin(self):
+        admin_url = reverse("admin:avent2026_puzzle_changelist")
+        with on(11, 1):
+            self.assertNotContains(self.client.get(reverse("avent2026:home")), admin_url)
+            self.user.is_staff = True
+            self.user.save()
+            self.assertContains(self.client.get(reverse("avent2026:home")), admin_url)
+
     def test_unlocked_day_one(self):
         day2 = Puzzle.objects.create(kind="enigme", day=2, title="E2", text="?", answers="x")
         with at(1):
