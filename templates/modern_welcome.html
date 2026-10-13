@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="fr">
 <head>
     {% include "_head.html" %}
@@ -19,10 +19,11 @@
     <main id="contenu">
         <section class="hero" id="hero">
             <div>
-                <h1>Deux villages plongés dans le noir, vingt-quatre jours pour les rallumer.</h1>
+                <h1>Rallumez le village et libérez le Père Noël avant le soir du 24.</h1>
                 <p class="lead">
-                    Chaque jour de décembre ouvre une énigme et une devinette. Chaque bonne réponse
-                    rallume une lumière, pour que les deux villages brillent à temps pour Noël.
+                    La tempête de neige n'était qu'un écran de fumée : le Père Noël a été enlevé.
+                    Chaque devinette résolue rallume une lumière du village, chaque énigme brise
+                    un des huit verrous qui le retiennent.
                 </p>
                 <div class="hero__actions">
                     <a class="btn" href="{% url 'signup' %}">Créer un compte</a>
@@ -30,10 +31,23 @@
                 </div>
             </div>
 
-            <!-- Portes du calendrier (décor) -->
-            <ol class="doors" aria-hidden="true">
-                {% for _ in "x"|ljust:24 %}<li class="door" style="--i:{{ forloop.counter0 }}"><span class="door__inside"></span><span class="door__face">{{ forloop.counter }}</span></li>{% endfor %}
-            </ol>
+            <!-- Les deux scènes du jeu, séparées par une chaîne. Le texte est dans la légende, l'image est décorative. -->
+            <figure class="diptyque">
+                <div class="diptyque__cadre" aria-hidden="true">
+                    <div class="diptyque__scene diptyque__scene--village">
+                        <img src="{% static 'img/accueil-village.webp' %}" alt="" width="768" height="960" decoding="async">
+                        <img class="diptyque__tempete" src="{% static 'img/accueil-village-tempete.webp' %}" alt="" width="768" height="960" decoding="async">
+                    </div>
+                    <div class="diptyque__scene diptyque__scene--cellule">
+                        <img src="{% static 'img/accueil-cellule.webp' %}" alt="" width="768" height="960" decoding="async">
+                    </div>
+                    <img class="diptyque__chaine" src="{% static 'img/accueil-chaine.svg' %}" alt="" width="768" height="960">
+                </div>
+                <figcaption>
+                    <p><strong>Le village</strong>24 devinettes, 24 lumières</p>
+                    <p><strong>La cellule</strong>8 énigmes, 8 verrous</p>
+                </figcaption>
+            </figure>
         </section>
 
         <!-- Compte à rebours : affiché par le script tant que le calendrier n'est pas ouvert -->
@@ -52,12 +66,12 @@
             <h2 id="fonctionnement">Comment ça marche</h2>
             <div class="steps">
                 <article>
-                    <h3>Deux villages à rallumer</h3>
-                    <p>Chaque village cache vingt-quatre lumières, une par jour. Un jour s'ouvre à minuit, heure de Paris, et vous les jouez dans l'ordre que vous voulez.</p>
+                    <h3>Un village à rallumer</h3>
+                    <p>Une devinette par jour, du 1er au 24 décembre, ouverte à minuit heure de Paris. Chaque bonne réponse rallume une lumière du village, dans l'ordre que vous voulez.</p>
                 </article>
                 <article>
-                    <h3>Deux pistes à suivre</h3>
-                    <p>Chaque jour propose une énigme, qui rallume le village des énigmes, et une devinette, qui rallume le village des devinettes. Les lumières allumées font franchir des paliers.</p>
+                    <h3>Un Père Noël à libérer</h3>
+                    <p>Huit énigmes, ouvertes à 6 h : le mardi 1er décembre, puis chaque mercredi et chaque samedi. Chacune brise un des verrous qui retiennent le Père Noël.</p>
                 </article>
                 <article>
                     <h3>Des points à gérer</h3>
