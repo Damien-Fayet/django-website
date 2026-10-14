@@ -16,8 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.conf import settings
-from django.conf.urls.static import static
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.static import serve
 from django.views.generic.base import TemplateView
 from accounts.views import public_home
 
@@ -31,5 +31,8 @@ urlpatterns = [
     path("", public_home, name="home"),  # Page d'accueil publique
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Images téléversées depuis l'admin (énoncés des puzzles) : servies par Django même avec DEBUG=False
+# (le Pi n'a ni nginx ni whitenoise pour `media/`, et le trafic est faible : ~30 personnes).
+urlpatterns += [
+    re_path(r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"), serve, {"document_root": settings.MEDIA_ROOT}),
+]

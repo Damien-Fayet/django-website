@@ -731,3 +731,23 @@ class ClientIpTests(TestCase):
         resp = self.client.get(reverse("avent2026:tracking"), {"vue": "connexions"})
         self.assertEqual(resp.context["shared_ips"], [{"ip": "203.0.113.7", "users": ["alice", "bob"]}])
         self.assertContains(resp, "203.0.113.7")
+
+
+class MediaServingTests(TestCase):
+    """Les images téléversées pour un énoncé doivent s'afficher aussi en production (DEBUG=False)."""
+
+    @override_settings(DEBUG=False)
+    def test_uploaded_image_is_served_without_debug(self):
+        from pathlib import Path
+        from django.conf import settings
+        folder = Path(settings.MEDIA_ROOT) / "avent2026_test"
+        folder.mkdir(parents=True, exist_ok=True)
+        f = folder / "x.webp"
+        f.write_bytes(b"RIFFdata")
+        try:
+            r = self.client.get("/media/avent2026_test/x.webp")
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(b"".join(r.streaming_content), b"RIFFdata")
+        finally:
+            f.unlink()
+            folder.rmdir()
