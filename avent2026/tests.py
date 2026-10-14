@@ -680,6 +680,14 @@ class TrackingTests(TestCase):
         self.assertEqual(len(self.client.get(self.url, {"vue": "reponses"}).context["page"].object_list), 1)
         self.assertEqual(len(self.client.get(self.url, {"vue": "reponses", "staff": "1"}).context["page"].object_list), 2)
 
+    def test_chosen_staff_player_is_shown(self):
+        # Choisir explicitement un compte staff dans le filtre « Joueur » l'affiche sans cocher « Inclure le staff ».
+        Submission.objects.create(user=self.boss, puzzle=self.puzzle, answer="test", correct=False)
+        Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="x", correct=False)
+        self.client.force_login(self.boss)
+        rows = self.client.get(self.url, {"vue": "reponses", "joueur": self.boss.id}).context["page"].object_list
+        self.assertEqual([s.user.username for s in rows], ["boss"])
+
     def test_answer_is_escaped(self):
         Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="<script>alert(1)</script>", correct=False)
         self.client.force_login(self.boss)
