@@ -45,6 +45,7 @@
   {% endif %}
   <div class="field field--check">
     <label><input type="checkbox" name="staff" value="1"{% if include_staff %} checked{% endif %}> Inclure le staff</label>
+    {% if not include_staff %}<span class="muted">Les comptes staff (dont le tien) sont masqués par défaut.</span>{% endif %}
   </div>
   <div class="field"><button class="btn btn--small" type="submit">Filtrer</button></div>
 </form>

@@ -34,8 +34,11 @@ def format_duration(delta):
     return f"{seconds} s"
 
 
-def _players(include_staff):
+def _players(include_staff, user_id=None):
+    """Comptes suivis. Un joueur choisi explicitement dans le filtre est toujours inclus, même s'il est staff."""
     users = get_user_model().objects.all()
+    if user_id:
+        return users.filter(pk=user_id)
     return users if include_staff else users.filter(is_staff=False)
 
 
@@ -48,8 +51,8 @@ def users_summary(include_staff):
 
 
 def login_events(include_staff, user_id=None):
-    qs = LoginEvent.objects.select_related("user").filter(user__in=_players(include_staff))
-    return qs.filter(user_id=user_id) if user_id else qs
+    qs = LoginEvent.objects.select_related("user").filter(user__in=_players(include_staff, user_id))
+    return qs
 
 
 def shared_ips(include_staff):
@@ -70,9 +73,7 @@ def shared_ips(include_staff):
 
 
 def submissions(include_staff, user_id=None, puzzle_id=None):
-    qs = Submission.objects.select_related("user", "puzzle").filter(user__in=_players(include_staff))
-    if user_id:
-        qs = qs.filter(user_id=user_id)
+    qs = Submission.objects.select_related("user", "puzzle").filter(user__in=_players(include_staff, user_id))
     if puzzle_id:
         qs = qs.filter(puzzle_id=puzzle_id)
     return qs
@@ -96,9 +97,7 @@ def with_delay(page_rows):
 
 def response_times(include_staff, seuil, user_id=None, puzzle_id=None, order="rapide"):
     """Une ligne par (joueur, puzzle) ouvert ou répondu, avec durée, signalements et médiane du puzzle."""
-    attempts = Attempt.objects.select_related("user", "puzzle").filter(user__in=_players(include_staff))
-    if user_id:
-        attempts = attempts.filter(user_id=user_id)
+    attempts = Attempt.objects.select_related("user", "puzzle").filter(user__in=_players(include_staff, user_id))
     if puzzle_id:
         attempts = attempts.filter(puzzle_id=puzzle_id)
     attempts = list(attempts)
