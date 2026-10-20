@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Avg
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -8,6 +9,7 @@ from django.utils import timezone
 from .models import Book
 from .forms import ISBNSearchForm, BookForm, BookFilterForm, search_book_by_isbn
 
+@login_required
 def index(request):
     """Page d'accueil améliorée avec plus de statistiques"""
     total_books = Book.objects.count()
@@ -30,6 +32,7 @@ def index(request):
     }
     return render(request, 'biblio/index.html', context)
 
+@login_required
 def book_list(request):
     """Liste des livres avec filtres améliorés"""
     books = Book.objects.all()
@@ -83,6 +86,7 @@ def book_list(request):
     }
     return render(request, 'biblio/book_list.html', context)
 
+@login_required
 def book_detail(request, pk):
     """Détails d'un livre avec navigation entre livres"""
     book = get_object_or_404(Book, pk=pk)
@@ -111,6 +115,7 @@ def book_detail(request, pk):
     }
     return render(request, 'biblio/book_detail.html', context)
 
+@login_required
 def add_book_isbn(request):
     """Ajouter un livre via ISBN"""
     if request.method == 'POST':
@@ -144,10 +149,12 @@ def add_book_isbn(request):
     
     return render(request, 'biblio/add_book_isbn.html', {'form': form})
 
+@login_required
 def scan_barcode(request):
     """Scanner un code-barres via webcam"""
     return render(request, 'biblio/scan_barcode.html')
 
+@login_required
 def add_book_manual(request, isbn=None):
     """Ajouter un livre manuellement"""
     if request.method == 'POST':
@@ -180,6 +187,7 @@ def add_book_manual(request, isbn=None):
         'from_isbn': from_isbn if 'from_isbn' in locals() else False
     })
 
+@login_required
 def edit_book(request, pk):
     """Modifier un livre"""
     book = get_object_or_404(Book, pk=pk)
@@ -195,6 +203,7 @@ def edit_book(request, pk):
     
     return render(request, 'biblio/edit_book.html', {'form': form, 'book': book})
 
+@login_required
 def delete_book(request, pk):
     """Supprimer un livre"""
     book = get_object_or_404(Book, pk=pk)
@@ -207,6 +216,7 @@ def delete_book(request, pk):
     
     return render(request, 'biblio/delete_book.html', {'book': book})
 
+@login_required
 def ajax_search(request):
     """Recherche AJAX rapide"""
     query = request.GET.get('q', '').strip()

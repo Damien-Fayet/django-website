@@ -1,7 +1,8 @@
 {% extends "avent2026/base.html" %}
 {% load static %}
-{% block title %}Avent 2026, la scène{% endblock %}
+{% block title %}Avent 2026, accueil{% endblock %}
 {% block content %}
+<h1 class="visually-hidden">Avent 2026, accueil</h1>
 {% if prologue %}<aside class="note"><h2>Prologue</h2><p>{{ prologue }}</p></aside>{% endif %}
 {% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
@@ -12,14 +13,32 @@
     <div><dt>{{ c.name }}</dt><dd>{{ c.solved }} <small>sur {{ c.total }}</small></dd>
       <dd class="status__count">{% if c.kind == "enigme" %}{{ scores.enigme }}{% else %}{{ scores.devinette }}{% endif %} points</dd></div>
     {% endfor %}
+    <div><dt>Total</dt><dd>{{ scores.total }} <small>points</small></dd></div>
   </dl>
   <div class="status__level">
     <p>Palier {{ village.level }} sur {{ village.max_level }}, <strong>{{ village.title }}</strong></p>
     <div class="meter" role="progressbar" aria-label="Progression vers le prochain palier"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ village.progress_pct }}"><span style="width:{{ village.progress_pct }}%"></span></div>
-    {% if village.next_title %}<p class="status__next">Prochain palier : {{ village.next_title }}, à {{ village.next_threshold }} étapes. Total : {{ scores.total }} points.</p>
-    {% else %}<p class="status__next">Tous les paliers sont atteints. Total : {{ scores.total }} points.</p>{% endif %}
+    {% if village.next_title %}<p class="status__next">Prochain palier : {{ village.next_title }}, à {{ village.next_threshold }} étapes.</p>
+    {% else %}<p class="status__next">Tous les paliers sont atteints.</p>{% endif %}
   </div>
+</section>
+
+<section class="toplay" aria-labelledby="a-jouer">
+  <h2 id="a-jouer">À jouer maintenant</h2>
+  {% if to_play %}
+  <ul class="toplay__list">
+    {% for item in to_play %}
+    <li><a href="{% url 'avent2026:puzzle' item.puzzle.id %}"><span class="toplay__label">{{ item.label }}</span><span class="toplay__title">{{ item.puzzle.title }}</span><span class="toplay__track">{{ item.track }}</span></a></li>
+    {% endfor %}
+  </ul>
+  {% if to_play_more %}<p class="muted toplay__more">et {{ to_play_more }} autre{{ to_play_more|pluralize }} sur la carte, plus bas.</p>{% endif %}
+  {% else %}
+  <p class="muted">Tout ce qui est sorti est résolu{% if not next_unlock %}.{% else %}, bravo.{% endif %}</p>
+  {% endif %}
+  {% if next_unlock %}
+  <p class="muted toplay__next">Prochain déblocage : {{ next_unlock.label }} ({{ next_unlock.track|lower }}), le {{ next_unlock.date|date:"l j F" }} à {{ next_unlock.hour }} h, heure de Paris.</p>
+  {% endif %}
 </section>
 
 <div class="villages">
@@ -42,18 +61,18 @@
         {% for l in c.steps %}
         <li>
           {% if l.state == "locked" %}
-          <span class="day is-locked" title="Pas encore débloqué"
-                role="img" aria-label="{{ c.step }} {% if c.dated %}{{ l.number }}{% else %}{{ l.day }}{% endif %}, pas encore débloqué, sort le {{ l.date|date:'l j F' }} à {{ c.hour }} h">
-            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}</span>
+          <span class="day is-locked" title="Pas encore débloqué" aria-disabled="true">
+            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}
+            <span class="visually-hidden">, pas encore débloqué, sort le {{ l.date|date:'l j F' }} à {{ c.hour }} h</span></span>
           {% elif l.puzzle %}
           <a class="day is-{{ l.state }}" href="{% url 'avent2026:puzzle' l.puzzle.id %}"
              title="{{ c.step }} {% if c.dated %}{{ l.number }}{% else %}{{ l.day }}{% endif %} : {{ l.puzzle.title }}"
              aria-label="{{ c.step }} {% if c.dated %}{{ l.number }}, {{ l.date|date:'l j F' }}{% else %}{{ l.day }}{% endif %}, {{ l.puzzle.title }}, {% if l.state == 'done' %}résolue, {{ c.noun }} {{ c.done }}{% else %}à résoudre{% endif %}">
             {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}</a>
           {% else %}
-          <span class="day is-empty" title="Rien de publié"
-                role="img" aria-label="{{ c.step }} {% if c.dated %}{{ l.number }}{% else %}{{ l.day }}{% endif %}, rien de publié">
-            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}</span>
+          <span class="day is-empty" title="Rien de publié" aria-disabled="true">
+            {% if c.dated %}<span class="day__n">{{ c.step }} {{ l.number }}</span><span class="day__d">{{ l.date|date:"D j" }}</span>{% else %}{{ l.day }}{% endif %}
+            <span class="visually-hidden">, rien de publié</span></span>
           {% endif %}
         </li>
         {% endfor %}
@@ -94,7 +113,7 @@
   <li><span class="swatch swatch--done"></span>Résolu</li>
   <li><span class="swatch swatch--open"></span>À résoudre</li>
   <li><span class="swatch swatch--locked"></span>Pas encore ouverte</li>
-  <li><span class="swatch swatch--empty"></span>Rien de publié</li>
+  {% if has_empty %}<li><span class="swatch swatch--empty"></span>Rien de publié</li>{% endif %}
 </ul>
 <p class="stage-note">Les devinettes se débloquent chaque jour à minuit, les énigmes à 6 h, heure de Paris. Une devinette rallume un bâtiment du village, une énigme brise un verrou de la cellule du Père Noël : joue les deux dans l'ordre que tu veux, chacun à son rythme.</p>
 {% endblock %}

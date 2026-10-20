@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="fr">
 <head>
     {% include "_head.html" %}
@@ -31,12 +31,16 @@
                 <div class="field">
                     <label for="id_username">Nom d'utilisateur</label>
                     <input class="input{% if form.errors %} input--error{% endif %}" type="text" name="username" id="id_username"
-                           autocomplete="username" autocapitalize="none" required autofocus>
+                           value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" required autofocus>
                 </div>
                 <div class="field">
                     <label for="id_password">Mot de passe</label>
-                    <input class="input{% if form.errors %} input--error{% endif %}" type="password" name="password" id="id_password"
-                           autocomplete="current-password" required>
+                    <div class="input-wrap">
+                        <input class="input{% if form.errors %} input--error{% endif %}" type="password" name="password" id="id_password"
+                               autocomplete="current-password" required>
+                        <button type="button" class="peek" data-peek="id_password" aria-controls="id_password" aria-pressed="false" hidden>Afficher</button>
+                    </div>
+                    <p class="help">Mot de passe oublié ? Demande à Damien, il pourra le réinitialiser.</p>
                 </div>
                 <button type="submit" class="btn btn--block">Se connecter</button>
             </form>
@@ -48,5 +52,6 @@
     <footer class="site-footer">
         <p>Calendrier de l'Avent 2026, entre proches.</p>
     </footer>
+    <script src="{% static 'js/peek-password.js' %}" defer></script>
 </body>
 </html>

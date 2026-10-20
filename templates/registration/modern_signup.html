@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="fr">
 <head>
     {% include "_head.html" %}
@@ -49,17 +49,23 @@
 
                 <div class="field">
                     <label for="{{ form.password1.id_for_label }}">Mot de passe</label>
-                    <input class="input{% if form.password1.errors %} input--error{% endif %}" type="password"
+                    <div class="input-wrap">
+                        <input class="input{% if form.password1.errors %} input--error{% endif %}" type="password"
                            name="{{ form.password1.name }}" id="{{ form.password1.id_for_label }}"
                            autocomplete="new-password" required>
+                        <button type="button" class="peek" data-peek="{{ form.password1.id_for_label }}" aria-controls="{{ form.password1.id_for_label }}" aria-pressed="false" hidden>Afficher</button>
+                    </div>
                     {% if form.password1.help_text %}<div class="help">{{ form.password1.help_text }}</div>{% endif %}
                 </div>
 
                 <div class="field">
                     <label for="{{ form.password2.id_for_label }}">Confirmation du mot de passe</label>
-                    <input class="input{% if form.password2.errors %} input--error{% endif %}" type="password"
+                    <div class="input-wrap">
+                        <input class="input{% if form.password2.errors %} input--error{% endif %}" type="password"
                            name="{{ form.password2.name }}" id="{{ form.password2.id_for_label }}"
                            autocomplete="new-password" required>
+                        <button type="button" class="peek" data-peek="{{ form.password2.id_for_label }}" aria-controls="{{ form.password2.id_for_label }}" aria-pressed="false" hidden>Afficher</button>
+                    </div>
                     {% if form.password2.help_text %}<p class="help">{{ form.password2.help_text }}</p>{% endif %}
                 </div>
 
@@ -78,5 +84,6 @@
     <footer class="site-footer">
         <p>Calendrier de l'Avent 2026, entre proches.</p>
     </footer>
+    <script src="{% static 'js/peek-password.js' %}" defer></script>
 </body>
 </html>
