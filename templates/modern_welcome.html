@@ -59,7 +59,7 @@
                     <div class="countdown__cell"><span class="countdown__num" id="minutes-welcome">00</span><span class="countdown__unit">minutes</span></div>
                     <div class="countdown__cell"><span class="countdown__num" id="seconds-welcome">00</span><span class="countdown__unit">secondes</span></div>
                 </div>
-                <p class="countdown__date">Le <strong>1er décembre 2026</strong> à 00 h 01</p>
+                <p class="countdown__date">Le <strong>1er décembre 2026</strong> à minuit, heure de Paris. Première énigme à 6 h.</p>
         </section>
 
         <section class="section" aria-labelledby="fonctionnement">
@@ -96,10 +96,11 @@
     </footer>
 
     <script>
-        // Compte à rebours jusqu'au 1er décembre 2026 à 00h01
+        // Compte à rebours jusqu'à l'ouverture, le 1er décembre 2026 à minuit, heure de Paris (donc pas d'heure locale du
+        // navigateur : le décalage est fixé dans la date, décembre = UTC+1).
         (function () {
             var container = document.getElementById('countdown-container-welcome');
-            var target = new Date('2026-12-01T00:01:00').getTime();
+            var target = new Date('2026-12-01T00:00:00+01:00').getTime();
             var ids = ['days', 'hours', 'minutes', 'seconds'].map(function (k) {
                 return document.getElementById(k + '-welcome');
             });

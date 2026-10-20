@@ -1,12 +1,21 @@
 {% extends "avent2026/base.html" %}
 {% load tz %}
 {% block title %}{{ puzzle.title }}{% endblock %}
+{# Les messages (mauvaise réponse, indice, bravo) s'affichent dans le bloc réponse, pas en haut de page. #}
+{% block messages %}{% endblock %}
 {% block content %}
-<a class="crumb" href="{% url 'avent2026:home' %}">Retour à la scène</a>
+<nav class="puzzle-nav" aria-label="Autres puzzles de cette piste">
+  {% if previous %}<a class="puzzle-nav__prev" href="{% url 'avent2026:puzzle' previous.id %}" rel="prev">Précédent : {{ previous.title }}</a>{% else %}<span></span>{% endif %}
+  <a class="puzzle-nav__home" href="{% url 'avent2026:home' %}">Toute la carte</a>
+  {% if following %}
+    {% if following.unlocked %}<a class="puzzle-nav__next" href="{% url 'avent2026:puzzle' following.id %}" rel="next">Suivant : {{ following.title }}{% if following.done %} (résolue){% endif %}</a>
+    {% else %}<span class="puzzle-nav__next muted">Suivant : le {{ following.date|date:"l j F" }} à {{ following.hour }} h</span>{% endif %}
+  {% else %}<span></span>{% endif %}
+</nav>
 
 <div class="puzzle">
   <article>
-    <p class="puzzle__kind">{% if competitive and step %}Verrou {{ step }} sur {{ steps }}, énigme du {{ date|date:"l j F" }}{% else %}{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}{% endif %}</p>
+    <p class="puzzle__kind">{% if competitive and step %}Verrou {{ step }} sur {{ steps }}, énigme du {{ date|date:"l j F" }}{% elif step %}Devinette {{ step }} sur {{ steps }}, du {{ date|date:"l j F" }}{% else %}{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}{% endif %}</p>
     <h1>{{ puzzle.title }}</h1>
     {% if other %}
     <p class="other-track">
@@ -24,23 +33,32 @@
     </div>
 
     {% if solved and story %}
-    <aside class="note note--after"><h2>Journal de bord</h2><div>{{ story|safe }}</div></aside>
+    <aside class="note note--after" id="histoire"><h2>Journal de bord</h2><div>{{ story|safe }}</div></aside>
     {% endif %}
   </article>
 
-  <div class="puzzle__aside">
+  <div class="puzzle__aside" id="resultat">
+    {% include "avent2026/_messages.html" %}
     <section class="aside-block" aria-labelledby="reponse">
       <h2 id="reponse">Réponse</h2>
       {% if solved %}
         <p class="answer-solved">Résolue : <b>+{{ attempt.points }}</b> points.</p>
         {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>{% endif %}
+        <ul class="after">
+          {% if story %}<li><a href="#histoire">Relire le fragment d'histoire</a></li>{% endif %}
+          {% if following %}
+            {% if following.unlocked %}<li><a href="{% url 'avent2026:puzzle' following.id %}">{% if following.done %}Revoir{% else %}Passer à{% endif %} « {{ following.title }} »</a></li>
+            {% else %}<li class="muted">Prochain {% if puzzle.kind == "enigme" %}verrou{% else %}puzzle de cette piste{% endif %} : le {{ following.date|date:"l j F" }} à {{ following.hour }} h.</li>{% endif %}
+          {% endif %}
+          <li><a href="{% url 'avent2026:home' %}">Retour à la carte</a></li>
+        </ul>
       {% else %}
         <p class="points">Vaut actuellement <b>{{ current_points }}</b> points{% if not competitive %} sur {{ max_points }}{% endif %}, {{ errors }} erreur{{ errors|pluralize }}.</p>
         {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>
         <p class="muted bonus-note">Bonus déjà inclus, à perdre si tu te trompes ou prends un indice.{% if podium_open %} Le podium se joue à la première bonne réponse.{% endif %}</p>{% endif %}
         <form method="post" action="{% url 'avent2026:answer' puzzle.id %}" class="answer">{% csrf_token %}
           <label for="answer">Ta réponse</label>
-          <input class="input" id="answer" type="text" name="answer" autocomplete="off" autofocus required>
+          <input class="input" id="answer" type="text" name="answer" autocomplete="off" autocapitalize="none" enterkeyhint="send" required>
           <button class="btn" type="submit">Valider</button>
         </form>
       {% endif %}
@@ -50,8 +68,10 @@
       <h2 id="indices">Indices</h2>
       {% for h in revealed_hints %}<p class="hint"><small>Indice {{ h.number }}</small>{{ h.text|safe }}</p>{% endfor %}
       {% if not solved and next_hint %}
-        <form method="post" action="{% url 'avent2026:hint' puzzle.id %}">{% csrf_token %}
-          <button class="btn btn--ghost btn--block" type="submit">Révéler l'indice {{ next_hint.number }} (−{{ next_hint.display_cost }} pts{% if competitive and not revealed_hints %}, bonus « sans indice » perdu{% endif %})</button>
+        <form method="post" action="{% url 'avent2026:hint' puzzle.id %}" class="hint-form"
+              data-confirm="Révéler l'indice {{ next_hint.number }} ? Cela coûte {{ next_hint.display_cost }} points{% if competitive and not revealed_hints %} et fait perdre le bonus « sans indice »{% endif %}.">{% csrf_token %}
+          <button class="btn btn--ghost btn--block" type="submit" aria-describedby="indice-cout">Révéler l'indice {{ next_hint.number }}</button>
+          <p class="help" id="indice-cout">Coût : −{{ next_hint.display_cost }} pts{% if competitive and not revealed_hints %}, bonus « sans indice » perdu{% endif %}.</p>
         </form>
       {% elif not hint_count %}<p class="muted" style="margin:0">Pas d'indice pour celle-ci.</p>
       {% elif not next_hint and not solved %}<p class="muted" style="margin:0">Tous les indices sont révélés.</p>
@@ -68,4 +88,19 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+(function () {
+  // Sur un écran avec souris, le curseur est mis dans le champ ; sur mobile non, pour ne pas ouvrir le clavier
+  // par-dessus l'énoncé.
+  var input = document.getElementById("answer");
+  if (input && window.matchMedia("(hover: hover) and (pointer: fine)").matches) input.focus({preventScroll: true});
+  // Un indice coûte des points et ne se reprend pas : demander confirmation.
+  document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    });
+  });
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,2 @@
+{# Un classement : `rows` = [{name, points, solved}], `me` = nom du joueur connecté, `anchor` = id posé sur sa ligne. #}
+<ol class="rank">{% for r in rows %}<li{% if r.name == me %} class="me"{% if anchor %} id="{{ anchor }}"{% endif %}{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}<small>{{ r.solved }} résolu{{ r.solved|pluralize }}</small></b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>

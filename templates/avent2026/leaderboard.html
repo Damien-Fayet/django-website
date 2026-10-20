@@ -2,29 +2,40 @@
 {% load tz %}
 {% block title %}Classement{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Classement</h1></div>
+<div class="page-head">
+  <h1>Classement</h1>
+  {% if my_rank %}<p>Tu es {{ my_rank }}{% if my_rank == 1 %}er{% else %}e{% endif %} sur {{ players }} joueur{{ players|pluralize }}. <a href="#moi">Voir ma ligne</a></p>
+  {% elif request.user.is_staff %}<p>{{ players }} joueur{{ players|pluralize }} au classement. Les comptes staff n'y figurent pas.</p>
+  {% else %}<p>{{ players }} joueur{{ players|pluralize }} au classement. Résous un puzzle pour y entrer.</p>{% endif %}
+</div>
+
+<section class="titles-block" aria-labelledby="g-titres">
+  <h2 id="g-titres" class="visually-hidden">Titres</h2>
+  <dl class="titles">
+    <div><dt>Libérateur</dt><dd>{% if titles.liberateur %}{{ titles.liberateur.user__username }}{% else %}<span class="muted">Personne n'a encore libéré le Père Noël.</span>{% endif %}</dd></div>
+    <div><dt>Sans filet</dt><dd>{% if titles.sans_filet %}{{ titles.sans_filet|join:", " }}{% else %}<span class="muted">Aucun, pour l'instant.</span>{% endif %}</dd></div>
+  </dl>
+  <p class="muted titles__note">Le Libérateur est le premier à avoir brisé les 8 verrous ; « Sans filet » : les 8 verrous sans un seul indice. Les comptes de test (staff) ne comptent pas.</p>
+</section>
+
 <div class="boards">
   <section class="board" aria-labelledby="g-total">
     <h2 id="g-total">Total</h2>
-    <ol class="rank">{% for r in total %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+    {% include "avent2026/_board.html" with rows=total anchor="moi" %}
   </section>
   <section class="board" aria-labelledby="g-enigmes">
     <h2 id="g-enigmes">Énigmes</h2>
-    <ol class="rank">{% for r in enigmes %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+    {% include "avent2026/_board.html" with rows=enigmes %}
   </section>
   <section class="board" aria-labelledby="g-devinettes">
     <h2 id="g-devinettes">Devinettes</h2>
-    <ol class="rank">{% for r in devinettes %}<li{% if r.name == me %} class="me"{% endif %}><span>{{ r.name }}{% if r.name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ r.points }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+    {% include "avent2026/_board.html" with rows=devinettes %}
   </section>
 </div>
 
 <section class="verrous" aria-labelledby="g-verrous">
   <h2 id="g-verrous">Les briseurs de verrous</h2>
-  <p class="muted">Les trois premiers à résoudre chaque énigme gagnent un bonus de podium. Les comptes de test (staff) ne comptent pas.</p>
-  <dl class="titles">
-    <div><dt>Libérateur</dt><dd>{% if titles.liberateur %}{{ titles.liberateur.user__username }}{% else %}<span class="muted">Personne n'a encore libéré le Père Noël.</span>{% endif %}</dd></div>
-    <div><dt>Sans filet</dt><dd>{% if titles.sans_filet %}{{ titles.sans_filet|join:", " }}{% else %}<span class="muted">Aucun, pour l'instant.</span>{% endif %}</dd></div>
-  </dl>
+  <p class="muted">Les trois premiers à résoudre chaque énigme gagnent un bonus de podium.</p>
   {% timezone "Europe/Paris" %}
   <ol class="verrou-list">
     {% for v in verrous %}

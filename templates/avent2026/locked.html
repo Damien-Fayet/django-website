@@ -2,8 +2,33 @@
 {% block title %}Pas encore ouvert{% endblock %}
 {% block content %}
 <div class="locked-page">
-  <h1>Jour {{ day }}</h1>
-  <p>Ce puzzle n'est pas encore débloqué{% if unlock_date %}. Rendez-vous le {{ unlock_date|date:"l j F Y" }}{% if hour %} à {{ hour }} h, heure de Paris{% endif %}{% else %}. Rendez-vous le {{ day }} décembre{% endif %}.</p>
-  <a class="btn" href="{% url 'avent2026:home' %}">Retour à la scène</a>
+  {% if step %}
+  <p class="puzzle__kind">{% if kind == "enigme" %}Verrou {{ step }} sur {{ steps }}{% else %}Devinette {{ step }} sur {{ steps }}{% endif %}</p>
+  {% endif %}
+  <h1>{% if kind == "enigme" %}Ce verrou est encore fermé{% elif kind %}Cette devinette n'est pas encore ouverte{% else %}Jour {{ day }}{% endif %}</h1>
+  <p>Ce puzzle n'est pas encore débloqué{% if unlock_date %}. Rendez-vous le {{ unlock_date|date:"l j F Y" }}{% if hour is not None %} à {{ hour }} h, heure de Paris{% endif %}{% else %}. Rendez-vous le {{ day }} décembre{% endif %}.</p>
+  {% if unlock_iso %}<p class="locked-page__left" id="restant" data-at="{{ unlock_iso }}" hidden></p>{% endif %}
+  <a class="btn" href="{% url 'avent2026:home' %}">Retour à l'accueil</a>
 </div>
+{% if unlock_iso %}
+<script>
+(function () {
+  var el = document.getElementById("restant");
+  var target = new Date(el.dataset.at).getTime();
+  if (isNaN(target)) return;
+  function update() {
+    var left = Math.floor((target - Date.now()) / 60000);
+    if (left < 0) { el.textContent = "C'est ouvert : recharge la page."; el.hidden = false; return; }
+    var parts = [], d = Math.floor(left / 1440), h = Math.floor(left % 1440 / 60), m = left % 60;
+    if (d) parts.push(d + " j");
+    if (d || h) parts.push(h + " h");
+    parts.push(m + " min");
+    el.textContent = "Ouverture dans " + parts.join(" ") + ".";
+    el.hidden = false;
+  }
+  update();
+  setInterval(update, 30000);
+})();
+</script>
+{% endif %}
 {% endblock %}
