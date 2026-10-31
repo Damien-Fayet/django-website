@@ -17,7 +17,7 @@ class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(
         label='Email',
         required=False,
-        help_text='Facultatif - Pour récupérer votre compte en cas d\'oubli de mot de passe.',
+        help_text='Facultatif. Il n\'y a pas de réinitialisation automatique : en cas d\'oubli de mot de passe, demandez à Damien.',
         widget=forms.EmailInput(attrs={
             'class': 'form-input',
             'placeholder': 'votre.email@exemple.com (facultatif)'

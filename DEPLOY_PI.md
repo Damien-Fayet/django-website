@@ -353,7 +353,7 @@ Points d'attention :
 | `NameError: name 'MIDDLEWARE' is not defined` | bloc de l'étape 4 collé trop haut dans `settings.py` | Le déplacer à la toute fin |
 | `-bash: ... event not found` | `!` dans une commande sans guillemets simples | Entourer la valeur de `'...'` |
 | Un jour reste verrouillé alors qu'il est l'heure | heure du Pi incorrecte | `timedatectl` (NTP actif ?) |
-| Images d'énigmes en 404 | avec `DEBUG=False`, Django ne sert plus `media/` | À prévoir quand tu ajouteras des images (service de `media/` à configurer) |
+| Images d'énigmes en 404 | le fichier n'est pas dans `media/` du Pi (téléversé sur une autre machine) | `media/` est servi par Django (`mysite/urls.py`) ; téléverser l'image via l'admin **du site de production** |
 | `Illegal instruction` en lançant `cloudflared` [Pi 1] | binaire non adapté à ARMv6 | Demander une autre méthode |
 | `last_deploy.txt` indique `ECHEC` | commit refusé par `check`/`migrate` ou site muet après redémarrage | `journalctl -u avent-update -n 80`, corriger sur `main` (nouveau commit), ou `--retry` |
 | Le site n'évolue plus alors que `main` a changé | timer arrêté, commit mis de côté, ou `settings.py` modifié | `systemctl list-timers avent-update.timer`, `update_pi.sh --check`, `journalctl -u avent-update` |
@@ -363,4 +363,4 @@ Points d'attention :
 
 - Si le courant, la box ou le Pi tombe, le site est inaccessible. En décembre, prévois au minimum un
   redémarrage automatique (déjà couvert par `Restart=always` et le service `cloudflared`), idéalement un onduleur.
-- Les statiques sont servies par WhiteNoise, mais pas `media/` (voir le tableau de dépannage).
+- Les statiques sont servies par WhiteNoise ; `media/` (images d'énigmes téléversées dans l'admin) l'est directement par Django.

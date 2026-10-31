@@ -12,7 +12,7 @@
       <a class="brand" href="{% url 'avent2026:home' %}">Avent <span>2026</span></a>
       {% with current=request.resolver_match.url_name %}
       <nav class="site-nav" aria-label="Navigation principale">
-        <a href="{% url 'avent2026:home' %}"{% if current == "home" or current == "puzzle" %} aria-current="page"{% endif %}>Scène</a>
+        <a href="{% url 'avent2026:home' %}"{% if current == "home" or current == "puzzle" %} aria-current="page"{% endif %}>Accueil</a>
         <a href="{% url 'avent2026:journal' %}"{% if current == "journal" %} aria-current="page"{% endif %}>Journal</a>
         <a href="{% url 'avent2026:leaderboard' %}"{% if current == "leaderboard" %} aria-current="page"{% endif %}>Classement</a>
         {% if request.user.is_staff %}<a href="{% url 'avent2026:tracking' %}"{% if current == "tracking" %} aria-current="page"{% endif %}>Suivi</a>
@@ -28,9 +28,8 @@
     </div>
   </header>
   <main id="contenu">
-    {% if messages %}
-    <ul class="messages">{% for m in messages %}<li class="notice notice--{{ m.tags }}" role="status">{{ m }}</li>{% endfor %}</ul>
-    {% endif %}
+    {# Une page peut afficher les messages à l'endroit où ils sont utiles (voir puzzle.html). #}
+    {% block messages %}{% include "avent2026/_messages.html" %}{% endblock %}
     {# Le site est en français : sans cela, un navigateur en anglais affiche « Tuesday 1 December ». #}
     {% language "fr" %}{% block content %}{% endblock %}{% endlanguage %}
   </main>

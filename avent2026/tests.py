@@ -189,7 +189,7 @@ class FlowTests(TestCase):
             r = self.client.get(reverse("avent2026:leaderboard"))
         self.assertEqual([x["name"] for x in r.context["enigmes"]], ["alice"])
         self.assertEqual(len(r.context["devinettes"]), 2)
-        self.assertEqual(r.context["total"][0], {"name": "alice", "points": 185 + 50})
+        self.assertEqual(r.context["total"][0], {"name": "alice", "points": 185 + 50, "solved": 2})
 
     @override_settings(AVENT2026_UNLOCK_ALL=True)
     def test_unlock_all_setting(self):
@@ -680,6 +680,14 @@ class TrackingTests(TestCase):
         self.assertEqual(len(self.client.get(self.url, {"vue": "reponses"}).context["page"].object_list), 1)
         self.assertEqual(len(self.client.get(self.url, {"vue": "reponses", "staff": "1"}).context["page"].object_list), 2)
 
+    def test_chosen_staff_player_is_shown(self):
+        # Choisir explicitement un compte staff dans le filtre « Joueur » l'affiche sans cocher « Inclure le staff ».
+        Submission.objects.create(user=self.boss, puzzle=self.puzzle, answer="test", correct=False)
+        Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="x", correct=False)
+        self.client.force_login(self.boss)
+        rows = self.client.get(self.url, {"vue": "reponses", "joueur": self.boss.id}).context["page"].object_list
+        self.assertEqual([s.user.username for s in rows], ["boss"])
+
     def test_answer_is_escaped(self):
         Submission.objects.create(user=self.alice, puzzle=self.puzzle, answer="<script>alert(1)</script>", correct=False)
         self.client.force_login(self.boss)
@@ -731,3 +739,209 @@ class ClientIpTests(TestCase):
         resp = self.client.get(reverse("avent2026:tracking"), {"vue": "connexions"})
         self.assertEqual(resp.context["shared_ips"], [{"ip": "203.0.113.7", "users": ["alice", "bob"]}])
         self.assertContains(resp, "203.0.113.7")
+
+
+class MediaServingTests(TestCase):
+    """Les images téléversées pour un énoncé doivent s'afficher aussi en production (DEBUG=False)."""
+
+    @override_settings(DEBUG=False)
+    def test_uploaded_image_is_served_without_debug(self):
+        from pathlib import Path
+        from django.conf import settings
+        folder = Path(settings.MEDIA_ROOT) / "avent2026_test"
+        folder.mkdir(parents=True, exist_ok=True)
+        f = folder / "x.webp"
+        f.write_bytes(b"RIFFdata")
+        try:
+            r = self.client.get("/media/avent2026_test/x.webp")
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(b"".join(r.streaming_content), b"RIFFdata")
+        finally:
+            f.unlink()
+            folder.rmdir()
+
+
+class NavigationTests(TestCase):
+    """Parcours du joueur : à jouer maintenant, voisins d'un puzzle, retour au bloc réponse, page verrouillée."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.client.force_login(self.user)
+        self.d1 = Puzzle.objects.create(kind="devinette", day=1, title="Premiere", text="?", answers="a")
+        self.d2 = Puzzle.objects.create(kind="devinette", day=2, title="Deuxieme", text="?", answers="b")
+        self.d3 = Puzzle.objects.create(kind="devinette", day=3, title="Troisieme", text="?", answers="c")
+        self.e1 = Puzzle.objects.create(kind="enigme", day=1, title="Verrou un", text="?", answers="d")
+
+    def test_home_lists_what_is_playable_and_the_next_unlock(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertEqual({item["puzzle"].title for item in r.context["to_play"]}, {"Premiere", "Verrou un"})
+        self.assertEqual(r.context["next_unlock"]["label"], "Jour 2")  # minuit avant l'énigme de 6 h
+        self.assertContains(r, "À jouer maintenant")
+        self.assertContains(r, reverse("avent2026:puzzle", args=[self.d1.id]))
+
+    def test_home_drops_solved_puzzles_from_the_list(self):
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "a"})
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertEqual([item["puzzle"].title for item in r.context["to_play"]], ["Verrou un"])
+
+    def test_home_caps_the_list_for_staff(self):
+        self.user.is_staff = True
+        self.user.save()
+        for day in village.ENIGME_DAYS[1:]:
+            Puzzle.objects.create(kind="enigme", day=day, title=f"E{day}", text="?", answers="x")
+        with at(1):
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertEqual(len(r.context["to_play"]), 6)
+        self.assertEqual(r.context["to_play_more"], 11 - 6)  # 3 devinettes + 8 énigmes, aucune résolue
+
+    def test_home_without_anything_to_play_still_announces_the_next_unlock(self):
+        with at(1, hour=12):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "a"})
+            self.client.post(reverse("avent2026:answer", args=[self.e1.id]), {"answer": "d"})
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertEqual(r.context["to_play"], [])
+        self.assertContains(r, "Prochain déblocage")
+
+    def test_home_is_called_accueil_and_hides_empty_legend_for_players(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertContains(r, ">Accueil</a>")
+        self.assertNotContains(r, ">Scène<")
+        self.assertFalse(r.context["has_empty"])
+        self.assertNotContains(r, "Rien de publié")
+        with at(2):  # jour 2 de l'énigme : débloqué mais rien de publié
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertTrue(r.context["has_empty"])
+        self.assertContains(r, "Rien de publié")
+
+    def test_locked_steps_are_not_announced_as_images(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertNotContains(r, 'role="img"')
+        self.assertContains(r, 'aria-disabled="true"')
+
+    def test_puzzle_links_to_previous_and_next_in_its_own_track(self):
+        with at(2):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d2.id]))
+        self.assertContains(r, reverse("avent2026:puzzle", args=[self.d1.id]))
+        self.assertNotContains(r, reverse("avent2026:puzzle", args=[self.e1.id]) + '" rel')
+        # Le suivant n'est pas encore sorti : on donne sa date, pas son titre.
+        self.assertContains(r, "Suivant : le jeudi 3 décembre à 0 h")
+        self.assertNotContains(r, "Troisieme")
+
+    def test_next_link_appears_once_unlocked(self):
+        with at(3):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d2.id]))
+        self.assertContains(r, "Suivant : Troisieme")
+
+    def test_first_puzzle_has_no_previous_link(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d1.id]))
+        self.assertNotContains(r, 'rel="prev"')
+
+    def test_solving_points_to_the_next_puzzle(self):
+        with at(2):
+            self.client.post(reverse("avent2026:answer", args=[self.d2.id]), {"answer": "b"})
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d2.id]))
+        self.assertContains(r, "Résolue")
+        self.assertContains(r, "le jeudi 3 décembre à 0 h")
+
+    def test_answer_returns_to_the_result_block(self):
+        with at(1):
+            wrong = self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "zzz"})
+            right = self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "a"})
+            hint = self.client.post(reverse("avent2026:hint", args=[self.e1.id]))
+        for r, puzzle in ((wrong, self.d1), (right, self.d1), (hint, self.e1)):
+            self.assertEqual(r["Location"], reverse("avent2026:puzzle", args=[puzzle.id]) + "#resultat")
+
+    def test_wrong_answer_message_is_an_alert_inside_the_answer_block(self):
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "zzz"})
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d1.id]))
+        html = r.content.decode()
+        self.assertEqual(html.count("essaie encore"), 1)  # une seule fois, pas aussi en haut de page
+        self.assertIn('role="alert"', html)
+        self.assertGreater(html.index("essaie encore"), html.index('id="resultat"'))
+
+    def test_other_pages_still_show_messages_on_top(self):
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "zzz"})
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertContains(r, "essaie encore")
+
+    def test_hint_asks_for_confirmation_and_shows_its_cost(self):
+        Hint.objects.create(puzzle=self.e1, number=1, text="h", cost=20)
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+        self.assertContains(r, "data-confirm=")
+        self.assertContains(r, "Coût : −20 pts, bonus « sans indice » perdu")
+        self.assertNotContains(r, "autofocus")
+
+    def test_locked_page_names_the_step_without_the_title(self):
+        with on(11, 30):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+        self.assertEqual(r.status_code, 403)
+        self.assertContains(r, "Verrou 1 sur 8", status_code=403)
+        self.assertContains(r, 'data-at="2026-12-01T06:00:00+01:00"', status_code=403)
+        self.assertNotContains(r, "Verrou un", status_code=403)
+        self.assertContains(r, "mardi 1 décembre 2026 à 6 h", status_code=403)
+
+
+class LeaderboardTests(TestCase):
+    def setUp(self):
+        self.puzzle = Puzzle.objects.create(kind="devinette", day=1, title="D", text="?", answers="a")
+        self.alice = User.objects.create_user("alice", password="pw")
+        self.tester = User.objects.create_user("testeur", password="pw", is_staff=True)
+
+    def solve(self, user):
+        self.client.force_login(user)
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "a"})
+
+    def test_staff_accounts_are_not_ranked(self):
+        self.solve(self.tester)
+        self.solve(self.alice)
+        with at(1):
+            r = self.client.get(reverse("avent2026:leaderboard"))
+        for board in ("total", "devinettes", "enigmes"):
+            self.assertNotIn("testeur", [row["name"] for row in r.context[board]])
+        self.assertEqual(r.context["players"], 1)
+
+    def test_rows_show_how_many_were_solved_and_my_place(self):
+        self.solve(self.alice)
+        with at(1):
+            r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertEqual(r.context["total"][0]["solved"], 1)
+        self.assertEqual(r.context["my_rank"], 1)
+        self.assertContains(r, "1 résolu")
+        self.assertContains(r, 'id="moi"')
+        self.assertContains(r, "Tu es 1er sur 1 joueur")
+
+    def test_staff_sees_a_note_instead_of_a_place(self):
+        self.solve(self.alice)
+        self.client.force_login(self.tester)
+        with at(1):
+            r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertIsNone(r.context["my_rank"])
+        self.assertContains(r, "Les comptes staff n'y figurent pas")
+
+
+class AuthPagesTests(TestCase):
+    def test_login_keeps_the_username_after_a_failure(self):
+        r = self.client.post(reverse("login"), {"username": "alice", "password": "mauvais"})
+        self.assertContains(r, 'value="alice"')
+        self.assertContains(r, "Demande à Damien")
+
+    def test_password_fields_have_a_show_button(self):
+        self.assertContains(self.client.get(reverse("login")), 'data-peek="id_password"')
+        self.assertContains(self.client.get(reverse("signup")), 'data-peek="id_password2"')
+
+    def test_welcome_countdown_uses_paris_time(self):
+        self.assertContains(self.client.get("/"), "2026-12-01T00:00:00+01:00")
+
+    def test_pages_have_a_description_and_an_icon(self):
+        r = self.client.get("/")
+        self.assertContains(r, '<meta name="description"')
+        self.assertContains(r, 'rel="icon"')

@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -18,10 +19,20 @@ from . import competition, scoring, suivi, village
 from .models import Attempt, Hint, HintReveal, Puzzle, Submission
 
 
+def _step_of(puzzle):
+    """Rang du puzzle dans sa piste (1 pour le premier verrou ou le premier jour) et nombre d'étapes de la piste."""
+    days = village.CARTES[puzzle.kind].days
+    return (days.index(puzzle.day) + 1 if puzzle.day in days else None), len(days)
+
+
 def _locked_response(request, day, puzzle=None):
-    target = scoring.unlock_date(puzzle) if puzzle else None
-    hour = scoring.RELEASE_HOUR[puzzle.kind] if puzzle else None
-    return render(request, "avent2026/locked.html", {"day": day, "unlock_date": target, "hour": hour}, status=403)
+    ctx = {"day": day, "unlock_date": None, "hour": None}
+    if puzzle:
+        step, steps = _step_of(puzzle)
+        # Le titre du puzzle n'est volontairement pas transmis : il révélerait le contenu avant l'heure.
+        ctx.update(unlock_date=scoring.unlock_date(puzzle), hour=scoring.RELEASE_HOUR[puzzle.kind],
+                   unlock_iso=scoring.unlock_at(puzzle).isoformat(), kind=puzzle.kind, step=step, steps=steps)
+    return render(request, "avent2026/locked.html", ctx, status=403)
 
 
 @login_required
@@ -50,23 +61,49 @@ def home(request):
                 "number": number, "day": day, "state": state,
                 "date": scoring.unlock_date(puzzle) if puzzle else date(scoring.YEAR, 12, day),
                 "puzzle": puzzle if state in ("open", "done") else None,
+                "unlock": scoring.unlock_at(puzzle) if puzzle else scoring.release_at(kind, day),
             })
         solved = sum(1 for step in steps if step["state"] == "done")
         cartes.append({
             "kind": kind, **info._asdict(), "hour": scoring.RELEASE_HOUR[kind], "steps": steps, "solved": solved, "total": len(info.days),
             "counter": village.counter(kind, solved), "carte": _carte(request, kind, solved),
         })
+    to_play, next_unlock = _to_play(cartes)
     scores = _user_scores(request.user)
     finale = _finished(request.user)
     show_prologue = not request.session.get("avent2026_prologue_seen")
     if show_prologue:  # n'écrire la session qu'une fois : sinon un UPDATE par visite
         request.session["avent2026_prologue_seen"] = True
     return render(request, "avent2026/home.html", {
-        "cartes": cartes, "scores": scores,
+        "cartes": cartes, "scores": scores, "to_play": to_play[:TO_PLAY_SHOWN],
+        "to_play_more": max(0, len(to_play) - TO_PLAY_SHOWN), "next_unlock": next_unlock,
+        "has_empty": any(step["state"] == "empty" for c in cartes for step in c["steps"]),
         "village": village.village_state(scores["lit"]), "finale": finale,
         "prologue": village.PROLOGUE if show_prologue else "",
         "epilogue": village.EPILOGUE if finale else "",
     })
+
+
+TO_PLAY_SHOWN = 6  # le staff voit tout débloqué : on ne liste pas les 32 puzzles
+
+
+def _to_play(cartes):
+    """Puzzles ouverts et pas encore résolus (les plus anciens d'abord), et le prochain déblocage.
+
+    `next_unlock` : la prochaine étape encore verrouillée (date et heure de Paris), ou None si tout est sorti.
+    """
+    to_play, locked = [], []
+    for c in cartes:
+        for step in c["steps"]:
+            label = f"{c['step']} {step['number'] if c['dated'] else step['day']}"
+            if step["state"] == "open":
+                to_play.append({"kind": c["kind"], "track": c["name"], "label": label, "puzzle": step["puzzle"],
+                                "date": step["date"], "unlock": step["unlock"]})
+            elif step["state"] == "locked":
+                locked.append({"track": c["name"], "label": label, "date": step["date"], "hour": c["hour"],
+                               "unlock": step["unlock"]})
+    to_play.sort(key=lambda item: item["unlock"])
+    return to_play, min(locked, key=lambda item: item["unlock"], default=None)
 
 
 def _carte(request, kind, step):
@@ -141,7 +178,7 @@ def _puzzle_context(request, puzzle):
         rank = attempt.rank
     else:
         rank = None if request.user.is_staff else competition.next_rank(puzzle)
-    days = village.CARTES[puzzle.kind].days
+    step, steps = _step_of(puzzle)
     return {
         "puzzle": puzzle, "attempt": attempt, "solved": solved,
         "revealed_hints": revealed, "next_hint": next_hint, "hint_count": len(hints),
@@ -151,9 +188,9 @@ def _puzzle_context(request, puzzle):
         "bonuses": scoring.bonuses(puzzle, rank, errors, revealed) if competitive else [],
         "podium": competition.podium(puzzle) if competitive else [],
         "podium_open": competition.next_rank(puzzle) <= len(scoring.PODIUM_BONUS) if competitive else False,
-        "step": days.index(puzzle.day) + 1 if puzzle.day in days else None, "steps": len(days),
+        "step": step, "steps": steps,
         "date": scoring.unlock_date(puzzle), "hour": scoring.RELEASE_HOUR[puzzle.kind],
-        "other": _other_track(request, puzzle),
+        "other": _other_track(request, puzzle), **_neighbours(request, puzzle),
         "locks": _locks(request, puzzle) if competitive else [],
         # Le fragment d'histoire n'est envoyé au template qu'une fois le puzzle résolu.
         "story": puzzle.story if attempt and attempt.solved else "",
@@ -169,6 +206,30 @@ def _locks(request, puzzle):
     return [{"number": n, "day": day,
              "state": "done" if day in done_days else "current" if day == puzzle.day else "todo"}
             for n, day in enumerate(days, start=1)]
+
+
+def _neighbours(request, puzzle):
+    """Puzzles voisins dans la même piste, pour enchaîner sans repasser par l'accueil.
+
+    Le précédent est le plus proche déjà ouvert ; le suivant est le prochain publié, avec sa date s'il est encore
+    verrouillé (son titre n'est alors pas affiché)."""
+    track = list(Puzzle.objects.filter(kind=puzzle.kind).only("id", "kind", "day", "title", "unlock_date")
+                 .order_by("day"))
+    index = next(i for i, p in enumerate(track) if p.pk == puzzle.pk)
+    solved = set(Attempt.objects.filter(user=request.user, puzzle__in=track, solved_at__isnull=False)
+                 .values_list("puzzle_id", flat=True))
+
+    def describe(other):
+        other.unlocked = scoring.is_unlocked(other, request.user)
+        other.done = other.pk in solved
+        other.step = _step_of(other)[0]
+        other.date = scoring.unlock_date(other)
+        other.hour = scoring.RELEASE_HOUR[other.kind]
+        return other
+
+    previous = next((describe(p) for p in reversed(track[:index]) if scoring.is_unlocked(p, request.user)), None)
+    following = describe(track[index + 1]) if index + 1 < len(track) else None
+    return {"previous": previous, "following": following}
 
 
 def _other_track(request, puzzle):
@@ -189,6 +250,12 @@ def puzzle_view(request, puzzle_id):
     # Premier affichage (suivi anti-triche) : une seule écriture, à la création de la progression.
     Attempt.objects.get_or_create(user=request.user, puzzle=puzzle, defaults={"first_seen_at": timezone.now()})
     return render(request, "avent2026/puzzle.html", _puzzle_context(request, puzzle))
+
+
+def _back_to_answer(puzzle):
+    """Retour au puzzle, calé sur le bloc réponse (messages, points, indices) : sur mobile, le résultat est sinon
+    hors de l'écran, sous un long énoncé."""
+    return redirect(reverse("avent2026:puzzle", args=[puzzle.id]) + "#resultat")
 
 
 @login_required
@@ -223,7 +290,7 @@ def answer(request, puzzle_id):
                 attempt.errors += 1
                 attempt.save(update_fields=["errors"])
                 messages.error(request, "Ce n'est pas ça, essaie encore.")
-    return redirect("avent2026:puzzle", puzzle_id=puzzle.id)
+    return _back_to_answer(puzzle)
 
 
 @login_required
@@ -233,14 +300,14 @@ def reveal_hint(request, puzzle_id):
     if not scoring.is_unlocked(puzzle, request.user):
         return _locked_response(request, puzzle.day, puzzle)
     if Attempt.objects.filter(user=request.user, puzzle=puzzle, solved_at__isnull=False).exists():
-        return redirect("avent2026:puzzle", puzzle_id=puzzle.id)
+        return _back_to_answer(puzzle)
     # Indices révélés dans l'ordre : on donne toujours le prochain non révélé.
     hint = puzzle.hints.exclude(reveals__user=request.user).order_by("number").first()
     if hint:
         HintReveal.objects.get_or_create(user=request.user, hint=hint)
         lost = " et le bonus « sans indice »" if puzzle.kind in scoring.BONUS_KINDS else ""
         messages.info(request, f"Indice révélé (−{scoring.hint_cost(hint)} points{lost} si tu trouves).")
-    return redirect("avent2026:puzzle", puzzle_id=puzzle.id)
+    return _back_to_answer(puzzle)
 
 
 def _user_scores(user):
@@ -258,18 +325,24 @@ def _user_scores(user):
 
 @login_required
 def leaderboard(request):
-    rows = (Attempt.objects.filter(solved_at__isnull=False)
+    # Le staff joue pour tester : il n'apparaît pas plus au classement qu'au podium.
+    rows = (Attempt.objects.filter(solved_at__isnull=False, user__is_staff=False)
             .values("user__username", "puzzle__kind").annotate(total=Sum("points"), solved=Count("id")))
-    board = {Puzzle.ENIGME: [], Puzzle.DEVINETTE: [], "total": defaultdict(int)}
+    board = {Puzzle.ENIGME: [], Puzzle.DEVINETTE: [], "total": defaultdict(lambda: [0, 0])}
     for r in rows:
         board[r["puzzle__kind"]].append({"name": r["user__username"], "points": r["total"], "solved": r["solved"]})
-        board["total"][r["user__username"]] += r["total"]
+        board["total"][r["user__username"]][0] += r["total"]
+        board["total"][r["user__username"]][1] += r["solved"]
     for kind in (Puzzle.ENIGME, Puzzle.DEVINETTE):
         board[kind].sort(key=lambda r: (-r["points"], r["name"]))
-    total = sorted(({"name": n, "points": p} for n, p in board["total"].items()), key=lambda r: (-r["points"], r["name"]))
+    total = sorted(({"name": n, "points": p, "solved": c} for n, (p, c) in board["total"].items()),
+                   key=lambda r: (-r["points"], r["name"]))
+    me = request.user.username
+    my_rank = next((place for place, r in enumerate(total, start=1) if r["name"] == me), None)
     return render(request, "avent2026/leaderboard.html", {
         "enigmes": board[Puzzle.ENIGME], "devinettes": board[Puzzle.DEVINETTE], "total": total,
-        "me": request.user.username, "verrous": competition.verrous(), "titles": competition.titles(),
+        "me": me, "my_rank": my_rank, "players": len(total),
+        "verrous": competition.verrous(), "titles": competition.titles(),
     })
 
 

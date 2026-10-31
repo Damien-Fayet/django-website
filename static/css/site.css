@@ -119,7 +119,8 @@ a:hover { color: var(--sapin-fonce); }
   .site-header__inner { gap: 0 1rem; }
   .brand { order: 1; margin-right: auto; }
   .account { order: 2; }
-  .site-nav { order: 3; flex-basis: 100%; margin: 0 -.65rem; border-top: 1px solid var(--filet); }
+  /* Le menu du staff compte 5 liens : il passe à la ligne plutôt que de déborder de l'écran */
+  .site-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; margin: 0 -.65rem; border-top: 1px solid var(--filet); }
 }
 
 /* ---- Boutons ------------------------------------------------------------- */
@@ -148,6 +149,13 @@ a:hover { color: var(--sapin-fonce); }
 .input:hover { border-color: var(--brume); }
 .input:focus { outline: 2px solid var(--sapin); outline-offset: 1px; border-color: var(--sapin); }
 .input--error { border-color: var(--baie); }
+/* Champ mot de passe avec bouton « Afficher » */
+.input-wrap { position: relative; }
+.input-wrap .input { padding-right: 6rem; }
+.peek {
+  position: absolute; top: 0; right: .25rem; min-height: 2.75rem; padding: 0 .65rem; border: 0; background: none; cursor: pointer;
+  font: 500 .875rem var(--font-ui); color: var(--sapin); text-decoration: underline; text-underline-offset: .2em;
+}
 .help { margin: .4rem 0 0; font-size: .8125rem; line-height: 1.45; color: var(--brume); }
 .help ul { padding-left: 1.1rem; }
 
