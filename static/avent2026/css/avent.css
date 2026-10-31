@@ -119,10 +119,9 @@ a.day.is-done:hover { background: #e6b653; }
   .puzzle__aside { position: sticky; top: 1.5rem; }
 }
 .puzzle__kind { margin: 0 0 .25rem; font-size: .9375rem; color: var(--brume); }
-.puzzle h1 { margin-bottom: 1rem; }
 .other-track { margin: 0 0 1.75rem; font-size: .9375rem; color: var(--brume); }
 
-.statement { max-width: var(--lecture); font: 400 1.0625rem/1.7 var(--font-texte); }
+.statement { font: 400 1.0625rem/1.7 var(--font-texte); }
 .statement img { max-width: 100%; height: auto; border-radius: var(--r-ctrl); }
 .statement p { margin-bottom: 1.1em; }
 
@@ -146,6 +145,69 @@ a.day.is-done:hover { background: #e6b653; }
 }
 .hint small { display: block; font-size: .8125rem; color: var(--brume); }
 .aside-block form { margin: 0; }
+
+/* Image de l'énoncé : un clic l'ouvre en grand dans un nouvel onglet */
+.statement__figure, .statement__link { position: relative; display: block; margin: 0 0 1.25rem; cursor: zoom-in; color: inherit; }
+.statement__link { display: inline-block; max-width: 100%; margin: 0; }
+.statement__figure img, .statement__link img { display: block; width: 100%; max-width: 100%; height: auto; }
+.statement__figure { overflow: hidden; border-radius: var(--r-ctrl); }
+.statement__zoom {
+  position: absolute; right: .6rem; bottom: .6rem; display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .65rem; border-radius: 99px; background: rgba(14, 26, 40, .88); color: #fff;
+  font-size: .8125rem; font-weight: 500; line-height: 1.2;
+}
+.statement__figure:hover .statement__zoom { background: var(--laiton); color: var(--nuit); }
+.statement__figure:focus-visible, .statement__link:focus-visible { outline: 3px solid var(--laiton); outline-offset: 2px; }
+
+/* ---- Énigmes et devinettes : un seul design -------------------------------- */
+/* En-tête compact (type, titre), énoncé sur une feuille barrée de rouge, réponse et indices sur panneau sombre.
+   Énigmes : la rangée des 8 verrous complète le type (brisé en laiton, celui-ci en rouge alarme, à venir en contour). */
+:root { --alarme: #d63c47; }
+.puzzle__head { margin-bottom: 1.25rem; }
+.puzzle__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1.5rem; margin-bottom: .35rem; }
+.puzzle__head .puzzle__kind { margin: 0; font-weight: 500; color: var(--alarme); }
+.puzzle__head h1 { margin: 0; font-size: clamp(2rem, 1.3rem + 3vw, 3rem); font-weight: 600; line-height: 1.04; letter-spacing: -.03em; }
+.puzzle__line { margin: .6rem 0 0; font-size: .9375rem; color: var(--brume); }
+.puzzle__head .other-track { margin: .6rem 0 0; }
+
+.locks { display: flex; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.lock { display: block; width: 1.25rem; }
+.lock svg { display: block; width: 100%; height: auto; overflow: visible; fill: none; stroke: var(--champ); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lock__shackle--open { display: none; }
+.lock--done svg { stroke: #b07f1f; }
+.lock--done .lock__body { fill: var(--laiton); }
+.lock--done .lock__keyhole { fill: var(--nuit); stroke: none; }
+.lock--done .lock__shackle--shut { display: none; }
+.lock--done .lock__shackle--open { display: inline; }
+.lock--current svg { stroke: var(--alarme); transform: scale(1.2); transform-origin: 50% 90%; }
+.lock--current .lock__body { fill: var(--alarme); }
+.lock--current .lock__keyhole { fill: #fff; stroke: none; }
+
+.statement {
+  max-width: calc(var(--lecture) + 3.5rem); padding: clamp(1.25rem, 4vw, 1.75rem); border: 1px solid var(--filet);
+  border-top: 4px solid var(--baie); border-radius: 0 0 var(--r-panel) var(--r-panel); background: var(--papier);
+}
+.statement > :last-child { margin-bottom: 0; }
+.puzzle__aside .aside-block { border-color: #24344a; background: var(--nuit); color: #e8edf3; }
+.puzzle__aside .aside-block h2 { color: #fff; }
+.puzzle__aside :focus-visible { outline-color: var(--laiton); }
+.puzzle__aside .muted, .puzzle__aside .points { color: #a9b6c4; }
+.puzzle__aside .points b { color: #fff; }
+.puzzle__aside .answer label { color: #e8edf3; }
+.puzzle__aside .answer .input { min-height: 3.25rem; font-size: 1.125rem; border-color: #4d5f74; }
+.puzzle__aside .answer .input:focus { outline: 2px solid var(--laiton); border-color: var(--laiton); }
+.puzzle__aside .btn { border-color: var(--laiton); background: var(--laiton); color: var(--nuit); }
+.puzzle__aside .btn:hover { border-color: #e6b653; background: #e6b653; color: var(--nuit); }
+.puzzle__aside .btn--ghost { border-color: rgba(255, 255, 255, .5); background: transparent; color: #fff; }
+.puzzle__aside .btn--ghost:hover { border-color: #fff; background: #fff; color: var(--nuit); }
+.puzzle__aside .answer-solved { color: #86d3ae; }
+.puzzle__aside .bonus li { border-top-color: rgba(255, 255, 255, .14); }
+.puzzle__aside .bonus b { color: var(--laiton); }
+.puzzle__aside .hint { color: var(--encre); }
+.puzzle__aside .rank { border-bottom-color: rgba(255, 255, 255, .14); }
+.puzzle__aside .rank li { border-top-color: rgba(255, 255, 255, .14); }
+.puzzle__aside .rank li::before { color: #a9b6c4; }
+.puzzle__aside .rank li.me { background: rgba(217, 164, 65, .18); }
 
 /* ---- Journal ------------------------------------------------------------- */
 .logbook-head { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2.5rem; }

@@ -6,20 +6,49 @@
 
 <div class="puzzle">
   <article>
-    <p class="puzzle__kind">{% if competitive and step %}Verrou {{ step }} sur {{ steps }}, énigme du {{ date|date:"l j F" }}{% else %}{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}{% endif %}</p>
-    <h1>{{ puzzle.title }}</h1>
-    {% if other %}
-    <p class="other-track">
-      {% if other.unlocked %}
-        <a href="{% url 'avent2026:puzzle' other.id %}">Même jour : {{ other.get_kind_display|lower }} « {{ other.title }} »{% if other.done %}, résolue{% endif %}</a>
-      {% else %}
-        Même jour : {{ other.get_kind_display|lower }}, pas encore débloquée.
+    {# En-tête compact, commun aux énigmes et aux devinettes. Énigmes : les 8 verrous, celui-ci en rouge. #}
+    <header class="puzzle__head">
+      <div class="puzzle__meta">
+        <p class="puzzle__kind">{% if competitive and step %}Verrou {{ step }} sur {{ steps }}, {{ date|date:"l j F" }}{% else %}{{ puzzle.get_kind_display }} du jour {{ puzzle.day }}{% endif %}</p>
+        {% if locks %}
+        <ol class="locks" aria-label="Les {{ steps }} verrous de la cellule">
+          {% for l in locks %}
+          <li class="lock lock--{{ l.state }}">
+            <svg viewBox="0 0 24 30" width="24" height="30" aria-hidden="true" focusable="false">
+              <path class="lock__shackle lock__shackle--shut" d="M7 13V9a5 5 0 0 1 10 0v4"/>
+              <path class="lock__shackle lock__shackle--open" d="M7 13V9a5 5 0 0 1 9.4-2.4"/>
+              <rect class="lock__body" x="3.5" y="13" width="17" height="14" rx="2.5"/>
+              <circle class="lock__keyhole" cx="12" cy="19.2" r="1.6"/>
+            </svg>
+            <span class="visually-hidden">Verrou {{ l.number }} : {% if l.state == "done" %}brisé{% elif l.state == "current" %}celui-ci, à briser{% else %}à venir{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ol>
+        {% endif %}
+      </div>
+      <h1>{{ puzzle.title }}</h1>
+      {% if competitive and not solved and podium_open %}<p class="puzzle__line">Le podium est encore libre : les trois premiers à répondre juste gagnent un bonus.</p>{% endif %}
+      {% if other %}
+      <p class="other-track">
+        {% if other.unlocked %}
+          <a href="{% url 'avent2026:puzzle' other.id %}">Même jour : {{ other.get_kind_display|lower }} « {{ other.title }} »{% if other.done %}, résolue{% endif %}</a>
+        {% else %}
+          Même jour : {{ other.get_kind_display|lower }}, pas encore débloquée.
+        {% endif %}
+      </p>
       {% endif %}
-    </p>
-    {% endif %}
+    </header>
 
     <div class="statement">
-      {% if puzzle.image %}<img src="{{ puzzle.image.url }}" alt="" loading="lazy">{% endif %}
+      {% if puzzle.image %}
+      <a class="statement__figure" href="{{ puzzle.image.url }}" target="_blank" rel="noopener" aria-label="Agrandir l'image, elle s'ouvre dans un nouvel onglet">
+        <img src="{{ puzzle.image.url }}" alt="" loading="lazy">
+        <span class="statement__zoom" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l4.5 4.5M6.5 4.5v4M4.5 6.5h4"/></svg>
+          Agrandir
+        </span>
+      </a>
+      {% endif %}
       {{ puzzle.text|safe }}
     </div>
 
@@ -68,4 +97,19 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+  // Les images placées dans l'énoncé (HTML de l'admin) s'ouvrent aussi en grand dans un nouvel onglet.
+  document.querySelectorAll('.statement img').forEach(function (img) {
+    if (img.closest('a')) return;
+    var a = document.createElement('a');
+    a.className = 'statement__link';
+    a.href = img.currentSrc || img.src;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.setAttribute('aria-label', "Agrandir l'image, elle s'ouvre dans un nouvel onglet");
+    img.parentNode.insertBefore(a, img);
+    a.appendChild(img);
+  });
+</script>
 {% endblock %}

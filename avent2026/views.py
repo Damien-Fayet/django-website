@@ -154,9 +154,21 @@ def _puzzle_context(request, puzzle):
         "step": days.index(puzzle.day) + 1 if puzzle.day in days else None, "steps": len(days),
         "date": scoring.unlock_date(puzzle), "hour": scoring.RELEASE_HOUR[puzzle.kind],
         "other": _other_track(request, puzzle),
+        "locks": _locks(request, puzzle) if competitive else [],
         # Le fragment d'histoire n'est envoyé au template qu'une fois le puzzle résolu.
         "story": puzzle.story if attempt and attempt.solved else "",
     }
+
+
+def _locks(request, puzzle):
+    """Les verrous de la cellule vus depuis cette énigme : brisé (résolue), en cours (celle-ci) ou à venir."""
+    days = village.CARTES[puzzle.kind].days
+    day_of = dict(Puzzle.objects.filter(kind=puzzle.kind).values_list("id", "day"))
+    done_days = {day_of[pid] for pid in Attempt.objects.filter(user=request.user, puzzle_id__in=day_of, solved_at__isnull=False)
+                 .values_list("puzzle_id", flat=True)}
+    return [{"number": n, "day": day,
+             "state": "done" if day in done_days else "current" if day == puzzle.day else "todo"}
+            for n, day in enumerate(days, start=1)]
 
 
 def _other_track(request, puzzle):
