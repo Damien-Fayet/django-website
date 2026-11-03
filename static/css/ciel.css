@@ -6,9 +6,18 @@
    ========================================================================== */
 
 :root {
-  --ciel-haut: #0b1330;
-  --ciel-bas: #2c3768;
+  /* Ciel de fête : un bleu roi qui s'éclaircit vers le bas, avec une lueur chaude à l'horizon. Les contrastes du
+     texte clair posé dessus sont vérifiés (au moins 4,5:1, y compris sur les tuiles translucides). */
+  --ciel-haut: #1d3874;
+  --ciel-milieu: #2d4d93;
+  --ciel-bas: #3f64b0;
+  --ciel-degrade:
+    radial-gradient(90% 55% at 50% 118%, rgba(255, 160, 120, .2), transparent 65%),
+    linear-gradient(180deg, var(--ciel-haut) 0%, var(--ciel-milieu) 60%, var(--ciel-bas) 100%);
+  --ciel-bord: #4766ad;
+  --ciel-doux: #eef3fb;   /* texte secondaire sur le ciel */
   --or-clair: #ffe6a8;
+  --or-vif: #f3cb74;      /* dessins dorés sur le ciel */
   --icone-etoile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23d9a441' d='M8 0c.6 4.6 2.8 7.4 8 8-5.2.6-7.4 3.4-8 8-.6-4.6-2.8-7.4-8-8 5.2-.6 7.4-3.4 8-8z'/%3E%3C/svg%3E");
 }
 
@@ -51,7 +60,7 @@
     radial-gradient(1.8px 1.8px at 18% 12%, #fff, transparent);
   background-repeat: no-repeat;
 }
-.nuit { background: linear-gradient(180deg, var(--ciel-haut) 0%, #1a2352 62%, var(--ciel-bas) 100%); color: #e8edf3; }
+.nuit { background: var(--ciel-degrade); color: #fff; }
 
 /* Étincelles lancées au clic ou à une bonne réponse (static/js/etincelles.js) */
 .etincelle {

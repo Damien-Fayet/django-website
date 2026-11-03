@@ -47,16 +47,6 @@ TOTAL = sum(len(carte.days) for carte in CARTES.values())  # 32 : étapes à fra
 # Dernier jour de chaque piste : l'épilogue s'affiche quand les puzzles publiés de ces jours sont tous résolus.
 FINAL_DAYS = {kind: carte.days[-1] for kind, carte in CARTES.items()}
 
-# (nombre d'étapes franchies, titre du palier, description)
-LEVELS = [
-    (0,  "Dans le noir",           "La tempête a tout éteint et le Père Noël a disparu. Il va falloir se mettre au travail."),
-    (4,  "Premières lueurs",       "Quelques fenêtres vacillent et un premier verrou a cédé."),
-    (10, "Les rues s'éveillent",   "Les lumières courent d'une maison à l'autre, la cellule commence à trembler."),
-    (17, "La moitié du chemin",    "Le village respire, les chaînes se desserrent."),
-    (24, "Presque en fête",        "La place s'éclaire, et derrière la porte de la cellule le Père Noël entend du bruit."),
-    (29, "Les dernières lumières", "Plus que quelques pas avant de rallumer l'étoile du sapin et de rouvrir la porte."),
-]
-
 PROLOGUE = (
     "Une tempête de neige a coupé le courant la veille du 1er décembre. Le village est plongé dans le noir et son "
     "grand sapin n'a même plus son étoile. Mais cette tempête n'avait rien de naturel : elle couvrait un enlèvement. "
@@ -89,30 +79,7 @@ def counter(kind, count):
     return f"{count} {carte.noun}{s} {carte.done}{s}"
 
 
-def village_state(lit):
-    """État de la progression pour un nombre donné d'étapes franchies (sur `TOTAL`)."""
+def progression(lit):
+    """Progression pour un nombre donné d'étapes franchies : étapes, total (`TOTAL`) et pourcentage entier."""
     lit = max(0, min(TOTAL, lit or 0))
-    level = 0
-    for index, (threshold, *_rest) in enumerate(LEVELS):
-        if lit >= threshold:
-            level = index
-    next_level = LEVELS[level + 1] if level + 1 < len(LEVELS) else None
-    if next_level is None:
-        progress = 100
-    else:
-        start = LEVELS[level][0]
-        progress = int((lit - start) * 100 / (next_level[0] - start))
-    return {
-        "lit": lit,
-        "total": TOTAL,
-        "level": level + 1,
-        "max_level": len(LEVELS),
-        "title": LEVELS[level][1],
-        "description": LEVELS[level][2],
-        "next_threshold": next_level[0] if next_level else None,
-        "next_title": next_level[1] if next_level else None,
-        "progress_pct": progress,
-        # Les paliers en une rangée d'ampoules : franchi, en cours, à venir.
-        "levels": [{"n": n, "title": title, "state": "done" if n < level + 1 else "now" if n == level + 1 else "todo"}
-                   for n, (_threshold, title, *_rest) in enumerate(LEVELS, start=1)],
-    }
+    return {"lit": lit, "total": TOTAL, "pct": lit * 100 // TOTAL}

@@ -16,14 +16,10 @@
     {% endfor %}
     <div><svg class="ic" aria-hidden="true"><use href="#ic-coupe"/></svg><dt>Total</dt><dd><span data-compte="{{ scores.total }}">{{ scores.total }}</span> <small>points</small></dd></div>
   </dl>
-  <div class="status__level">
-    <p>Palier {{ village.level }} sur {{ village.max_level }}, <strong>{{ village.title }}</strong></p>
-    {# Une ampoule par palier : allumée si franchi, qui pulse si en cours. Le texte ci-dessus dit la même chose. #}
-    <ol class="paliers" aria-hidden="true">{% for l in village.levels %}<li class="palier palier--{{ l.state }}" title="Palier {{ l.n }} : {{ l.title }}"></li>{% endfor %}</ol>
-    <div class="meter" role="progressbar" aria-label="Progression vers le prochain palier"
-         aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ village.progress_pct }}"><span style="width:{{ village.progress_pct }}%"></span></div>
-    {% if village.next_title %}<p class="status__next">Prochain palier : {{ village.next_title }}, à {{ village.next_threshold }} étapes.</p>
-    {% else %}<p class="status__next">Tous les paliers sont atteints.</p>{% endif %}
+  <div class="status__jauge">
+    <div class="meter" role="progressbar" aria-label="Étapes franchies"
+         aria-valuemin="0" aria-valuemax="{{ village.total }}" aria-valuenow="{{ village.lit }}"><span style="width:{{ village.pct }}%"></span></div>
+    <p class="status__pct">{{ village.pct }} %</p>
   </div>
 </section>
 
