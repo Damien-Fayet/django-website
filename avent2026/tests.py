@@ -941,6 +941,21 @@ class AuthPagesTests(TestCase):
     def test_welcome_countdown_uses_paris_time(self):
         self.assertContains(self.client.get("/"), "2026-12-01T00:00:00+01:00")
 
+    def test_welcome_page_has_the_festive_countdown_and_its_assets(self):
+        from django.contrib.staticfiles import finders
+        r = self.client.get("/")
+        self.assertContains(r, 'id="countdown" data-open-at="2026-12-01T00:00:00+01:00"')
+        self.assertContains(r, "css/accueil.css")
+        self.assertContains(r, "js/accueil.js")
+        self.assertContains(r, 'id="neige-toggle"')
+        for path in ("css/accueil.css", "js/accueil.js"):
+            self.assertIsNotNone(finders.find(path), path)
+
+    def test_game_pages_do_not_load_the_festive_assets(self):
+        user = User.objects.create_user("alice", password="pw")
+        self.client.force_login(user)
+        self.assertNotContains(self.client.get(reverse("avent2026:home")), "accueil.css")
+
     def test_pages_have_a_description_and_an_icon(self):
         r = self.client.get("/")
         self.assertContains(r, '<meta name="description"')

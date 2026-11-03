@@ -2,9 +2,10 @@
 <html lang="fr">
 <head>
     {% include "_head.html" %}
+    <link rel="stylesheet" href="{% static 'css/accueil.css' %}">
     <title>Avent 2026, calendrier de l'Avent</title>
 </head>
-<body>
+<body class="fete">
     <a class="skip-link" href="#contenu">Aller au contenu</a>
     <header class="site-header">
         <div class="site-header__inner">
@@ -19,7 +20,8 @@
     <main id="contenu">
         <section class="hero" id="hero">
             <div>
-                <h1>Rallumez le village et libérez le Père Noël avant le soir du 24.</h1>
+                <p class="eyebrow">Calendrier de l'Avent 2026, entre proches</p>
+                <h1>Rallumez le village et <span class="soulign">libérez le Père Noël</span> avant le soir du 24.</h1>
                 <p class="lead">
                     La tempête de neige n'était qu'un écran de fumée : le Père Noël a été enlevé.
                     Chaque devinette résolue rallume une lumière du village, chaque énigme brise
@@ -50,30 +52,46 @@
             </figure>
         </section>
 
-        <!-- Compte à rebours : affiché par le script tant que le calendrier n'est pas ouvert -->
-        <section class="countdown" id="countdown-container-welcome" style="display: none;">
-                <p class="countdown__title">Ouverture dans</p>
-                <div class="countdown__grid">
+        <!-- Compte à rebours : le script l'affiche tant que le calendrier n'est pas ouvert, puis il laisse la place à
+             l'invitation. L'heure d'ouverture porte son décalage : elle ne dépend pas du fuseau du navigateur. -->
+        <section class="countdown" id="countdown" data-open-at="2026-12-01T00:00:00+01:00" aria-labelledby="countdown-title" hidden>
+            <div class="countdown__sky" aria-hidden="true"></div>
+            <div class="countdown__body">
+                <p class="countdown__title" id="countdown-title">Les lumières se rallument dans</p>
+                <div class="countdown__grid" role="timer">
                     <div class="countdown__cell"><span class="countdown__num" id="days-welcome">00</span><span class="countdown__unit">jours</span></div>
                     <div class="countdown__cell"><span class="countdown__num" id="hours-welcome">00</span><span class="countdown__unit">heures</span></div>
                     <div class="countdown__cell"><span class="countdown__num" id="minutes-welcome">00</span><span class="countdown__unit">minutes</span></div>
                     <div class="countdown__cell"><span class="countdown__num" id="seconds-welcome">00</span><span class="countdown__unit">secondes</span></div>
                 </div>
+                <p class="countdown__quip" id="countdown-quip"></p>
                 <p class="countdown__date">Le <strong>1er décembre 2026</strong> à minuit, heure de Paris. Première énigme à 6 h.</p>
+            </div>
+            <div class="countdown__open" hidden>
+                <h2 class="countdown__open-title" id="countdown-open">C'est ouvert !</h2>
+                <p>Le village attend ses allumeurs et le Père Noël attend qu'on brise ses chaînes.</p>
+                <div class="hero__actions">
+                    <a class="btn btn--laiton" href="{% url 'signup' %}">Rallumer le village</a>
+                    <a class="btn btn--clair" href="{% url 'login' %}">Se connecter</a>
+                </div>
+            </div>
         </section>
 
         <section class="section" aria-labelledby="fonctionnement">
             <h2 id="fonctionnement">Comment ça marche</h2>
             <div class="steps">
                 <article>
+                    <span class="icone icone--lanterne" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="4.5" r="1.6"/><path d="M11.5 8h9l1.8 3.5H9.7z"/><path class="plein" d="M10.5 11.5h11v12h-11z"/><path d="M16 14.5c1.7 1.9 2.4 3 2.4 4.2a2.4 2.4 0 01-4.8 0c0-1.2.7-2.3 2.4-4.2z"/><path d="M12 23.5h8V27h-8z"/></svg></span>
                     <h3>Un village à rallumer</h3>
                     <p>Une devinette par jour, du 1er au 24 décembre, ouverte à minuit heure de Paris. Chaque bonne réponse rallume une lumière du village, dans l'ordre que vous voulez.</p>
                 </article>
                 <article>
+                    <span class="icone icone--cadenas" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M10.5 14V10.5a5.5 5.5 0 0111 0V14"/><rect class="plein" x="7.5" y="14" width="17" height="12.5" rx="2.5"/><circle cx="16" cy="19.5" r="1.7"/><path d="M16 21.2v2.6"/></svg></span>
                     <h3>Un Père Noël à libérer</h3>
                     <p>Huit énigmes, ouvertes à 6 h : le mardi 1er décembre, puis chaque mercredi et chaque samedi. Chacune brise un des verrous qui retiennent le Père Noël.</p>
                 </article>
                 <article>
+                    <span class="icone icone--etoile" aria-hidden="true"><svg viewBox="0 0 32 32"><path class="plein" d="M16 3c.9 7 4 10.6 12 11.6-8 1-11.1 4.6-12 11.6-.9-7-4-10.6-12-11.6 8-1 11.1-4.6 12-11.6z"/><path d="M25 22.5v5M22.5 25h5"/></svg></span>
                     <h3>Des points à gérer</h3>
                     <p>Les indices débloquent une situation, mais chaque indice et chaque mauvaise réponse réduisent les points gagnés. Le classement montre qui est en tête.</p>
                 </article>
@@ -82,7 +100,10 @@
 
         <section class="section" aria-labelledby="inscription">
             <div class="closing">
-                <h2 id="inscription">Prêt à jouer ?</h2>
+                <div class="closing__text">
+                    <h2 id="inscription">Prêt à rallumer le village ?</h2>
+                    <p>Le Père Noël compte sur vous.</p>
+                </div>
                 <div class="hero__actions">
                     <a class="btn" href="{% url 'signup' %}">Créer un compte</a>
                     <a class="btn btn--ghost" href="{% url 'login' %}">J'ai déjà un compte</a>
@@ -92,42 +113,12 @@
     </main>
 
     <footer class="site-footer">
-        <p>Calendrier de l'Avent 2026, entre proches.</p>
+        <div class="pied">
+            <p>Calendrier de l'Avent 2026, entre proches. Fait avec des guirlandes et du chocolat chaud.</p>
+            <button type="button" class="neige-toggle" id="neige-toggle" aria-pressed="true" hidden>Neige : oui</button>
+        </div>
     </footer>
 
-    <script>
-        // Compte à rebours jusqu'à l'ouverture, le 1er décembre 2026 à minuit, heure de Paris (donc pas d'heure locale du
-        // navigateur : le décalage est fixé dans la date, décembre = UTC+1).
-        (function () {
-            var container = document.getElementById('countdown-container-welcome');
-            var target = new Date('2026-12-01T00:00:00+01:00').getTime();
-            var ids = ['days', 'hours', 'minutes', 'seconds'].map(function (k) {
-                return document.getElementById(k + '-welcome');
-            });
-            var timer;
-
-            function pad(n) { return String(n).padStart(2, '0'); }
-
-            function update() {
-                var distance = target - Date.now();
-                if (distance < 0) {
-                    container.style.display = 'none';
-                    clearInterval(timer);
-                    return;
-                }
-                container.style.display = 'grid';
-                var values = [
-                    Math.floor(distance / 86400000),
-                    Math.floor(distance % 86400000 / 3600000),
-                    Math.floor(distance % 3600000 / 60000),
-                    Math.floor(distance % 60000 / 1000)
-                ];
-                ids.forEach(function (el, i) { if (el) el.textContent = pad(values[i]); });
-            }
-
-            update();
-            timer = setInterval(update, 1000);
-        })();
-    </script>
+    <script src="{% static 'js/accueil.js' %}" defer></script>
 </body>
 </html>
