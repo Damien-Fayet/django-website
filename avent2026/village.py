@@ -112,4 +112,7 @@ def village_state(lit):
         "next_threshold": next_level[0] if next_level else None,
         "next_title": next_level[1] if next_level else None,
         "progress_pct": progress,
+        # Les paliers en une rangée d'ampoules : franchi, en cours, à venir.
+        "levels": [{"n": n, "title": title, "state": "done" if n < level + 1 else "now" if n == level + 1 else "todo"}
+                   for n, (_threshold, title, *_rest) in enumerate(LEVELS, start=1)],
     }

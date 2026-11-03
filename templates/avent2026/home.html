@@ -6,17 +6,20 @@
 {% if prologue %}<aside class="note"><h2>Prologue</h2><p>{{ prologue }}</p></aside>{% endif %}
 {% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
-<section class="status" aria-label="Ta progression">
+<section class="status nuit avec-guirlande" aria-label="Ta progression">
+  <div class="ciel" aria-hidden="true"></div>
   <dl class="status__scores">
-    <div><dt>Étapes franchies</dt><dd>{{ village.lit }} <small>sur {{ village.total }}</small></dd></div>
+    <div><svg class="ic" aria-hidden="true"><use href="#ic-etoile"/></svg><dt>Étapes franchies</dt><dd><span data-compte="{{ village.lit }}">{{ village.lit }}</span> <small>sur {{ village.total }}</small></dd></div>
     {% for c in cartes %}
-    <div><dt>{{ c.name }}</dt><dd>{{ c.solved }} <small>sur {{ c.total }}</small></dd>
+    <div><svg class="ic" aria-hidden="true"><use href="#ic-{% if c.kind == 'enigme' %}cadenas{% else %}lanterne{% endif %}"/></svg><dt>{{ c.name }}</dt><dd><span data-compte="{{ c.solved }}">{{ c.solved }}</span> <small>sur {{ c.total }}</small></dd>
       <dd class="status__count">{% if c.kind == "enigme" %}{{ scores.enigme }}{% else %}{{ scores.devinette }}{% endif %} points</dd></div>
     {% endfor %}
-    <div><dt>Total</dt><dd>{{ scores.total }} <small>points</small></dd></div>
+    <div><svg class="ic" aria-hidden="true"><use href="#ic-coupe"/></svg><dt>Total</dt><dd><span data-compte="{{ scores.total }}">{{ scores.total }}</span> <small>points</small></dd></div>
   </dl>
   <div class="status__level">
     <p>Palier {{ village.level }} sur {{ village.max_level }}, <strong>{{ village.title }}</strong></p>
+    {# Une ampoule par palier : allumée si franchi, qui pulse si en cours. Le texte ci-dessus dit la même chose. #}
+    <ol class="paliers" aria-hidden="true">{% for l in village.levels %}<li class="palier palier--{{ l.state }}" title="Palier {{ l.n }} : {{ l.title }}"></li>{% endfor %}</ol>
     <div class="meter" role="progressbar" aria-label="Progression vers le prochain palier"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ village.progress_pct }}"><span style="width:{{ village.progress_pct }}%"></span></div>
     {% if village.next_title %}<p class="status__next">Prochain palier : {{ village.next_title }}, à {{ village.next_threshold }} étapes.</p>

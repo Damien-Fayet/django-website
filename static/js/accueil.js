@@ -68,31 +68,11 @@
     if (!fini) minuteur = setInterval(maj, 1000);
   }
 
-  // ---- Étincelles au clic (compte à rebours et diptyque) --------------------------------------------------------
-  var COULEURS = ["#d9a441", "#ffe6a8", "#ff6b78", "#52c79b", "#ffffff"];
-
-  var etincelles = function (x, y) {
-    for (var i = 0; i < 12; i++) {
-      var e = document.createElement("span");
-      e.className = "etincelle";
-      e.style.left = x + "px";
-      e.style.top = y + "px";
-      e.style.background = COULEURS[i % COULEURS.length];
-      document.body.appendChild(e);
-      var angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
-      var distance = 40 + Math.random() * 60;
-      var anim = e.animate([
-        { transform: "translate(0, 0) scale(.4) rotate(0deg)", opacity: 1 },
-        { transform: "translate(" + Math.cos(angle) * distance + "px, " + (Math.sin(angle) * distance + 24) + "px) scale(1.1) rotate(" + (Math.random() * 180) + "deg)", opacity: 0 }
-      ], { duration: 700 + Math.random() * 300, easing: "cubic-bezier(.2,.7,.3,1)" });
-      anim.onfinish = (function (el) { return function () { el.remove(); }; })(e);
-    }
-  };
-
-  if (!calme && document.body.animate) {
+  // ---- Étincelles au clic (compte à rebours et diptyque ; la gerbe elle-même est dans etincelles.js) ---------------
+  if (!calme) {
     document.addEventListener("pointerdown", function (event) {
       if (!event.target.closest(".countdown, .diptyque__cadre")) return;
-      etincelles(event.clientX, event.clientY);
+      if (window.aventEtincelles) window.aventEtincelles(event.clientX, event.clientY);
       var cadre = event.target.closest(".diptyque__cadre");
       if (cadre) {  // la chaîne se secoue aussi au toucher
         cadre.classList.remove("est-secoue");
