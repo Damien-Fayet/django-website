@@ -68,11 +68,12 @@
 
   <div class="puzzle__aside" id="resultat">
     {% include "avent2026/_messages.html" %}
-    <section class="aside-block" aria-labelledby="reponse">
-      <h2 id="reponse">Réponse</h2>
+    <section class="aside-block nuit avec-guirlande{% if solved %} aside-block--resolu{% endif %}" aria-labelledby="reponse">
+      <div class="ciel" aria-hidden="true"></div>
+      <h2 id="reponse"><svg class="ic" aria-hidden="true"><use href="#ic-etoile"/></svg>Réponse</h2>
       {% if solved %}
-        <p class="answer-solved">Résolue : <b>+{{ attempt.points }}</b> points.</p>
-        {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>{% endif %}
+        <p class="answer-solved"><svg class="ic ic--grand" aria-hidden="true"><use href="#ic-coche"/></svg><span>Résolue : <b>+{{ attempt.points }}</b> points.</span></p>
+        {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span class="bonus__label"><svg class="ic" aria-hidden="true"><use href="#ic-{% if label == 'Sans indice' %}ampoule{% elif label == 'Sans faute' %}coche{% else %}medaille{% endif %}"/></svg>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>{% endif %}
         <ul class="after">
           {% if story %}<li><a href="#histoire">Relire le fragment d'histoire</a></li>{% endif %}
           {% if following %}
@@ -83,23 +84,24 @@
         </ul>
       {% else %}
         <p class="points">Vaut actuellement <b>{{ current_points }}</b> points{% if not competitive %} sur {{ max_points }}{% endif %}, {{ errors }} erreur{{ errors|pluralize }}.</p>
-        {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>
+        {% if bonuses %}<ul class="bonus">{% for label, points in bonuses %}<li><span class="bonus__label"><svg class="ic" aria-hidden="true"><use href="#ic-{% if label == 'Sans indice' %}ampoule{% elif label == 'Sans faute' %}coche{% else %}medaille{% endif %}"/></svg>{{ label }}</span><b>+{{ points }}</b></li>{% endfor %}</ul>
         <p class="muted bonus-note">Bonus déjà inclus, à perdre si tu te trompes ou prends un indice.{% if podium_open %} Le podium se joue à la première bonne réponse.{% endif %}</p>{% endif %}
         <form method="post" action="{% url 'avent2026:answer' puzzle.id %}" class="answer">{% csrf_token %}
           <label for="answer">Ta réponse</label>
           <input class="input" id="answer" type="text" name="answer" autocomplete="off" autocapitalize="none" enterkeyhint="send" required>
-          <button class="btn" type="submit">Valider</button>
+          <button class="btn" type="submit"><svg class="ic" aria-hidden="true"><use href="#ic-etoile"/></svg>Valider</button>
         </form>
       {% endif %}
     </section>
 
-    <section class="aside-block" aria-labelledby="indices">
-      <h2 id="indices">Indices</h2>
-      {% for h in revealed_hints %}<p class="hint"><small>Indice {{ h.number }}</small>{{ h.text|safe }}</p>{% endfor %}
+    <section class="aside-block nuit" aria-labelledby="indices">
+      <div class="ciel" aria-hidden="true"></div>
+      <h2 id="indices"><svg class="ic" aria-hidden="true"><use href="#ic-ampoule"/></svg>Indices</h2>
+      {% for h in revealed_hints %}<p class="hint"><small><svg class="ic" aria-hidden="true"><use href="#ic-ampoule"/></svg>Indice {{ h.number }}</small>{{ h.text|safe }}</p>{% endfor %}
       {% if not solved and next_hint %}
         <form method="post" action="{% url 'avent2026:hint' puzzle.id %}" class="hint-form"
               data-confirm="Révéler l'indice {{ next_hint.number }} ? Cela coûte {{ next_hint.display_cost }} points{% if competitive and not revealed_hints %} et fait perdre le bonus « sans indice »{% endif %}.">{% csrf_token %}
-          <button class="btn btn--ghost btn--block" type="submit" aria-describedby="indice-cout">Révéler l'indice {{ next_hint.number }}</button>
+          <button class="btn btn--ghost btn--block" type="submit" aria-describedby="indice-cout"><svg class="ic" aria-hidden="true"><use href="#ic-ampoule"/></svg>Révéler l'indice {{ next_hint.number }}</button>
           <p class="help" id="indice-cout">Coût : −{{ next_hint.display_cost }} pts{% if competitive and not revealed_hints %}, bonus « sans indice » perdu{% endif %}.</p>
         </form>
       {% elif not hint_count %}<p class="muted" style="margin:0">Pas d'indice pour celle-ci.</p>
@@ -108,8 +110,8 @@
     </section>
 
     {% if competitive and podium %}
-    <section class="aside-block" aria-labelledby="podium">
-      <h2 id="podium">Podium</h2>
+    <section class="aside-block nuit" aria-labelledby="podium">
+      <h2 id="podium"><svg class="ic" aria-hidden="true"><use href="#ic-coupe"/></svg>Podium</h2>
       {% timezone "Europe/Paris" %}
       <ol class="rank">{% for place, name, when in podium %}<li{% if name == request.user.username %} class="me"{% endif %}><span>{{ name }}</span><b>{{ when|date:"j M, G:i" }}</b></li>{% endfor %}</ol>
       {% endtimezone %}

@@ -40,7 +40,7 @@
                                autocomplete="current-password" required>
                         <button type="button" class="peek" data-peek="id_password" aria-controls="id_password" aria-pressed="false" hidden>Afficher</button>
                     </div>
-                    <p class="help">Mot de passe oublié ? Demande à Damien, il pourra le réinitialiser.</p>
+                    <p class="help">Mot de passe oublié ? Demande à Damien, il pourra le réinitialiser : {% include "_contact.html" %}.</p>
                 </div>
                 <button type="submit" class="btn btn--block">Se connecter</button>
             </form>
@@ -50,7 +50,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>Calendrier de l'Avent 2026, entre proches.</p>
+        <p>Calendrier de l'Avent 2026, entre proches. Une question, un souci ? {% include "_contact.html" %}</p>
     </footer>
     <script src="{% static 'js/peek-password.js' %}" defer></script>
 </body>

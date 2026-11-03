@@ -5,13 +5,6 @@
    ni neige ni étincelles sinon.
    ========================================================================== */
 
-:root {
-  --ciel-haut: #0b1330;
-  --ciel-bas: #2c3768;
-  --or-clair: #ffe6a8;
-  --icone-etoile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23d9a441' d='M8 0c.6 4.6 2.8 7.4 8 8-5.2.6-7.4 3.4-8 8-.6-4.6-2.8-7.4-8-8 5.2-.6 7.4-3.4 8-8z'/%3E%3C/svg%3E");
-}
-
 /* ---- Haut de page --------------------------------------------------------- */
 .eyebrow {
   display: inline-flex; align-items: center; gap: .5rem; margin: 0 0 1rem;
@@ -28,12 +21,6 @@
 .fete .hero__actions .btn { transition: transform .15s, background-color .15s, border-color .15s, color .15s; }
 .fete .hero__actions .btn:hover { transform: translateY(-2px); }
 
-/* Étincelles lancées au clic (voir accueil.js) */
-.etincelle {
-  position: fixed; z-index: 40; width: 12px; height: 12px; margin: -6px 0 0 -6px; pointer-events: none;
-  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-}
-
 /* La chaîne du diptyque se secoue quand on la touche */
 .diptyque__cadre { cursor: pointer; }
 @keyframes secousse {
@@ -45,52 +32,13 @@
   80% { transform: translate(-1px, 0) rotate(-.4deg); }
 }
 
-/* ---- Compte à rebours : un ciel étoilé -------------------------------------- */
+/* ---- Compte à rebours : un ciel étoilé (briques partagées : ciel.css) ------------------ */
 .countdown {
-  position: relative; isolation: isolate; overflow: hidden; margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
   padding: clamp(2.25rem, 5vw, 3.25rem) 1.25rem clamp(1.5rem, 4vw, 2.25rem); border-radius: 16px; text-align: center;
   background: linear-gradient(180deg, var(--ciel-haut) 0%, #1a2352 62%, var(--ciel-bas) 100%); color: #e8edf3;
 }
 .countdown[hidden], .countdown [hidden] { display: none; }
-
-/* Guirlande en haut du ciel */
-.countdown::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: 1; height: 18px; pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='18' viewBox='0 0 64 18'%3E%3Cpath d='M0 1Q32 11 64 1' fill='none' stroke='%238593a0'/%3E%3Cg fill='%238593a0'%3E%3Cpath d='M14.8 4.4h2.4l.5 1.8h-3.4z'/%3E%3Cpath d='M30.8 5.7h2.4l.5 1.8h-3.4z'/%3E%3Cpath d='M46.8 4.4h2.4l.5 1.8h-3.4z'/%3E%3C/g%3E%3Cellipse cx='16' cy='9' rx='2.3' ry='3' fill='%23ff6b78'/%3E%3Cellipse cx='32' cy='10.3' rx='2.3' ry='3' fill='%23ffd067'/%3E%3Cellipse cx='48' cy='9' rx='2.3' ry='3' fill='%2352c79b'/%3E%3C/svg%3E") repeat-x left top;
-}
-
-/* Trois couches d'étoiles ; deux d'entre elles scintillent à des rythmes différents */
-.countdown__sky, .countdown__sky::before, .countdown__sky::after { position: absolute; inset: 0; z-index: -1; pointer-events: none; content: ""; }
-.countdown__sky {
-  background:
-    radial-gradient(1.4px 1.4px at 12% 22%, #fff, transparent),
-    radial-gradient(1px 1px at 31% 64%, #fff, transparent),
-    radial-gradient(1.6px 1.6px at 47% 14%, #fff, transparent),
-    radial-gradient(1px 1px at 63% 78%, #fff, transparent),
-    radial-gradient(1.4px 1.4px at 78% 30%, #fff, transparent),
-    radial-gradient(1px 1px at 91% 58%, #fff, transparent),
-    radial-gradient(1px 1px at 5% 80%, #fff, transparent),
-    radial-gradient(1.2px 1.2px at 86% 90%, #fff, transparent);
-  background-repeat: no-repeat;
-}
-.countdown__sky::before {
-  background:
-    radial-gradient(2px 2px at 22% 40%, var(--or-clair), transparent),
-    radial-gradient(2px 2px at 54% 52%, #fff, transparent),
-    radial-gradient(2.4px 2.4px at 72% 16%, var(--or-clair), transparent),
-    radial-gradient(1.8px 1.8px at 95% 24%, #fff, transparent),
-    radial-gradient(1.8px 1.8px at 38% 88%, #fff, transparent);
-  background-repeat: no-repeat;
-}
-.countdown__sky::after {
-  background:
-    radial-gradient(2.2px 2.2px at 8% 52%, #fff, transparent),
-    radial-gradient(2px 2px at 40% 30%, var(--or-clair), transparent),
-    radial-gradient(2.2px 2.2px at 66% 62%, #fff, transparent),
-    radial-gradient(2px 2px at 84% 44%, var(--or-clair), transparent),
-    radial-gradient(1.8px 1.8px at 18% 12%, #fff, transparent);
-  background-repeat: no-repeat;
-}
 
 .countdown__title {
   display: inline-flex; align-items: center; gap: .6rem; margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--or-clair);
@@ -170,10 +118,6 @@
 
 /* ---- Mouvements ---------------------------------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes scintille { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
-  .countdown__sky::before { animation: scintille 3.1s ease-in-out infinite; }
-  .countdown__sky::after { animation: scintille 4.7s ease-in-out -1.6s infinite; }
-
   @keyframes tic { from { opacity: 0; transform: translateY(-40%) scale(.96); } to { opacity: 1; transform: none; } }
   .countdown__num.est-change { animation: tic .35s ease-out; }
 

@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     {% include "_head.html" %}
+    <link rel="stylesheet" href="{% static 'css/ciel.css' %}">
     <link rel="stylesheet" href="{% static 'css/accueil.css' %}">
     <title>Avent 2026, calendrier de l'Avent</title>
 </head>
@@ -54,8 +55,8 @@
 
         <!-- Compte à rebours : le script l'affiche tant que le calendrier n'est pas ouvert, puis il laisse la place à
              l'invitation. L'heure d'ouverture porte son décalage : elle ne dépend pas du fuseau du navigateur. -->
-        <section class="countdown" id="countdown" data-open-at="2026-12-01T00:00:00+01:00" aria-labelledby="countdown-title" hidden>
-            <div class="countdown__sky" aria-hidden="true"></div>
+        <section class="countdown nuit avec-guirlande" id="countdown" data-open-at="2026-12-01T00:00:00+01:00" aria-labelledby="countdown-title" hidden>
+            <div class="ciel" aria-hidden="true"></div>
             <div class="countdown__body">
                 <p class="countdown__title" id="countdown-title">Les lumières se rallument dans</p>
                 <div class="countdown__grid" role="timer">
@@ -114,11 +115,12 @@
 
     <footer class="site-footer">
         <div class="pied">
-            <p>Calendrier de l'Avent 2026, entre proches. Fait avec des guirlandes et du chocolat chaud.</p>
+            <p>Calendrier de l'Avent 2026, entre proches. Fait avec des guirlandes et du chocolat chaud.<br>Une question, un souci ? {% include "_contact.html" %}</p>
             <button type="button" class="neige-toggle" id="neige-toggle" aria-pressed="true" hidden>Neige : oui</button>
         </div>
     </footer>
 
+    <script src="{% static 'js/etincelles.js' %}" defer></script>
     <script src="{% static 'js/accueil.js' %}" defer></script>
 </body>
 </html>

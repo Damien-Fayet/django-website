@@ -956,7 +956,77 @@ class AuthPagesTests(TestCase):
         self.client.force_login(user)
         self.assertNotContains(self.client.get(reverse("avent2026:home")), "accueil.css")
 
+    def test_contact_address_is_in_every_footer(self):
+        mail = 'href="mailto:contact-avent@damienfayet.com"'
+        for url in ("/", reverse("login"), reverse("signup")):
+            with self.subTest(url=url):
+                self.assertContains(self.client.get(url), mail)
+        self.client.force_login(User.objects.create_user("alice", password="pw"))
+        self.assertContains(self.client.get(reverse("avent2026:home")), mail)
+        self.assertContains(self.client.get(reverse("avent2026:leaderboard")), mail)
+
+    def test_festive_assets_exist(self):
+        from django.contrib.staticfiles import finders
+        for path in ("css/ciel.css", "js/etincelles.js", "avent2026/js/fete.js"):
+            self.assertIsNotNone(finders.find(path), path)
+
     def test_pages_have_a_description_and_an_icon(self):
         r = self.client.get("/")
         self.assertContains(r, '<meta name="description"')
         self.assertContains(r, 'rel="icon"')
+
+
+class FesteTests(TestCase):
+    """Progression de l'accueil, réponse et indices : les dessins et les données dont les scripts ont besoin."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.client.force_login(self.user)
+        self.e1 = Puzzle.objects.create(kind="enigme", day=1, title="E1", text="?", answers="a")
+        Hint.objects.create(puzzle=self.e1, number=1, text="un indice")
+        self.d1 = Puzzle.objects.create(kind="devinette", day=1, title="D1", text="?", answers="b")
+
+    def test_levels_are_a_row_of_bulbs_done_now_todo(self):
+        levels = village.village_state(11)["levels"]  # palier 3 sur 6
+        self.assertEqual([lv["state"] for lv in levels], ["done", "done", "now", "todo", "todo", "todo"])
+        self.assertEqual(village.village_state(0)["levels"][0]["state"], "now")
+        self.assertEqual(village.village_state(10 ** 6)["levels"][-1]["state"], "now")
+
+    def test_home_progress_panel_has_counters_bulbs_and_icons(self):
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "b"})
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertContains(r, 'data-compte="1"')
+        self.assertContains(r, "palier palier--now", count=1)
+        self.assertContains(r, "palier--todo", count=5)
+        self.assertContains(r, 'class="status nuit avec-guirlande"')
+        self.assertContains(r, 'id="ic-cadenas"')  # le sprite est dans la page
+        self.assertContains(r, 'src="/static/avent2026/js/fete.js"')
+
+    def test_puzzle_blocks_have_icons_and_the_ciel(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+        for icon in ("#ic-etoile", "#ic-ampoule", "#ic-medaille"):
+            self.assertContains(r, f'href="{icon}"')
+        self.assertContains(r, 'class="ciel"')
+
+    def test_bonus_icons_follow_the_bonus(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+        self.assertContains(r, 'href="#ic-medaille"/></svg>Premier à briser ce verrou')
+        self.assertContains(r, 'href="#ic-ampoule"/></svg>Sans indice')
+        self.assertContains(r, 'href="#ic-coche"/></svg>Sans faute')
+
+    def test_messages_keep_their_type_for_the_script(self):
+        with at(1):
+            self.client.post(reverse("avent2026:answer", args=[self.e1.id]), {"answer": "zzz"})
+            wrong = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+            self.client.post(reverse("avent2026:hint", args=[self.e1.id]))
+            hinted = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+            self.client.post(reverse("avent2026:answer", args=[self.e1.id]), {"answer": "a"})
+            solved = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
+        self.assertContains(wrong, "notice--error")
+        self.assertContains(hinted, "notice--info")
+        self.assertContains(hinted, "un indice")
+        self.assertContains(solved, "notice--success")
+        self.assertContains(solved, "aside-block--resolu")

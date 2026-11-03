@@ -3,9 +3,11 @@
 <head>
   {% include "_head.html" %}
   <title>{% block title %}Avent 2026{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/ciel.css' %}">
   <link rel="stylesheet" href="{% static 'avent2026/css/avent.css' %}">
 </head>
 <body>
+  {% include "avent2026/_sprite.html" %}
   <a class="skip-link" href="#contenu">Aller au contenu</a>
   <header class="site-header">
     <div class="site-header__inner">
@@ -33,5 +35,10 @@
     {# Le site est en français : sans cela, un navigateur en anglais affiche « Tuesday 1 December ». #}
     {% language "fr" %}{% block content %}{% endblock %}{% endlanguage %}
   </main>
+  <footer class="site-footer">
+    <p>Calendrier de l'Avent 2026, entre proches. Une question, un souci ? {% include "_contact.html" %}</p>
+  </footer>
+  <script src="{% static 'js/etincelles.js' %}" defer></script>
+  <script src="{% static 'avent2026/js/fete.js' %}" defer></script>
 </body>
 </html>
