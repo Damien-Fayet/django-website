@@ -208,25 +208,7 @@ a:hover { color: var(--sapin-fonce); }
 .diptyque figcaption p:last-child { text-align: right; }
 .diptyque figcaption strong { display: block; font-weight: 600; color: var(--encre); }
 
-.countdown {
-  display: grid; gap: 1rem 2rem; align-items: center; margin-bottom: clamp(2rem, 5vw, 3.5rem);
-  padding: 1.25rem 1.5rem; border-radius: var(--r-panel); background: var(--nuit); color: #e8edf3;
-}
-.countdown__title { margin: 0; font-size: .9375rem; color: #a9b6c4; }
-@media (min-width: 52rem) {
-  .countdown { grid-template-columns: auto minmax(0, 26rem) 1fr; }
-  .countdown__date { margin: 0 !important; padding: 0 !important; border: 0 !important; text-align: right; }
-}
-.countdown__grid { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; }
-.countdown__cell { padding: 0 .5rem 0 .875rem; border-left: 1px solid rgba(255, 255, 255, .16); }
-.countdown__cell:first-child { padding-left: 0; border-left: 0; }
-.countdown__num {
-  display: block; margin: 0; font-size: clamp(1.5rem, 1.1rem + 1.8vw, 2.25rem); font-weight: 300; line-height: 1;
-  font-variant-numeric: tabular-nums; color: #fff;
-}
-.countdown__unit { display: block; margin: .35rem 0 0; font-size: .8125rem; color: #a9b6c4; }
-.countdown__date { margin: .25rem 0 0; padding-top: .75rem; border-top: 1px solid rgba(255, 255, 255, .16); font-size: .9375rem; color: #c9d3dd; }
-.countdown__date strong { font-weight: 500; color: var(--laiton); }
+/* Compte à rebours et touches de fête de l'accueil public : static/css/accueil.css */
 
 .section { padding: clamp(2rem, 5vw, 3.5rem) 0; border-top: 1px solid var(--filet); }
 .section h2 { margin-bottom: 1.75rem; }

@@ -1,0 +1,187 @@
+/* ==========================================================================
+   Accueil public : touches de fête (neige, étoiles, guirlande qui clignote, compte à rebours sous les étoiles).
+   Chargée par templates/modern_welcome.html seulement : le jeu reste sobre.
+   Les mouvements sont réservés à `prefers-reduced-motion: no-preference` ; le script (static/js/accueil.js) ne lance
+   ni neige ni étincelles sinon.
+   ========================================================================== */
+
+:root {
+  --ciel-haut: #0b1330;
+  --ciel-bas: #2c3768;
+  --or-clair: #ffe6a8;
+  --icone-etoile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23d9a441' d='M8 0c.6 4.6 2.8 7.4 8 8-5.2.6-7.4 3.4-8 8-.6-4.6-2.8-7.4-8-8 5.2-.6 7.4-3.4 8-8z'/%3E%3C/svg%3E");
+}
+
+/* ---- Haut de page --------------------------------------------------------- */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .5rem; margin: 0 0 1rem;
+  font-size: .8125rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sapin);
+}
+.eyebrow::before { content: ""; width: .9rem; height: .9rem; background: var(--icone-etoile) center / contain no-repeat; }
+
+/* Soulignement dessiné à la main sous « libérez le Père Noël » */
+.soulign {
+  padding-bottom: .1em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='8' viewBox='0 0 24 8'%3E%3Cpath d='M0 4Q6 0 12 4T24 4' fill='none' stroke='%23d9a441' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x 0 100% / 24px 8px;
+}
+
+.fete .hero__actions .btn { transition: transform .15s, background-color .15s, border-color .15s, color .15s; }
+.fete .hero__actions .btn:hover { transform: translateY(-2px); }
+
+/* Étincelles lancées au clic (voir accueil.js) */
+.etincelle {
+  position: fixed; z-index: 40; width: 12px; height: 12px; margin: -6px 0 0 -6px; pointer-events: none;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+/* La chaîne du diptyque se secoue quand on la touche */
+.diptyque__cadre { cursor: pointer; }
+@keyframes secousse {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  15% { transform: translate(-2px, 1px) rotate(-1.2deg); }
+  30% { transform: translate(3px, -1px) rotate(1.4deg); }
+  45% { transform: translate(-3px, 1px) rotate(-1deg); }
+  60% { transform: translate(2px, 0) rotate(.8deg); }
+  80% { transform: translate(-1px, 0) rotate(-.4deg); }
+}
+
+/* ---- Compte à rebours : un ciel étoilé -------------------------------------- */
+.countdown {
+  position: relative; isolation: isolate; overflow: hidden; margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  padding: clamp(2.25rem, 5vw, 3.25rem) 1.25rem clamp(1.5rem, 4vw, 2.25rem); border-radius: 16px; text-align: center;
+  background: linear-gradient(180deg, var(--ciel-haut) 0%, #1a2352 62%, var(--ciel-bas) 100%); color: #e8edf3;
+}
+.countdown[hidden], .countdown [hidden] { display: none; }
+
+/* Guirlande en haut du ciel */
+.countdown::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: 1; height: 18px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='18' viewBox='0 0 64 18'%3E%3Cpath d='M0 1Q32 11 64 1' fill='none' stroke='%238593a0'/%3E%3Cg fill='%238593a0'%3E%3Cpath d='M14.8 4.4h2.4l.5 1.8h-3.4z'/%3E%3Cpath d='M30.8 5.7h2.4l.5 1.8h-3.4z'/%3E%3Cpath d='M46.8 4.4h2.4l.5 1.8h-3.4z'/%3E%3C/g%3E%3Cellipse cx='16' cy='9' rx='2.3' ry='3' fill='%23ff6b78'/%3E%3Cellipse cx='32' cy='10.3' rx='2.3' ry='3' fill='%23ffd067'/%3E%3Cellipse cx='48' cy='9' rx='2.3' ry='3' fill='%2352c79b'/%3E%3C/svg%3E") repeat-x left top;
+}
+
+/* Trois couches d'étoiles ; deux d'entre elles scintillent à des rythmes différents */
+.countdown__sky, .countdown__sky::before, .countdown__sky::after { position: absolute; inset: 0; z-index: -1; pointer-events: none; content: ""; }
+.countdown__sky {
+  background:
+    radial-gradient(1.4px 1.4px at 12% 22%, #fff, transparent),
+    radial-gradient(1px 1px at 31% 64%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 47% 14%, #fff, transparent),
+    radial-gradient(1px 1px at 63% 78%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 78% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 91% 58%, #fff, transparent),
+    radial-gradient(1px 1px at 5% 80%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 86% 90%, #fff, transparent);
+  background-repeat: no-repeat;
+}
+.countdown__sky::before {
+  background:
+    radial-gradient(2px 2px at 22% 40%, var(--or-clair), transparent),
+    radial-gradient(2px 2px at 54% 52%, #fff, transparent),
+    radial-gradient(2.4px 2.4px at 72% 16%, var(--or-clair), transparent),
+    radial-gradient(1.8px 1.8px at 95% 24%, #fff, transparent),
+    radial-gradient(1.8px 1.8px at 38% 88%, #fff, transparent);
+  background-repeat: no-repeat;
+}
+.countdown__sky::after {
+  background:
+    radial-gradient(2.2px 2.2px at 8% 52%, #fff, transparent),
+    radial-gradient(2px 2px at 40% 30%, var(--or-clair), transparent),
+    radial-gradient(2.2px 2.2px at 66% 62%, #fff, transparent),
+    radial-gradient(2px 2px at 84% 44%, var(--or-clair), transparent),
+    radial-gradient(1.8px 1.8px at 18% 12%, #fff, transparent);
+  background-repeat: no-repeat;
+}
+
+.countdown__title {
+  display: inline-flex; align-items: center; gap: .6rem; margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--or-clair);
+}
+.countdown__title::before, .countdown__title::after {
+  content: ""; width: .85rem; height: .85rem; background: var(--icone-etoile) center / contain no-repeat;
+}
+
+.countdown__grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; max-width: 34rem; margin: 1.4rem auto 1.1rem;
+}
+.countdown__cell {
+  padding: .9rem .25rem .7rem; border: 1px solid rgba(255, 230, 168, .28); border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
+  box-shadow: 0 6px 18px rgba(4, 8, 24, .35), inset 0 -1px 0 rgba(0, 0, 0, .3);
+}
+.countdown__num {
+  display: block; font-size: clamp(2rem, 1.2rem + 4.2vw, 3.5rem); font-weight: 300; line-height: 1; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 0 22px rgba(255, 208, 103, .55);
+}
+.countdown__unit { display: block; margin-top: .4rem; font-size: .8125rem; color: #b6c3d3; }
+.countdown__quip { max-width: 30rem; margin: 0 auto .9rem; font: italic 400 1.0625rem/1.5 var(--font-texte); color: #dfe6ee; }
+.countdown__date { margin: 0; font-size: .875rem; color: #a9b6c4; }
+.countdown__date strong { font-weight: 600; color: var(--laiton); }
+
+/* Ouverture : le compte à rebours laisse la place à une invitation */
+.countdown__open-title { margin: 0 0 .5rem; font-size: clamp(1.75rem, 1.2rem + 2.6vw, 2.75rem); font-weight: 600; color: var(--or-clair); text-shadow: 0 0 24px rgba(255, 208, 103, .45); }
+.countdown__open p { margin: 0 0 1.25rem; font: 400 1.125rem/1.55 var(--font-texte); color: #dfe6ee; }
+.countdown__open .hero__actions { justify-content: center; margin-top: 0; }
+.btn--laiton { border-color: #f3d58a; background: var(--laiton); color: var(--nuit); }
+.btn--laiton:hover { border-color: #fff; background: #f0c569; color: var(--nuit); }
+.btn--clair { border-color: rgba(255, 255, 255, .6); background: transparent; color: #fff; }
+.btn--clair:hover { border-color: #fff; background: rgba(255, 255, 255, .14); color: #fff; }
+
+/* ---- Comment ça marche : trois cartes colorées ------------------------------ */
+.steps > * { border-top-width: 3px; }
+.steps > :nth-child(1) { border-top-color: var(--laiton); }
+.steps > :nth-child(2) { border-top-color: var(--baie); }
+.steps > :nth-child(3) { border-top-color: var(--sapin); }
+.icone {
+  display: grid; place-items: center; width: 3.25rem; height: 3.25rem; margin-bottom: .9rem; border-radius: 14px;
+  transition: transform .25s;
+}
+.icone svg { width: 1.9rem; height: 1.9rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.icone--lanterne { background: #faf0d8; color: #a8741a; }
+.icone--cadenas { background: var(--baie-teinte); color: var(--baie); }
+.icone--etoile { background: var(--sapin-teinte); color: var(--sapin); }
+.icone .plein { fill: currentColor; fill-opacity: .22; }
+.steps h3 { margin-bottom: .4rem; }
+
+/* ---- Invitation finale -------------------------------------------------------- */
+.closing {
+  position: relative; overflow: hidden; padding: clamp(1.5rem, 4vw, 2.25rem); border-radius: 16px;
+  background: var(--sapin-teinte); border: 1px solid #c6dcd3;
+}
+.closing__text p { margin: .35rem 0 0; color: var(--brume); }
+.closing::after {
+  content: ""; position: absolute; right: -1.2rem; top: -1.2rem; width: 5rem; height: 5rem; opacity: .22; pointer-events: none;
+  background: var(--icone-etoile) center / contain no-repeat;
+}
+
+/* ---- Pied de page et réglage de la neige -------------------------------------- */
+.site-footer .pied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; max-width: var(--page); margin: 0 auto; padding: 1.25rem 1rem; }
+.site-footer .pied p { margin: 0; padding: 0; }
+.neige-toggle {
+  min-height: 2.25rem; padding: 0 .9rem; border: 1px solid var(--filet); border-radius: 999px; background: var(--papier); cursor: pointer;
+  font: 500 .8125rem var(--font-ui); color: var(--brume);
+}
+.neige-toggle:hover { border-color: var(--brume); color: var(--encre); }
+.neige { position: fixed; inset: 0; z-index: 20; width: 100%; height: 100%; pointer-events: none; }
+
+/* ---- Apparition douce au défilement (posée par le script, hors écran seulement) ---- */
+.apparait { opacity: 0; transform: translateY(16px); transition: opacity .6s ease-out, transform .6s ease-out; }
+.apparait.est-la { opacity: 1; transform: none; }
+.steps > .apparait:nth-child(2) { transition-delay: .1s; }
+.steps > .apparait:nth-child(3) { transition-delay: .2s; }
+
+/* ---- Mouvements ---------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes scintille { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+  .countdown__sky::before { animation: scintille 3.1s ease-in-out infinite; }
+  .countdown__sky::after { animation: scintille 4.7s ease-in-out -1.6s infinite; }
+
+  @keyframes tic { from { opacity: 0; transform: translateY(-40%) scale(.96); } to { opacity: 1; transform: none; } }
+  .countdown__num.est-change { animation: tic .35s ease-out; }
+
+  @keyframes guirlande { from { opacity: .55; } to { opacity: 1; } }
+  .fete .site-header::after { animation: guirlande 2.6s ease-in-out infinite alternate; }
+  @keyframes etoile { 0%, 100% { transform: rotate(0) scale(1); } 50% { transform: rotate(18deg) scale(1.25); } }
+  .fete .brand::before { animation: etoile 3.2s ease-in-out infinite; }
+
+  .diptyque__cadre:hover .diptyque__chaine, .diptyque__cadre.est-secoue .diptyque__chaine { animation: secousse .55s ease-in-out; }
+  .steps > :hover .icone { transform: rotate(-7deg) scale(1.08); }
+}
