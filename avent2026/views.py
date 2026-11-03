@@ -78,7 +78,7 @@ def home(request):
         "cartes": cartes, "scores": scores, "to_play": to_play[:TO_PLAY_SHOWN],
         "to_play_more": max(0, len(to_play) - TO_PLAY_SHOWN), "next_unlock": next_unlock,
         "has_empty": any(step["state"] == "empty" for c in cartes for step in c["steps"]),
-        "village": village.village_state(scores["lit"]), "finale": finale,
+        "village": village.progression(scores["lit"]), "finale": finale,
         "prologue": village.PROLOGUE if show_prologue else "",
         "epilogue": village.EPILOGUE if finale else "",
     })
@@ -355,7 +355,7 @@ def journal(request):
     return render(request, "avent2026/journal.html", {
         "entries": [a.puzzle for a in solved], "prologue": village.PROLOGUE,
         "epilogue": village.EPILOGUE if _finished(request.user) else "",
-        "village": village.village_state(scores["lit"]),
+        "village": village.progression(scores["lit"]),
     })
 
 

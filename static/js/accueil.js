@@ -16,7 +16,7 @@
     var nombres = ["days", "hours", "minutes", "seconds"].map(function (k) { return document.getElementById(k + "-welcome"); });
     var phrase = document.getElementById("countdown-quip");
     var precedent = [];
-    var palier = null;
+    var phraseCourante = null;
     var minuteur = null;
     var fini = false;
 
@@ -61,7 +61,7 @@
       });
       precedent = valeurs;
       var etape = PHRASES.find(function (p) { return reste > p[0]; }) || PHRASES[PHRASES.length - 1];
-      if (phrase && etape !== palier) { palier = etape; phrase.textContent = etape[1]; }
+      if (phrase && etape !== phraseCourante) { phraseCourante = etape; phrase.textContent = etape[1]; }
     };
 
     maj();

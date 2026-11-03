@@ -377,20 +377,12 @@ class CartesPageTests(TestCase):
 
 
 class VillageTests(TestCase):
-    def test_thresholds_and_levels(self):
-        start = village.village_state(0)
-        self.assertEqual((start["level"], start["lit"], start["next_threshold"], start["progress_pct"]), (1, 0, 4, 0))
-        self.assertEqual(village.village_state(3)["level"], 1)
-        self.assertEqual(village.village_state(4)["level"], 2)
-        top = village.village_state(10 ** 6)  # plafonné au nombre d'étapes du jeu
-        self.assertEqual((top["lit"], top["level"], top["progress_pct"], top["next_threshold"]),
-                         (village.TOTAL, len(village.LEVELS), 100, None))
-
-    def test_last_level_reachable(self):
-        """Le dernier palier se franchit sans avoir tout résolu ; 24 devinettes + 8 énigmes = 32 étapes."""
-        self.assertEqual(village.TOTAL, 32)
-        self.assertLess(village.LEVELS[-1][0], village.TOTAL)
-        self.assertEqual(village.LEVELS, sorted(village.LEVELS))
+    def test_progression_is_capped_to_the_number_of_steps(self):
+        self.assertEqual(village.TOTAL, 32)  # 24 devinettes + 8 énigmes
+        self.assertEqual(village.progression(0), {"lit": 0, "total": 32, "pct": 0})
+        self.assertEqual(village.progression(8)["pct"], 25)
+        self.assertEqual(village.progression(10 ** 6), {"lit": 32, "total": 32, "pct": 100})
+        self.assertEqual(village.progression(None)["lit"], 0)
 
 
 class StoryTests(TestCase):
@@ -986,19 +978,14 @@ class FesteTests(TestCase):
         Hint.objects.create(puzzle=self.e1, number=1, text="un indice")
         self.d1 = Puzzle.objects.create(kind="devinette", day=1, title="D1", text="?", answers="b")
 
-    def test_levels_are_a_row_of_bulbs_done_now_todo(self):
-        levels = village.village_state(11)["levels"]  # palier 3 sur 6
-        self.assertEqual([lv["state"] for lv in levels], ["done", "done", "now", "todo", "todo", "todo"])
-        self.assertEqual(village.village_state(0)["levels"][0]["state"], "now")
-        self.assertEqual(village.village_state(10 ** 6)["levels"][-1]["state"], "now")
-
-    def test_home_progress_panel_has_counters_bulbs_and_icons(self):
+    def test_home_progress_panel_has_counters_gauge_and_icons(self):
         with at(1):
             self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "b"})
             r = self.client.get(reverse("avent2026:home"))
         self.assertContains(r, 'data-compte="1"')
-        self.assertContains(r, "palier palier--now", count=1)
-        self.assertContains(r, "palier--todo", count=5)
+        self.assertContains(r, 'aria-valuemax="32" aria-valuenow="1"')
+        self.assertContains(r, "3 %")  # 1 étape sur 32
+        self.assertNotContains(r, "alier")  # plus de paliers
         self.assertContains(r, 'class="status nuit avec-guirlande"')
         self.assertContains(r, 'id="ic-cadenas"')  # le sprite est dans la page
         self.assertContains(r, 'src="/static/avent2026/js/fete.js"')
