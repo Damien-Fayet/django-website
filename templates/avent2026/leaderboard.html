@@ -2,46 +2,92 @@
 {% load tz %}
 {% block title %}Classement{% endblock %}
 {% block content %}
-<div class="page-head">
-  <h1>Classement</h1>
-  {% if my_rank %}<p>Tu es {{ my_rank }}{% if my_rank == 1 %}er{% else %}e{% endif %} sur {{ players }} joueur{{ players|pluralize }}. <a href="#moi">Voir ma ligne</a></p>
-  {% elif request.user.is_staff %}<p>{{ players }} joueur{{ players|pluralize }} au classement. Les comptes staff n'y figurent pas.</p>
-  {% else %}<p>{{ players }} joueur{{ players|pluralize }} au classement. Résous un puzzle pour y entrer.</p>{% endif %}
-</div>
-
-<section class="titles-block" aria-labelledby="g-titres">
-  <h2 id="g-titres" class="visually-hidden">Titres</h2>
-  <dl class="titles">
-    <div><dt>Libérateur</dt><dd>{% if titles.liberateur %}{{ titles.liberateur.user__username }}{% else %}<span class="muted">Personne n'a encore libéré le Père Noël.</span>{% endif %}</dd></div>
-    <div><dt>Sans filet</dt><dd>{% if titles.sans_filet %}{{ titles.sans_filet|join:", " }}{% else %}<span class="muted">Aucun, pour l'instant.</span>{% endif %}</dd></div>
-  </dl>
-  <p class="muted titles__note">Le Libérateur est le premier à avoir brisé les 8 verrous ; « Sans filet » : les 8 verrous sans un seul indice. Les comptes de test (staff) ne comptent pas.</p>
+{# En-tête : le ciel de fête, ta place, et le podium du classement affiché (décor : la liste dessous dit la même chose). #}
+<section class="rang-hero nuit avec-guirlande" aria-labelledby="titre-classement">
+  <div class="ciel" aria-hidden="true"></div>
+  <div class="rang-hero__texte">
+    <h1 id="titre-classement">Classement{% if vue == "famille" %} famille{% endif %}</h1>
+    {% if my_place %}
+      <p class="rang-hero__moi">Tu es <b>{{ my_place }}{% if my_place == 1 %}er{% else %}e{% endif %}</b> sur {{ players }} joueur{{ players|pluralize }}.
+        <a href="#moi">Voir ma ligne</a></p>
+    {% elif request.user.is_staff %}
+      <p class="rang-hero__moi">{{ players }} joueur{{ players|pluralize }}. Les comptes staff n'apparaissent dans aucun classement.</p>
+    {% else %}
+      <p class="rang-hero__moi">{% if players %}{{ players }} joueur{{ players|pluralize }}. Résous un puzzle pour y entrer.{% else %}Personne encore : le podium t'attend.{% endif %}</p>
+    {% endif %}
+    <p class="rang-hero__haut-faits">{{ hauts_faits_mine }} haut{{ hauts_faits_mine|pluralize }}-fait{{ hauts_faits_mine|pluralize }} sur {{ hauts_faits_total }}. <a href="#hauts-faits">Voir les hauts-faits</a></p>
+  </div>
+  {% if podium %}
+  <ol class="podium" aria-hidden="true">
+    {% for r in podium %}
+    <li class="podium__place podium__place--{{ forloop.counter }}">
+      <svg class="ic ic--grand medaille--{{ r.place }}"><use href="#ic-{% if forloop.first %}coupe{% else %}medaille{% endif %}"/></svg>
+      <span class="podium__nom">{{ r.name }}</span>
+      <span class="podium__pts">{{ r.points }} pts</span>
+      <span class="podium__marche">{{ r.place }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
 </section>
 
-<div class="boards">
-  <section class="board" aria-labelledby="g-total">
-    <h2 id="g-total">Total</h2>
-    {% include "avent2026/_board.html" with rows=total anchor="moi" %}
-  </section>
-  <section class="board" aria-labelledby="g-enigmes">
-    <h2 id="g-enigmes">Énigmes</h2>
-    {% include "avent2026/_board.html" with rows=enigmes %}
-  </section>
-  <section class="board" aria-labelledby="g-devinettes">
-    <h2 id="g-devinettes">Devinettes</h2>
-    {% include "avent2026/_board.html" with rows=devinettes %}
-  </section>
-</div>
+<nav class="onglets" aria-label="Classements">
+  {% for key, label in vues %}<a href="?vue={{ key }}"{% if key == vue %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+
+{% if vue == "famille" %}<p class="rang-note">Classement réservé à la famille : les autres joueurs ne le voient pas, et n'y figurent pas.</p>{% endif %}
+<ol class="rang">
+  {% for r in board %}
+  <li class="rang__ligne{% if r.place <= 3 %} rang__ligne--p{{ r.place }}{% endif %}{% if r.uid == my_id %} rang__ligne--moi{% endif %}"{% if r.uid == my_id %} id="moi"{% endif %}>
+    <span class="rang__place">{% if r.place <= 3 %}<svg class="ic medaille--{{ r.place }}" aria-hidden="true"><use href="#ic-medaille"/></svg>{% endif %}<span{% if r.place <= 3 %} class="visually-hidden"{% endif %}>{{ r.place }}</span></span>
+    <span class="rang__nom">{{ r.name }}{% if r.uid == my_id %}<span class="me-tag">toi</span>{% endif %}
+      {% if r.badges %}<span class="rang__badges">{% for h in r.badges|slice:":6" %}<svg class="ic" role="img" aria-label="{{ h.name }}"><title>{{ h.name }}</title><use href="#ic-{{ h.icon }}"/></svg>{% endfor %}{% if r.badges|length > 6 %}<span class="rang__plus">+{{ r.badges|length|add:"-6" }}</span>{% endif %}</span>{% endif %}
+    </span>
+    <span class="rang__pts"><b>{{ r.points }}</b><small>{{ r.solved }} résolu{{ r.solved|pluralize }}</small></span>
+  </li>
+  {% empty %}
+  <li class="rang__vide">Personne encore dans ce classement.</li>
+  {% endfor %}
+</ol>
+
+<section class="titres" aria-labelledby="g-titres">
+  <h2 id="g-titres">Les titres de la cellule</h2>
+  <div class="titres__grille">
+    <div class="titre"><svg class="ic ic--grand" aria-hidden="true"><use href="#ic-cadenas"/></svg>
+      <div><h3>Libérateur</h3><p>{% if titles.liberateur %}<b>{{ titles.liberateur.user__username }}</b>{% else %}<span class="muted">Personne n'a encore libéré le Père Noël.</span>{% endif %}</p>
+        <p class="muted">Le premier à avoir brisé les 8 verrous.</p></div></div>
+    <div class="titre"><svg class="ic ic--grand" aria-hidden="true"><use href="#ic-ampoule"/></svg>
+      <div><h3>Sans filet</h3><p>{% if titles.sans_filet %}<b>{{ titles.sans_filet|join:", " }}</b>{% else %}<span class="muted">Aucun, pour l'instant.</span>{% endif %}</p>
+        <p class="muted">Les 8 verrous brisés sans un seul indice.</p></div></div>
+  </div>
+</section>
+
+<section class="hauts-faits" id="hauts-faits" aria-labelledby="g-hauts-faits">
+  <h2 id="g-hauts-faits">Hauts-faits</h2>
+  <p class="muted">De petits défis pour rire, décernés tout seuls. Tu en as <b>{{ hauts_faits_mine }}</b> sur {{ hauts_faits_total }}.</p>
+  <ul class="hf-grille">
+    {% for h in hauts_faits %}
+    <li class="hf{% if h.mine %} hf--mien{% endif %}">
+      <span class="hf__icone"><svg class="ic" aria-hidden="true"><use href="#ic-{{ h.icon }}"/></svg></span>
+      <div class="hf__texte">
+        <h3>{{ h.name }}{% if h.mine %} <span class="hf__tag">Décroché</span>{% endif %}</h3>
+        <p>{{ h.description }}</p>
+        <p class="hf__qui">{% if h.count %}{{ h.count }} joueur{{ h.count|pluralize }} : {{ h.earners|join:", " }}{% if h.more %} et {{ h.more }} autre{{ h.more|pluralize }}{% endif %}{% else %}Personne pour l'instant.{% endif %}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
 
 <section class="verrous" aria-labelledby="g-verrous">
   <h2 id="g-verrous">Les briseurs de verrous</h2>
-  <p class="muted">Les trois premiers à résoudre chaque énigme gagnent un bonus de podium.</p>
+  <p class="muted">Les trois premiers à résoudre chaque énigme gagnent un petit bonus de podium.</p>
   {% timezone "Europe/Paris" %}
   <ol class="verrou-list">
     {% for v in verrous %}
-    <li>
-      <h3>Verrou {{ v.step }}, {{ v.puzzle.title }}</h3>
-      <ol class="rank">{% for place, name, when in v.podium %}<li{% if name == me %} class="me"{% endif %}><span>{{ name }}{% if name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ when|date:"j M, G:i" }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
+    <li class="verrou">
+      <h3><svg class="ic" aria-hidden="true"><use href="#ic-cadenas"/></svg>Verrou {{ v.step }}, {{ v.puzzle.title }}</h3>
+      <ol class="rank">{% for place, name, when in v.podium %}<li{% if name == me %} class="me"{% endif %}><span><svg class="ic medaille--{{ place }}" aria-hidden="true"><use href="#ic-medaille"/></svg>{{ name }}{% if name == me %}<span class="me-tag">toi</span>{% endif %}</span><b>{{ when|date:"j M, G:i" }}</b></li>{% empty %}<li class="empty">Personne encore.</li>{% endfor %}</ol>
     </li>
     {% empty %}<li class="empty">Aucune énigme n'est encore sortie.</li>
     {% endfor %}

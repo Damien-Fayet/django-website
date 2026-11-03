@@ -13,9 +13,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.utils import client_ip
+from accounts.utils import client_ip, family_user_ids, is_family
 
-from . import competition, scoring, suivi, village
+from . import achievements, competition, scoring, suivi, village
 from .models import Attempt, Hint, HintReveal, Puzzle, Submission
 
 
@@ -170,7 +170,7 @@ def _puzzle_context(request, puzzle):
         h.display_cost = scoring.hint_cost(h)
     revealed = [h for h in hints if h.revealed]
     next_hint = next((h for h in hints if not h.revealed), None)
-    errors = attempt.errors if attempt else 0
+    tries = attempt.errors if attempt else 0  # mauvaises réponses : affichées, sans effet sur les points
     solved = bool(attempt and attempt.solved)
     # Course (énigmes) : bonus obtenus une fois résolue, sinon bonus en jeu si on résolvait maintenant.
     competitive = puzzle.kind in scoring.BONUS_KINDS
@@ -182,10 +182,10 @@ def _puzzle_context(request, puzzle):
     return {
         "puzzle": puzzle, "attempt": attempt, "solved": solved,
         "revealed_hints": revealed, "next_hint": next_hint, "hint_count": len(hints),
-        "errors": errors, "max_points": scoring.puzzle_base_points(puzzle),
-        "current_points": scoring.compute_points(puzzle, errors, revealed, rank),
+        "tries": tries, "max_points": scoring.puzzle_base_points(puzzle),
+        "current_points": scoring.compute_points(puzzle, revealed, rank),
         "competitive": competitive,
-        "bonuses": scoring.bonuses(puzzle, rank, errors, revealed) if competitive else [],
+        "bonuses": scoring.bonuses(puzzle, rank, revealed) if competitive else [],
         "podium": competition.podium(puzzle) if competitive else [],
         "podium_open": competition.next_rank(puzzle) <= len(scoring.PODIUM_BONUS) if competitive else False,
         "step": step, "steps": steps,
@@ -264,6 +264,7 @@ def answer(request, puzzle_id):
     puzzle = get_object_or_404(Puzzle, pk=puzzle_id)
     if not scoring.is_unlocked(puzzle, request.user):
         return _locked_response(request, puzzle.day, puzzle)
+    before = achievements.keys_for(request.user)
     with transaction.atomic():
         attempt, _ = Attempt.objects.select_for_update().get_or_create(user=request.user, puzzle=puzzle)
         if attempt.solved:
@@ -279,17 +280,19 @@ def answer(request, puzzle_id):
                 # Écrire la résolution avant de compter les précédentes : l'écriture prend le verrou de SQLite, donc
                 # deux résolutions simultanées ne reçoivent pas la même place.
                 attempt.solved_at = timezone.now()
-                attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed)
+                attempt.points = scoring.compute_points(puzzle, revealed)
                 attempt.save()
                 if puzzle.kind in scoring.BONUS_KINDS:
                     attempt.rank = competition.rank_of(attempt)
-                    attempt.points = scoring.compute_points(puzzle, attempt.errors, revealed, attempt.rank)
+                    attempt.points = scoring.compute_points(puzzle, revealed, attempt.rank)
                     attempt.save(update_fields=["rank", "points"])
                 messages.success(request, f"Bravo ! +{attempt.points} points.")
             else:
                 attempt.errors += 1
                 attempt.save(update_fields=["errors"])
                 messages.error(request, "Ce n'est pas ça, essaie encore.")
+    for fait in achievements.new_for(request.user, before):
+        messages.success(request, f"Haut-fait débloqué : {fait.name}. {fait.description}")
     return _back_to_answer(puzzle)
 
 
@@ -323,25 +326,84 @@ def _user_scores(user):
     return scores
 
 
+LEADERBOARD_VIEWS = [("total", "Général"), ("enigmes", "Énigmes"), ("devinettes", "Devinettes"), ("famille", "Famille")]
+FAIT_EARNERS_SHOWN = 6  # noms cités sur la carte d'un haut-fait
+
+
+def _place_rows(rows):
+    """Trie par points puis par nom et numérote : les ex æquo partagent la même place (1, 2, 2, 4)."""
+    rows.sort(key=lambda r: (-r["points"], r["name"]))
+    for index, row in enumerate(rows):
+        row["place"] = index + 1 if index == 0 or row["points"] != rows[index - 1]["points"] else rows[index - 1]["place"]
+    return rows
+
+
 @login_required
 def leaderboard(request):
-    # Le staff joue pour tester : il n'apparaît pas plus au classement qu'au podium.
+    """Classements (général, énigmes, devinettes, et « Famille » réservé aux membres de la famille), titres de la
+    cellule, hauts-faits et podium de chaque verrou. Le staff joue pour tester : il n'apparaît dans aucun classement."""
+    me = request.user
+    can_see_family = me.is_staff or is_family(me)
+    vue = request.GET.get("vue")
+    if vue not in dict(LEADERBOARD_VIEWS):
+        vue = "total"
+    if vue == "famille" and not can_see_family:
+        raise Http404
+
+    per_user = defaultdict(lambda: {"enigme": [0, 0], "devinette": [0, 0]})  # {uid: {type: [points, résolus]}}
+    names = {}
     rows = (Attempt.objects.filter(solved_at__isnull=False, user__is_staff=False)
-            .values("user__username", "puzzle__kind").annotate(total=Sum("points"), solved=Count("id")))
-    board = {Puzzle.ENIGME: [], Puzzle.DEVINETTE: [], "total": defaultdict(lambda: [0, 0])}
+            .values("user_id", "user__username", "puzzle__kind").annotate(total=Sum("points"), solved=Count("id")))
     for r in rows:
-        board[r["puzzle__kind"]].append({"name": r["user__username"], "points": r["total"], "solved": r["solved"]})
-        board["total"][r["user__username"]][0] += r["total"]
-        board["total"][r["user__username"]][1] += r["solved"]
-    for kind in (Puzzle.ENIGME, Puzzle.DEVINETTE):
-        board[kind].sort(key=lambda r: (-r["points"], r["name"]))
-    total = sorted(({"name": n, "points": p, "solved": c} for n, (p, c) in board["total"].items()),
-                   key=lambda r: (-r["points"], r["name"]))
-    me = request.user.username
-    my_rank = next((place for place, r in enumerate(total, start=1) if r["name"] == me), None)
+        names[r["user_id"]] = r["user__username"]
+        per_user[r["user_id"]][r["puzzle__kind"]] = [r["total"], r["solved"]]
+
+    won = achievements.by_user()  # {uid: {clés}}
+    order = {h.key: i for i, h in enumerate(achievements.HAUTS_FAITS)}
+
+    def build(uids, kinds):
+        out = []
+        for uid in uids:
+            points = sum(per_user[uid][k][0] for k in kinds)
+            solved = sum(per_user[uid][k][1] for k in kinds)
+            if solved:
+                badges = [achievements.BY_KEY[k] for k in sorted(won.get(uid, ()), key=order.get)]
+                out.append({"uid": uid, "name": names[uid], "points": points, "solved": solved, "badges": badges})
+        return _place_rows(out)
+
+    everyone = list(per_user)
+    boards = {
+        "total": build(everyone, ("enigme", "devinette")),
+        "enigmes": build(everyone, ("enigme",)),
+        "devinettes": build(everyone, ("devinette",)),
+    }
+    if can_see_family:
+        family_ids = family_user_ids()
+        boards["famille"] = build([uid for uid in everyone if uid in family_ids], ("enigme", "devinette"))
+    board = boards[vue]
+    my_place = next((r["place"] for r in board if r["uid"] == me.pk), None)
+
+    # Hauts-faits : qui a décroché quoi (les noms viennent de tous les joueurs ayant joué, pas du classement affiché)
+    all_names = dict(get_user_model().objects.filter(pk__in=won).values_list("pk", "username"))
+    earners = defaultdict(list)
+    for uid, keys in won.items():
+        for key in keys:
+            earners[key].append(all_names[uid])
+    mine = achievements.keys_for(me)
+    hauts_faits = [{
+        "key": h.key, "name": h.name, "description": h.description, "icon": h.icon, "mine": h.key in mine,
+        "count": len(earners[h.key]), "earners": sorted(earners[h.key])[:FAIT_EARNERS_SHOWN],
+        "more": max(0, len(earners[h.key]) - FAIT_EARNERS_SHOWN),
+    } for h in achievements.HAUTS_FAITS]
+
     return render(request, "avent2026/leaderboard.html", {
-        "enigmes": board[Puzzle.ENIGME], "devinettes": board[Puzzle.DEVINETTE], "total": total,
-        "me": me, "my_rank": my_rank, "players": len(total),
+        # Les trois classements publics restent disponibles tels quels ; `board` est celui qu'affiche l'onglet choisi.
+        "total": boards["total"], "enigmes": boards["enigmes"], "devinettes": boards["devinettes"],
+        "famille": boards.get("famille"), "board": board, "podium": board[:3],
+        "vue": vue, "vues": [v for v in LEADERBOARD_VIEWS if v[0] != "famille" or can_see_family],
+        "me": me.username, "my_id": me.pk, "my_place": my_place, "my_rank": next((r["place"] for r in boards["total"] if r["uid"] == me.pk), None),
+        "players": len(board), "hauts_faits": hauts_faits,
+        "hauts_faits_mine": sum(1 for h in hauts_faits if h["mine"]), "hauts_faits_total": len(hauts_faits),
         "verrous": competition.verrous(), "titles": competition.titles(),
     })
 

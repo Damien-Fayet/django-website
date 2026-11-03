@@ -7,7 +7,9 @@ from django.db.migrations.executor import MigrationExecutor
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
-from . import competition, scoring, village
+from accounts.models import Profile
+
+from . import achievements, competition, scoring, village
 from .models import Attempt, Hint, HintReveal, Puzzle, Submission
 
 
@@ -25,31 +27,40 @@ class ScoringTests(TestCase):
     def test_normalize(self):
         self.assertEqual(scoring.normalize("  Le Père-Noël !! "), "le pere noel")
 
-    def test_points_floor_and_penalties(self):
+    def test_points_hint_cost_and_floor(self):
         p = Puzzle.objects.create(kind="enigme", day=1, title="t", text="x", answers="a")
         h = Hint.objects.create(puzzle=p, number=1, text="h")
         d = Puzzle.objects.create(kind="devinette", day=1, title="d", text="x", answers="a")
-        self.assertEqual(scoring.compute_points(d, 0, []), 50)  # pas de bonus hors des énigmes
-        self.assertEqual(scoring.compute_points(d, 2, [h]), 50 - 10 - 15)
-        self.assertEqual(scoring.compute_points(p, 2, [h]), 100 - 10 - 15)  # ni sans indice ni sans faute
-        # Le plancher s'applique à la pénalité, les bonus s'y ajoutent.
-        self.assertEqual(scoring.compute_points(p, 100, [h]), scoring.MIN_POINTS)
-        self.assertEqual(scoring.compute_points(p, 100, [h], rank=1), scoring.MIN_POINTS + 50)
+        self.assertEqual(scoring.compute_points(d, []), 50)  # pas de bonus hors des énigmes
+        self.assertEqual(scoring.compute_points(d, [h]), 50 - scoring.DEFAULT_HINT_COST)
+        self.assertEqual(scoring.compute_points(p, [h]), 100 - scoring.DEFAULT_HINT_COST)  # pas de « sans indice »
+        # Le plancher s'applique au coût des indices, les bonus s'y ajoutent.
+        costly = Hint.objects.create(puzzle=p, number=2, text="h2", cost=500)
+        self.assertEqual(scoring.compute_points(p, [costly]), scoring.MIN_POINTS)
+        self.assertEqual(scoring.compute_points(p, [costly], rank=1), scoring.MIN_POINTS + scoring.PODIUM_BONUS[0])
+
+    def test_wrong_answers_cost_nothing_and_hints_are_cheap(self):
+        """Se tromper ne coûte rien (il n'y a plus de paramètre d'erreurs) ; un indice coûte quelques points."""
+        self.assertNotIn("errors", scoring.compute_points.__code__.co_varnames[:scoring.compute_points.__code__.co_argcount])
+        self.assertLessEqual(scoring.DEFAULT_HINT_COST, 5)
+        self.assertLessEqual(max(scoring.PODIUM_BONUS), 10)  # bonus de podium symbolique
+        self.assertLessEqual(scoring.NO_HINT_BONUS, 10)
 
     def test_enigme_bonuses(self):
         p = Puzzle.objects.create(kind="enigme", day=1, title="t", text="x", answers="a")
         h = Hint.objects.create(puzzle=p, number=1, text="h")
         labels = lambda **kw: [b[0] for b in scoring.bonuses(p, **kw)]  # noqa: E731
-        self.assertEqual(labels(rank=None, errors=0, hints=[]), ["Sans indice", "Sans faute"])
-        self.assertEqual(labels(rank=2, errors=1, hints=[h]), ["Deuxième à briser ce verrou"])
-        self.assertEqual(labels(rank=4, errors=1, hints=[h]), [])  # hors podium
-        self.assertEqual(scoring.compute_points(p, 0, [], rank=1), 100 + 50 + 25 + 10)
-        self.assertEqual(scoring.compute_points(p, 0, [], rank=3), 100 + 20 + 25 + 10)
+        self.assertEqual(labels(rank=None, hints=[]), ["Sans indice"])
+        self.assertEqual(labels(rank=2, hints=[h]), ["Deuxième à briser ce verrou"])
+        self.assertEqual(labels(rank=4, hints=[h]), [])  # hors podium
+        podium, no_hint = scoring.PODIUM_BONUS, scoring.NO_HINT_BONUS
+        self.assertEqual(scoring.compute_points(p, [], rank=1), 100 + podium[0] + no_hint)
+        self.assertEqual(scoring.compute_points(p, [], rank=3), 100 + podium[2] + no_hint)
 
     def test_no_speed_bonus_beyond_the_podium(self):
         """Pas de bonus de rapidité : seul le rang compte, pas l'heure de résolution."""
         p = Puzzle.objects.create(kind="enigme", day=1, title="t", text="x", answers="a")
-        self.assertEqual({label for label, _ in scoring.bonuses(p, 5, 1, [object()])}, set())
+        self.assertEqual({label for label, _ in scoring.bonuses(p, 5, [object()])}, set())
 
     def test_release_hours(self):
         e = Puzzle.objects.create(kind="enigme", day=5, title="e", text="x", answers="a")
@@ -160,7 +171,8 @@ class FlowTests(TestCase):
         a = Attempt.objects.get(user=self.user, puzzle=self.enigme)
         self.assertTrue(a.solved)
         self.assertEqual(a.errors, 1)
-        self.assertEqual((a.rank, a.points), (1, 100 - 5 - 20 + 50))  # premier au podium, mais ni sans indice ni sans faute
+        self.assertEqual((a.rank, a.points), (1, 100 - 20 + scoring.PODIUM_BONUS[0]))  # premier au podium, mais l'indice coûte 20 et fait perdre « sans indice »
+        self.assertEqual(a.errors, 1)  # la faute, elle, n'a rien coûté
 
     def test_solved_is_final_and_hints_blocked(self):
         with at(1):
@@ -169,7 +181,7 @@ class FlowTests(TestCase):
             self.client.post(url, {"answer": "faux"})
             self.client.post(reverse("avent2026:hint", args=[self.enigme.id]))
         a = Attempt.objects.get(user=self.user, puzzle=self.enigme)
-        self.assertEqual((a.errors, a.points), (0, 100 + 50 + 25 + 10))
+        self.assertEqual((a.errors, a.points), (0, 100 + scoring.PODIUM_BONUS[0] + scoring.NO_HINT_BONUS))
         self.assertEqual(self.user.avent2026_hints.count(), 0)
 
     def test_hints_revealed_in_order_and_capped(self):
@@ -189,7 +201,9 @@ class FlowTests(TestCase):
             r = self.client.get(reverse("avent2026:leaderboard"))
         self.assertEqual([x["name"] for x in r.context["enigmes"]], ["alice"])
         self.assertEqual(len(r.context["devinettes"]), 2)
-        self.assertEqual(r.context["total"][0], {"name": "alice", "points": 185 + 50, "solved": 2})
+        first = r.context["total"][0]
+        self.assertEqual((first["name"], first["points"], first["solved"], first["place"]),
+                         ("alice", 100 + scoring.PODIUM_BONUS[0] + scoring.NO_HINT_BONUS + 50, 2, 1))
 
     @override_settings(AVENT2026_UNLOCK_ALL=True)
     def test_unlock_all_setting(self):
@@ -445,10 +459,11 @@ class CompetitionTests(TestCase):
             third = self.solve("carl", hint=True)
             fourth = self.solve("dora")
         self.assertEqual([a.rank for a in (first, second, third, fourth)], [1, 2, 3, 4])
-        self.assertEqual(first.points, 100 + 50 + 25 + 10)
-        self.assertEqual(second.points, 100 - 5 + 30 + 25)  # une faute : pas de « sans faute »
-        self.assertEqual(third.points, 100 - 15 + 20 + 10)  # un indice : pas de « sans indice »
-        self.assertEqual(fourth.points, 100 + 25 + 10)  # hors podium
+        pb, nh, hc = scoring.PODIUM_BONUS, scoring.NO_HINT_BONUS, scoring.DEFAULT_HINT_COST
+        self.assertEqual(first.points, 100 + pb[0] + nh)
+        self.assertEqual(second.points, 100 + pb[1] + nh)  # une faute : aucune conséquence sur les points
+        self.assertEqual(third.points, 100 - hc + pb[2])  # un indice : coût, et pas de « sans indice »
+        self.assertEqual(fourth.points, 100 + nh)  # hors podium
         self.assertEqual([(p, n) for p, n, _ in competition.podium(self.e1)], [(1, "alice"), (2, "bob"), (3, "carl")])
 
     def test_rank_depends_on_resolution_time_not_on_when_the_player_started(self):
@@ -466,7 +481,7 @@ class CompetitionTests(TestCase):
             admin = self.solve("zed")
             alice = self.solve("alice")
         self.assertIsNone(admin.rank)
-        self.assertEqual(admin.points, 100 + 25 + 10)  # pas de bonus de podium
+        self.assertEqual(admin.points, 100 + scoring.NO_HINT_BONUS)  # pas de bonus de podium
         self.assertEqual(alice.rank, 1)
         self.assertEqual([n for _, n, _ in competition.podium(self.e1)], ["alice"])
 
@@ -481,14 +496,15 @@ class CompetitionTests(TestCase):
             self.solve("alice", answer="faux")
             a = self.solve("alice")
             again = self.solve("alice")
-        self.assertEqual((a.rank, again.pk, again.points, again.errors), (1, a.pk, 100 - 5 + 50 + 25, 1))  # une faute, puis résolue
+        self.assertEqual((a.rank, again.pk, again.points, again.errors),
+                         (1, a.pk, 100 + scoring.PODIUM_BONUS[0] + scoring.NO_HINT_BONUS, 1))  # une faute sans effet, puis résolue
 
     def test_puzzle_page_shows_bonuses_then_podium(self):
         url = reverse("avent2026:puzzle", args=[self.e1.id])
         with at(1):
             self.client.force_login(self.users["alice"])
             r = self.client.get(url)
-            self.assertEqual(r.context["current_points"], 100 + 50 + 25 + 10)  # si elle résolvait maintenant
+            self.assertEqual(r.context["current_points"], 100 + scoring.PODIUM_BONUS[0] + scoring.NO_HINT_BONUS)  # si elle résolvait maintenant
             self.assertContains(r, "Sans indice")
             self.assertContains(r, "bonus « sans indice » perdu")  # prévenu avant de prendre un indice
             self.solve("alice")
@@ -497,7 +513,7 @@ class CompetitionTests(TestCase):
             self.assertContains(r, "Podium")
             self.client.force_login(self.users["bob"])
             r = self.client.get(url)
-        self.assertEqual(r.context["current_points"], 100 + 30 + 25 + 10)  # bob viserait la 2e place
+        self.assertEqual(r.context["current_points"], 100 + scoring.PODIUM_BONUS[1] + scoring.NO_HINT_BONUS)  # bob viserait la 2e place
         self.assertContains(r, "alice")
 
     def test_hint_reveal_warns_about_the_lost_bonus(self):
@@ -909,7 +925,7 @@ class LeaderboardTests(TestCase):
         self.assertEqual(r.context["my_rank"], 1)
         self.assertContains(r, "1 résolu")
         self.assertContains(r, 'id="moi"')
-        self.assertContains(r, "Tu es 1er sur 1 joueur")
+        self.assertContains(r, "Tu es <b>1er</b> sur 1 joueur")
 
     def test_staff_sees_a_note_instead_of_a_place(self):
         self.solve(self.alice)
@@ -917,7 +933,7 @@ class LeaderboardTests(TestCase):
         with at(1):
             r = self.client.get(reverse("avent2026:leaderboard"))
         self.assertIsNone(r.context["my_rank"])
-        self.assertContains(r, "Les comptes staff n'y figurent pas")
+        self.assertContains(r, "Les comptes staff n'apparaissent dans aucun classement")
 
 
 class AuthPagesTests(TestCase):
@@ -1002,7 +1018,7 @@ class FesteTests(TestCase):
             r = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
         self.assertContains(r, 'href="#ic-medaille"/></svg>Premier à briser ce verrou')
         self.assertContains(r, 'href="#ic-ampoule"/></svg>Sans indice')
-        self.assertContains(r, 'href="#ic-coche"/></svg>Sans faute')
+        self.assertNotContains(r, "Sans faute")  # se tromper ne coûte plus rien, donc plus de bonus « sans faute »
 
     def test_messages_keep_their_type_for_the_script(self):
         with at(1):
@@ -1017,3 +1033,279 @@ class FesteTests(TestCase):
         self.assertContains(hinted, "un indice")
         self.assertContains(solved, "notice--success")
         self.assertContains(solved, "aside-block--resolu")
+
+
+class AchievementTests(TestCase):
+    """Hauts-faits : chacun se juge sur ce que le joueur a fait (résolutions, essais, indices)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.counter = 0
+
+    def puzzle(self, kind="devinette", day=None):
+        self.counter += 1
+        day = day or self.counter
+        return Puzzle.objects.create(kind=kind, day=day, title=f"{kind}{day}", text="?", answers="ok")
+
+    def solve(self, puzzle, when=None, errors=0, rank=None, user=None):
+        when = when or datetime(2026, 12, 1, 12, tzinfo=scoring.TZ)
+        return Attempt.objects.create(user=user or self.user, puzzle=puzzle, errors=errors, solved_at=when, rank=rank)
+
+    def send(self, puzzle, answer, correct=False, times=1):
+        for _ in range(times):
+            Submission.objects.create(user=self.user, puzzle=puzzle, answer=answer, correct=correct)
+
+    def keys(self):
+        return achievements.keys_for(self.user)
+
+    def test_try_harder_needs_more_than_five_tries_on_one_puzzle(self):
+        p = self.puzzle()
+        self.send(p, "a", times=5)
+        self.assertNotIn("try_harder", self.keys())
+        self.send(p, "b")
+        self.assertIn("try_harder", self.keys())
+
+    def test_try_harder_is_per_puzzle(self):
+        for _ in range(3):
+            self.send(self.puzzle(), "x", times=2)  # 6 essais au total, mais jamais plus de 2 sur le même puzzle
+        self.assertNotIn("try_harder", self.keys())
+
+    def test_disque_raye_is_the_same_wrong_answer_three_times(self):
+        p = self.puzzle()
+        for given in ("Faux", "faux !", "FAUX"):  # même réponse une fois normalisée
+            self.send(p, given)
+        self.assertIn("disque_raye", self.keys())
+
+    def test_disque_raye_ignores_different_answers_and_correct_ones(self):
+        p = self.puzzle()
+        for given in ("a", "b", "c"):
+            self.send(p, given)
+        self.send(p, "ok", correct=True, times=3)
+        self.assertNotIn("disque_raye", self.keys())
+
+    def test_brise_chaine_and_podium_come_from_the_rank_on_enigmes(self):
+        self.solve(self.puzzle("enigme", 1), rank=3)
+        self.assertEqual({"podium"}, self.keys() & {"podium", "brise_chaine"})
+        self.solve(self.puzzle("enigme", 2), rank=1)
+        self.assertEqual({"podium", "brise_chaine"}, self.keys() & {"podium", "brise_chaine"})
+
+    def test_rank_on_a_devinette_does_not_count(self):
+        self.solve(self.puzzle("devinette"), rank=1)
+        self.assertFalse(self.keys() & {"podium", "brise_chaine"})
+
+    def test_premier_coup_and_cerveau_seul_count_clean_solves(self):
+        puzzles = [self.puzzle() for _ in range(achievements.FIRST_TRY_COUNT)]
+        for p in puzzles[:-1]:
+            self.solve(p)
+        self.assertFalse(self.keys() & {"premier_coup", "cerveau_seul"})
+        self.solve(puzzles[-1])
+        self.assertEqual({"premier_coup", "cerveau_seul"}, self.keys() & {"premier_coup", "cerveau_seul"})
+
+    def test_a_mistake_or_a_hint_breaks_the_clean_streaks(self):
+        puzzles = [self.puzzle() for _ in range(achievements.FIRST_TRY_COUNT)]
+        for i, p in enumerate(puzzles):
+            self.solve(p, errors=1 if i == 0 else 0)
+        hint = Hint.objects.create(puzzle=puzzles[1], number=1, text="h")
+        HintReveal.objects.create(user=self.user, hint=hint)
+        self.assertFalse(self.keys() & {"premier_coup", "cerveau_seul"})
+
+    def test_accro_aux_indices(self):
+        for _ in range(achievements.HINT_LOVER_COUNT - 1):
+            HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=self.puzzle(), number=1, text="h"))
+        self.assertNotIn("accro", self.keys())
+        HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=self.puzzle(), number=1, text="h"))
+        self.assertIn("accro", self.keys())
+
+    def test_leve_tot_and_noctambule_use_paris_time(self):
+        early = self.puzzle("enigme", 1)
+        self.solve(early, when=datetime(2026, 12, 1, 7, 30, tzinfo=scoring.TZ))
+        self.assertIn("leve_tot", self.keys())
+        self.assertNotIn("noctambule", self.keys())
+        self.solve(self.puzzle("devinette", 5), when=datetime(2026, 12, 5, 2, 0, tzinfo=scoring.TZ))
+        self.assertIn("noctambule", self.keys())
+
+    def test_leve_tot_needs_an_enigme_in_the_morning(self):
+        self.solve(self.puzzle("enigme", 1), when=datetime(2026, 12, 1, 9, 0, tzinfo=scoring.TZ))
+        self.solve(self.puzzle("devinette", 1), when=datetime(2026, 12, 1, 7, 0, tzinfo=scoring.TZ))
+        self.assertFalse(self.keys() & {"leve_tot", "noctambule"})
+
+    def test_double_needs_both_tracks_of_the_same_day(self):
+        self.solve(self.puzzle("enigme", 2))
+        self.solve(self.puzzle("devinette", 3))
+        self.assertNotIn("double", self.keys())
+        self.solve(self.puzzle("devinette", 2))
+        self.assertIn("double", self.keys())
+
+    def test_assidu_needs_seven_days_in_a_row(self):
+        for day in (1, 2, 3, 4, 5, 6, 8):  # le 7 manque
+            self.solve(self.puzzle("devinette", day), when=datetime(2026, 12, day, 12, tzinfo=scoring.TZ))
+        self.assertNotIn("assidu", self.keys())
+        self.solve(self.puzzle("devinette", 7), when=datetime(2026, 12, 7, 12, tzinfo=scoring.TZ))
+        self.assertIn("assidu", self.keys())
+
+    def test_grand_allumeur_needs_all_devinettes(self):
+        days = village.CARTES["devinette"].days
+        for day in days[:-1]:
+            self.solve(self.puzzle("devinette", day))
+        self.assertNotIn("allumeur", self.keys())
+        self.solve(self.puzzle("devinette", days[-1]))
+        self.assertIn("allumeur", self.keys())
+
+    def test_public_list_leaves_out_staff(self):
+        tester = User.objects.create_user("testeur", password="pw", is_staff=True)
+        for user in (self.user, tester):
+            p = self.puzzle()
+            self.solve(p, rank=1, user=user)
+            self.solve(self.puzzle("enigme", 1 + self.counter), rank=1, user=user)
+        won = achievements.by_user()
+        self.assertIn(self.user.pk, won)
+        self.assertNotIn(tester.pk, won)
+        self.assertTrue(achievements.keys_for(tester))  # le staff peut quand même les décrocher
+
+    def test_every_achievement_has_an_icon_in_the_sprite(self):
+        sprite = open("templates/avent2026/_sprite.html", encoding="utf-8").read()
+        for h in achievements.HAUTS_FAITS:
+            self.assertIn(f'id="ic-{h.icon}"', sprite, h.key)
+        self.assertEqual(len({h.key for h in achievements.HAUTS_FAITS}), len(achievements.HAUTS_FAITS))
+
+
+class AchievementMessageTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.client.force_login(self.user)
+        self.puzzle = Puzzle.objects.create(kind="devinette", day=1, title="D", text="?", answers="oui")
+
+    def test_try_harder_is_announced_once_on_the_sixth_try(self):
+        url = reverse("avent2026:answer", args=[self.puzzle.id])
+        with at(1):
+            for i in range(5):
+                r = self.client.post(url, {"answer": f"non{i}"}, follow=True)
+                self.assertNotContains(r, "Haut-fait débloqué")
+            r = self.client.post(url, {"answer": "encore non"}, follow=True)
+            self.assertContains(r, "Haut-fait débloqué : Try-Harder")
+            self.assertContains(r, "notice--success")  # le script en fait une fête
+            r = self.client.post(url, {"answer": "toujours non"}, follow=True)
+        self.assertNotContains(r, "Haut-fait débloqué")  # une seule fois
+
+    def test_no_announcement_when_nothing_is_unlocked(self):
+        with at(1):
+            r = self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "oui"}, follow=True)
+        self.assertNotContains(r, "Haut-fait débloqué")
+
+
+class FamilyLeaderboardTests(TestCase):
+    """Le classement « Famille » : réservé aux membres de la famille, et ne les classe qu'entre eux."""
+
+    def setUp(self):
+        self.puzzle = Puzzle.objects.create(kind="devinette", day=1, title="D", text="?", answers="oui")
+        self.alice = User.objects.create_user("alice", password="pw")   # famille
+        self.bob = User.objects.create_user("bob", password="pw")       # pas de la famille
+        self.carl = User.objects.create_user("carl", password="pw")     # famille
+        Profile.objects.create(user=self.alice, is_family=True)
+        Profile.objects.create(user=self.carl, is_family=True)
+        Profile.objects.create(user=self.bob, is_family=False)
+        for user in (self.alice, self.bob, self.carl):
+            Attempt.objects.create(user=user, puzzle=self.puzzle, solved_at=datetime(2026, 12, 1, 12, tzinfo=scoring.TZ),
+                                   points=50)
+
+    def get(self, user, vue=None):
+        self.client.force_login(user)
+        return self.client.get(reverse("avent2026:leaderboard"), {"vue": vue} if vue else {})
+
+    def test_family_members_see_the_tab_and_only_family_in_it(self):
+        r = self.get(self.alice, "famille")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([row["name"] for row in r.context["board"]], ["alice", "carl"])
+        self.assertContains(r, 'href="?vue=famille"')
+        self.assertContains(r, "Classement réservé à la famille")
+
+    def test_others_get_a_404_and_no_tab(self):
+        self.assertEqual(self.get(self.bob, "famille").status_code, 404)
+        r = self.get(self.bob)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "vue=famille")
+        self.assertNotIn("famille", [key for key, _ in r.context["vues"]])
+        self.assertIsNone(r.context["famille"])
+
+    def test_a_player_without_profile_is_not_family(self):
+        dora = User.objects.create_user("dora", password="pw")
+        self.assertEqual(self.get(dora, "famille").status_code, 404)
+
+    def test_the_general_board_still_has_everybody(self):
+        names = [row["name"] for row in self.get(self.alice).context["total"]]
+        self.assertEqual(sorted(names), ["alice", "bob", "carl"])
+
+    def test_staff_can_look_but_is_never_listed(self):
+        staff = User.objects.create_user("zed", password="pw", is_staff=True)
+        Profile.objects.create(user=staff, is_family=True)
+        Attempt.objects.create(user=staff, puzzle=self.puzzle, solved_at=datetime(2026, 12, 1, 12, tzinfo=scoring.TZ), points=50)
+        r = self.get(staff, "famille")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([row["name"] for row in r.context["board"]], ["alice", "carl"])
+
+    def test_places_inside_the_family_board_ignore_outsiders(self):
+        Attempt.objects.filter(user=self.bob).update(points=500)  # bob est premier au général
+        self.assertEqual(self.get(self.alice).context["my_rank"], 2)
+        r = self.get(self.alice, "famille")
+        self.assertEqual(r.context["my_place"], 1)
+
+
+class LeaderboardPageTests(TestCase):
+    def setUp(self):
+        self.puzzle = Puzzle.objects.create(kind="devinette", day=1, title="D", text="?", answers="oui")
+        self.users = {n: User.objects.create_user(n, password="pw") for n in ("alice", "bob", "carl", "dora")}
+        self.client.force_login(self.users["alice"])
+
+    def give(self, name, points):
+        Attempt.objects.create(user=self.users[name], puzzle=self.puzzle, points=points,
+                               solved_at=datetime(2026, 12, 1, 12, tzinfo=scoring.TZ))
+
+    def test_ties_share_a_place(self):
+        for name, points in (("alice", 60), ("bob", 60), ("carl", 50), ("dora", 40)):
+            self.give(name, points)
+        r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertEqual([(row["name"], row["place"]) for row in r.context["board"]],
+                         [("alice", 1), ("bob", 1), ("carl", 3), ("dora", 4)])
+
+    def test_tabs_show_the_chosen_board(self):
+        self.give("alice", 50)
+        Attempt.objects.create(user=self.users["bob"], puzzle=Puzzle.objects.create(kind="enigme", day=1, title="E", text="?", answers="x"),
+                               points=100, solved_at=datetime(2026, 12, 1, 12, tzinfo=scoring.TZ))
+        names = lambda vue: [row["name"] for row in self.client.get(reverse("avent2026:leaderboard"), {"vue": vue}).context["board"]]  # noqa: E731
+        self.assertEqual(names("devinettes"), ["alice"])
+        self.assertEqual(names("enigmes"), ["bob"])
+        self.assertEqual(names("total"), ["bob", "alice"])
+        self.assertEqual(names("n'importe quoi"), ["bob", "alice"])  # vue inconnue : le général
+
+    def test_podium_shows_the_top_three(self):
+        for name, points in (("alice", 60), ("bob", 50), ("carl", 40), ("dora", 30)):
+            self.give(name, points)
+        r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertEqual([row["name"] for row in r.context["podium"]], ["alice", "bob", "carl"])
+        self.assertContains(r, "podium__place--1")
+
+    def test_badges_appear_next_to_the_name(self):
+        self.give("alice", 50)
+        p = Puzzle.objects.create(kind="devinette", day=2, title="D2", text="?", answers="x")
+        for i in range(6):
+            Submission.objects.create(user=self.users["alice"], puzzle=p, answer=f"non{i}", correct=False)
+        r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertContains(r, 'aria-label="Try-Harder"')
+        self.assertEqual([h.key for h in r.context["board"][0]["badges"]], ["try_harder"])
+
+    def test_hauts_faits_section_lists_everything_and_who_got_it(self):
+        self.give("alice", 50)
+        p = Puzzle.objects.create(kind="devinette", day=2, title="D2", text="?", answers="x")
+        for i in range(6):
+            Submission.objects.create(user=self.users["alice"], puzzle=p, answer=f"non{i}", correct=False)
+        r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertEqual(len(r.context["hauts_faits"]), len(achievements.HAUTS_FAITS))
+        self.assertContains(r, "Plus de 5 essais sur une même énigme ou devinette")
+        try_harder = next(h for h in r.context["hauts_faits"] if h["key"] == "try_harder")
+        self.assertEqual((try_harder["mine"], try_harder["earners"], try_harder["count"]), (True, ["alice"], 1))
+        self.assertContains(r, "Personne pour l'instant")  # les autres n'ont encore rien décroché
+
+    def test_empty_game_still_renders(self):
+        r = self.client.get(reverse("avent2026:leaderboard"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Personne encore")
