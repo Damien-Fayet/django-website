@@ -206,7 +206,26 @@ a.day.is-done:hover { background: #e6b653; }
 .puzzle__head .puzzle__kind { margin: 0; font-weight: 500; color: var(--alarme); }
 .puzzle__head h1 { margin: 0; font-size: clamp(2rem, 1.3rem + 3vw, 3rem); font-weight: 600; line-height: 1.04; letter-spacing: -.03em; }
 .puzzle__line { margin: .6rem 0 0; font-size: .9375rem; color: var(--brume); }
-.puzzle__head .other-track { margin: .6rem 0 0; }
+.puzzle__head .other-track { margin: .9rem 0 0; }
+/* Lien vers l'autre puzzle du jour : une pastille cliquable, pour qu'on voie qu'on peut passer de l'une à l'autre */
+.other-track__link {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: .15rem .6rem; min-height: 2.75rem;
+  padding: .4rem .9rem; border: 1px solid var(--filet); border-radius: 99px; background: var(--papier);
+  color: var(--encre); text-decoration: none; line-height: 1.3;
+}
+a.other-track__link { color: var(--sapin); border-color: currentColor; }
+a.other-track__link:hover { background: var(--sapin); color: #fff; }
+a.other-track__link:focus-visible { outline: 3px solid var(--laiton); outline-offset: 2px; }
+.other-track__label { font-size: .8125rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.other-track__title { font-weight: 500; }
+.other-track__link--locked { color: var(--brume); }
+.other-track__arrow { flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Pastille d'état (coche : résolu, cadenas : pas encore ouvert) */
+.etat { flex: none; display: inline-block; vertical-align: -.2em; margin-left: .35rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.etat--done { color: var(--sapin); }
+.other-track a:hover .etat--done { color: #fff; }
+.other-track__link .etat { margin-left: 0; }
 
 .locks { display: flex; gap: .4rem; margin: 0; padding: 0; list-style: none; }
 .lock { display: block; width: 1.25rem; }
