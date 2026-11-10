@@ -6,6 +6,7 @@ from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from . import competition, scoring, village
 from .models import Attempt, Hint, HintReveal, Puzzle, Submission
@@ -213,6 +214,14 @@ class FlowTests(TestCase):
             r = self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id]))
         self.assertEqual(r.context["other"], self.devinette)
         self.assertContains(r, reverse("avent2026:puzzle", args=[self.devinette.id]))
+        self.assertContains(r, "Devinette du jour")
+        self.assertNotContains(r, 'class="etat etat--done"')
+
+    def test_other_track_link_shows_check_when_solved(self):
+        Attempt.objects.create(user=self.user, puzzle=self.devinette, solved_at=timezone.now())
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.enigme.id]))
+        self.assertContains(r, 'class="etat etat--done"')
 
 
 class CartesPageTests(TestCase):

@@ -233,11 +233,12 @@ def _neighbours(request, puzzle):
 
 
 def _other_track(request, puzzle):
-    """L'autre puzzle du même jour (l'autre piste), avec son état, pour le lien « même jour »."""
+    """L'autre puzzle du même jour (l'autre piste), avec son état, pour le lien « Devinette du jour » / « Énigme du jour »."""
     other = Puzzle.objects.filter(day=puzzle.day).exclude(pk=puzzle.pk).first()
     if other is None:
         return None
     other.unlocked = scoring.is_unlocked(other, request.user)
+    other.hour = scoring.RELEASE_HOUR[other.kind]
     other.done = Attempt.objects.filter(user=request.user, puzzle=other, solved_at__isnull=False).exists()
     return other
 

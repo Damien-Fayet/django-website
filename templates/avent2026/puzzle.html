@@ -8,7 +8,7 @@
   {% if previous %}<a class="puzzle-nav__prev" href="{% url 'avent2026:puzzle' previous.id %}" rel="prev">Précédent : {{ previous.title }}</a>{% else %}<span></span>{% endif %}
   <a class="puzzle-nav__home" href="{% url 'avent2026:home' %}">Toute la carte</a>
   {% if following %}
-    {% if following.unlocked %}<a class="puzzle-nav__next" href="{% url 'avent2026:puzzle' following.id %}" rel="next">Suivant : {{ following.title }}{% if following.done %} (résolue){% endif %}</a>
+    {% if following.unlocked %}<a class="puzzle-nav__next" href="{% url 'avent2026:puzzle' following.id %}" rel="next">Suivant : {{ following.title }}{% if following.done %}{% include "avent2026/_etat.html" with done=True %}{% endif %}</a>
     {% else %}<span class="puzzle-nav__next muted">Suivant : le {{ following.date|date:"l j F" }} à {{ following.hour }} h</span>{% endif %}
   {% else %}<span></span>{% endif %}
 </nav>
@@ -40,9 +40,18 @@
       {% if other %}
       <p class="other-track">
         {% if other.unlocked %}
-          <a href="{% url 'avent2026:puzzle' other.id %}">Même jour : {{ other.get_kind_display|lower }} « {{ other.title }} »{% if other.done %}, résolue{% endif %}</a>
+          <a class="other-track__link" href="{% url 'avent2026:puzzle' other.id %}">
+            <span class="other-track__label">{{ other.get_kind_display }} du jour</span>
+            <span class="other-track__title">« {{ other.title }} »</span>
+            {% include "avent2026/_etat.html" with done=other.done %}
+            <svg class="other-track__arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </a>
         {% else %}
-          Même jour : {{ other.get_kind_display|lower }}, pas encore débloquée.
+          <span class="other-track__link other-track__link--locked">
+            <span class="other-track__label">{{ other.get_kind_display }} du jour</span>
+            <span class="other-track__title">disponible à {{ other.hour }} h</span>
+            {% include "avent2026/_etat.html" with locked=True %}
+          </span>
         {% endif %}
       </p>
       {% endif %}
