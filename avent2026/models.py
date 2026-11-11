@@ -138,3 +138,20 @@ class Submission(models.Model):
 
     def __str__(self):
         return f"{self.user} — {self.puzzle} — {self.answer!r}"
+
+
+class LeaderboardDay(models.Model):
+    """Nombre de visites de la page du classement par joueur et par jour (heure de Paris), pour le haut-fait
+    « Fana du classement ». Un compteur par jour plutôt qu'une ligne par visite : la table reste minuscule."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="avent2026_board_days")
+    day = models.DateField("Jour")
+    views = models.PositiveIntegerField("Visites", default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "day"], name="uniq_avent2026_board_day"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.day} : {self.views}"

@@ -1,7 +1,8 @@
 """Hauts-faits : de petits défis pour rire, décernés d'après ce que chacun a fait (réponses, indices, résolutions).
 
-Rien n'est stocké : tout est recalculé à la demande depuis `Attempt`, `HintReveal` et `Submission` (quelques dizaines
-de joueurs, quelques milliers de lignes : trois requêtes suffisent). Ajouter un haut-fait = ajouter une fonction de
+Rien n'est stocké : tout est recalculé à la demande depuis `Attempt`, `HintReveal`, `Submission` et `LeaderboardDay`
+(le compteur de visites du classement ; quelques dizaines de joueurs, quelques milliers de lignes : quatre requêtes
+suffisent). Ajouter un haut-fait = ajouter une fonction de
 test et une entrée dans `HAUTS_FAITS` ; l'icône est un symbole du sprite `templates/avent2026/_sprite.html`.
 
 Le staff joue pour tester : il peut décrocher des hauts-faits (utile pour les voir), mais n'apparaît pas dans les
@@ -11,14 +12,17 @@ from collections import Counter, defaultdict
 from typing import Callable, NamedTuple
 
 from . import scoring, village
-from .models import Attempt, HintReveal, Submission
+from .models import Attempt, HintReveal, LeaderboardDay, Submission
 
 # Seuils, ici pour être faciles à retoucher (et à tester).
 TRY_HARDER_TRIES = 5            # « plus de 5 essais » : au moins 6 réponses envoyées sur un même puzzle
 DISQUE_RAYE_REPEATS = 3         # la même mauvaise réponse envoyée 3 fois sur un même puzzle
-FIRST_TRY_COUNT = 10            # puzzles résolus du premier coup
-NO_HINT_COUNT = 10              # puzzles résolus sans aucun indice
-HINT_LOVER_COUNT = 5            # puzzles où l'on a pris au moins un indice
+# Paliers « du premier coup » et « sans indice » : nombre de puzzles de la piste, un haut-fait par palier.
+FIRST_TRY_TIERS = {"enigme": (1, 5, 8), "devinette": (1, 5, 10, 20)}
+NO_HINT_TIERS = {"enigme": (1, 3, 5, 8), "devinette": (1, 5, 10, 20)}
+HINT_LOVER_TIERS = (5, 10)      # puzzles (énigmes ou devinettes) où l'on a pris au moins un indice
+BOARD_DAILY_VIEWS = 3           # « plus de 3 fois par jour » : au moins 4 visites du classement le même jour
+BOARD_TOTAL_VIEWS = 100         # « plus de 100 fois au total » : au moins 101 visites
 EARLY_BIRD_HOURS = (6, 8)       # une énigme résolue entre 6 h et 8 h (heure de Paris)
 NIGHT_OWL_BEFORE = 5            # un puzzle résolu avant 5 h du matin
 STREAK_DAYS = 7                 # jours de suite avec au moins un puzzle résolu
@@ -32,6 +36,7 @@ class Dossier:
         self.hinted = set()                  # puzzles où un indice a été révélé
         self.tries = Counter()               # puzzle_id -> nombre de réponses envoyées
         self.wrong = defaultdict(Counter)    # puzzle_id -> {mauvaise réponse normalisée: fois envoyée}
+        self.board_views = {}                # jour (heure de Paris) -> visites du classement ce jour-là
 
 
 def _dossiers(user_ids=None, include_staff=True):
@@ -55,6 +60,8 @@ def _dossiers(user_ids=None, include_staff=True):
         d.tries[puzzle_id] += 1
         if not correct and scoring.normalize(answer):
             d.wrong[puzzle_id][scoring.normalize(answer)] += 1
+    for user_id, day, views in narrow(LeaderboardDay.objects.all()).values_list("user_id", "day", "views"):
+        dossiers[user_id].board_views[day] = views
     return dossiers
 
 
@@ -77,16 +84,18 @@ def _podium(d):
                for s in d.solved)
 
 
-def _premier_coup(d):
-    return sum(1 for s in d.solved if s["errors"] == 0) >= FIRST_TRY_COUNT
+def _premier_coup(kind, count):
+    """Au moins `count` puzzles de la piste résolus dès la première réponse (aucune erreur avant la bonne)."""
+    return lambda d: sum(1 for s in d.solved if s["kind"] == kind and s["errors"] == 0) >= count
 
 
-def _cerveau_seul(d):
-    return sum(1 for s in d.solved if s["puzzle_id"] not in d.hinted) >= NO_HINT_COUNT
+def _sans_indice(kind, count):
+    """Au moins `count` puzzles de la piste résolus sans le moindre indice."""
+    return lambda d: sum(1 for s in d.solved if s["kind"] == kind and s["puzzle_id"] not in d.hinted) >= count
 
 
-def _accro(d):
-    return len(d.hinted) >= HINT_LOVER_COUNT
+def _accro(count):
+    return lambda d: len(d.hinted) >= count
 
 
 def _leve_tot(d):
@@ -112,6 +121,18 @@ def _assidu(d):
     return best >= STREAK_DAYS
 
 
+def _serrurier(d):
+    return sum(1 for s in d.solved if s["kind"] == "enigme") >= len(village.ENIGME_DAYS)
+
+
+def _fana_du_jour(d):
+    return any(n > BOARD_DAILY_VIEWS for n in d.board_views.values())
+
+
+def _abonne(d):
+    return sum(d.board_views.values()) > BOARD_TOTAL_VIEWS
+
+
 def _allumeur(d):
     return sum(1 for s in d.solved if s["kind"] == "devinette") >= len(village.CARTES["devinette"].days)
 
@@ -122,6 +143,43 @@ class HautFait(NamedTuple):
     description: str
     icon: str            # symbole du sprite (sans le préfixe « ic- »)
     test: Callable
+    family: str = ""     # les paliers d'une même série partagent une famille ; les pastilles ne montrent que le plus haut
+
+
+def _resolues(count, kind):
+    """« Une énigme résolue », « 5 devinettes résolues »."""
+    noun = "énigme" if kind == "enigme" else "devinette"
+    return f"Une {noun} résolue" if count == 1 else f"{count} {noun}s résolues"
+
+
+def _nombre(count, kind):
+    noun = "énigme" if kind == "enigme" else "devinette"
+    return f"{count} {noun}{'s' if count > 1 else ''}"
+
+
+def _premier_coup_faits():
+    """« Du premier coup » : un haut-fait par palier et par piste (aucune erreur avant la bonne réponse)."""
+    for kind, tiers in FIRST_TRY_TIERS.items():
+        for count in tiers:
+            yield HautFait(f"premier_coup_{kind}_{count}", f"Du premier coup : {_nombre(count, kind)}",
+                           f"{_resolues(count, kind)} dès la première réponse.", "cible", _premier_coup(kind, count),
+                           family=f"premier_coup_{kind}")
+
+
+def _sans_indice_faits():
+    """« Sans indice » : un haut-fait par palier et par piste."""
+    for kind, tiers in NO_HINT_TIERS.items():
+        for count in tiers:
+            yield HautFait(f"sans_indice_{kind}_{count}", f"Sans indice : {_nombre(count, kind)}",
+                           f"{_resolues(count, kind)} sans le moindre indice.", "coche", _sans_indice(kind, count),
+                           family=f"sans_indice_{kind}")
+
+
+def _accro_faits():
+    for count in HINT_LOVER_TIERS:
+        yield HautFait(f"accro_{count}", f"Accro aux indices : {count} puzzles",
+                       f"Des indices pris sur {count} puzzles, énigmes ou devinettes. Il n'y a pas de honte.",
+                       "ampoule", _accro(count), family="accro")
 
 
 HAUTS_FAITS = [
@@ -131,20 +189,34 @@ HAUTS_FAITS = [
              "disque", _disque_raye),
     HautFait("brise_chaine", "Brise-chaîne", "Premier de tous à briser un verrou de la cellule.", "eclair", _brise_chaine),
     HautFait("podium", "Médaillé", "Sur le podium d'un verrou : parmi les trois premiers à le briser.", "medaille", _podium),
-    HautFait("premier_coup", "Du premier coup",
-             f"{FIRST_TRY_COUNT} puzzles résolus dès la première réponse.", "cible", _premier_coup),
-    HautFait("cerveau_seul", "Cerveau seul",
-             f"{NO_HINT_COUNT} puzzles résolus sans le moindre indice.", "coche", _cerveau_seul),
-    HautFait("accro", "Accro aux indices",
-             f"Des indices pris sur {HINT_LOVER_COUNT} puzzles. Il n'y a pas de honte.", "ampoule", _accro),
+    *_premier_coup_faits(),
+    *_sans_indice_faits(),
+    *_accro_faits(),
     HautFait("leve_tot", "Lève-tôt", "Une énigme résolue entre 6 h et 8 h du matin, heure de Paris.", "soleil", _leve_tot),
-    HautFait("noctambule", "Noctambule", "Un puzzle résolu avant 5 h du matin, heure de Paris.", "lune", _noctambule),
+    HautFait("noctambule", "Noctambule", "Un puzzle résolu entre minuit et 5 h du matin, heure de Paris.", "lune", _noctambule),
     HautFait("double", "Doublé du jour",
              "L'énigme et la devinette d'un même jour toutes les deux résolues.", "double", _double),
     HautFait("assidu", "Assidu", f"Au moins un puzzle résolu {STREAK_DAYS} jours de suite.", "calendrier", _assidu),
+    HautFait("serrurier", "Serrurier", "Les 8 énigmes résolues : tous les verrous de la cellule sont brisés.", "cadenas", _serrurier),
     HautFait("allumeur", "Grand allumeur", "Les 24 devinettes résolues : tout le village est éclairé.", "lanterne", _allumeur),
+    HautFait("fana_du_jour", "Fana du classement",
+             f"Le classement consulté plus de {BOARD_DAILY_VIEWS} fois dans la même journée. On ne se refait pas.",
+             "classement", _fana_du_jour, family="classement"),
+    HautFait("abonne", "Abonné au classement",
+             f"Le classement consulté plus de {BOARD_TOTAL_VIEWS} fois au total. Il doit avoir des raisons.",
+             "classement", _abonne, family="classement"),
 ]
 BY_KEY = {h.key: h for h in HAUTS_FAITS}
+
+
+def badges(keys):
+    """Les hauts-faits de `keys` à montrer en pastilles : pour une série à paliers, seulement le plus haut atteint
+    (la liste `HAUTS_FAITS` range les paliers du plus petit au plus grand)."""
+    best = {}
+    for h in HAUTS_FAITS:
+        if h.key in keys:
+            best[h.family or h.key] = h  # le dernier palier de la famille écrase les précédents
+    return sorted(best.values(), key=HAUTS_FAITS.index)
 
 
 def _earned(dossier):
