@@ -3,10 +3,10 @@ from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from accounts.utils import client_ip, family_user_ids, is_family
 
 from . import achievements, competition, scoring, suivi, village
-from .models import Attempt, Hint, HintReveal, Puzzle, Submission
+from .models import Attempt, Hint, HintReveal, LeaderboardDay, Puzzle, Submission
 
 
 def _step_of(puzzle):
@@ -339,11 +339,26 @@ def _place_rows(rows):
     return rows
 
 
+def _count_board_visit(user):
+    """Une visite de plus du classement aujourd'hui (heure de Paris), pour le haut-fait « Fana du classement »."""
+    today = scoring.now().date()
+    counter = LeaderboardDay.objects.filter(user=user, day=today)
+    if counter.update(views=F("views") + 1):
+        return
+    try:
+        with transaction.atomic():
+            LeaderboardDay.objects.create(user=user, day=today, views=1)
+    except IntegrityError:  # deux requêtes simultanées : l'autre a créé la ligne entre-temps
+        counter.update(views=F("views") + 1)
+
+
 @login_required
 def leaderboard(request):
     """Classements (général, énigmes, devinettes, et « Famille » réservé aux membres de la famille), titres de la
     cellule, hauts-faits et podium de chaque verrou. Le staff joue pour tester : il n'apparaît dans aucun classement."""
     me = request.user
+    if request.method == "GET":
+        _count_board_visit(me)
     can_see_family = me.is_staff or is_family(me)
     vue = request.GET.get("vue")
     if vue not in dict(LEADERBOARD_VIEWS):
@@ -360,7 +375,6 @@ def leaderboard(request):
         per_user[r["user_id"]][r["puzzle__kind"]] = [r["total"], r["solved"]]
 
     won = achievements.by_user()  # {uid: {clés}}
-    order = {h.key: i for i, h in enumerate(achievements.HAUTS_FAITS)}
 
     def build(uids, kinds):
         out = []
@@ -368,7 +382,7 @@ def leaderboard(request):
             points = sum(per_user[uid][k][0] for k in kinds)
             solved = sum(per_user[uid][k][1] for k in kinds)
             if solved:
-                badges = [achievements.BY_KEY[k] for k in sorted(won.get(uid, ()), key=order.get)]
+                badges = achievements.badges(won.get(uid, ()))
                 out.append({"uid": uid, "name": names[uid], "points": points, "solved": solved, "badges": badges})
         return _place_rows(out)
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -11,7 +11,7 @@ from django.utils import timezone
 from accounts.models import Profile
 
 from . import achievements, competition, scoring, village
-from .models import Attempt, Hint, HintReveal, Puzzle, Submission
+from .models import Attempt, Hint, HintReveal, LeaderboardDay, Puzzle, Submission
 
 
 def on(month, day, hour=12):
@@ -1102,28 +1102,98 @@ class AchievementTests(TestCase):
         self.solve(self.puzzle("devinette"), rank=1)
         self.assertFalse(self.keys() & {"podium", "brise_chaine"})
 
-    def test_premier_coup_and_cerveau_seul_count_clean_solves(self):
-        puzzles = [self.puzzle() for _ in range(achievements.FIRST_TRY_COUNT)]
-        for p in puzzles[:-1]:
-            self.solve(p)
-        self.assertFalse(self.keys() & {"premier_coup", "cerveau_seul"})
-        self.solve(puzzles[-1])
-        self.assertEqual({"premier_coup", "cerveau_seul"}, self.keys() & {"premier_coup", "cerveau_seul"})
+    def solve_many(self, kind, count, **kwargs):
+        """Résout `count` puzzles de la piste (jours 1 à `count`, sans erreur ni indice sauf précision)."""
+        puzzles = [self.puzzle(kind, day) for day in range(1, count + 1)]
+        for p in puzzles:
+            self.solve(p, **kwargs)
+        return puzzles
 
-    def test_a_mistake_or_a_hint_breaks_the_clean_streaks(self):
-        puzzles = [self.puzzle() for _ in range(achievements.FIRST_TRY_COUNT)]
-        for i, p in enumerate(puzzles):
-            self.solve(p, errors=1 if i == 0 else 0)
-        hint = Hint.objects.create(puzzle=puzzles[1], number=1, text="h")
-        HintReveal.objects.create(user=self.user, hint=hint)
-        self.assertFalse(self.keys() & {"premier_coup", "cerveau_seul"})
+    def test_premier_coup_has_a_tier_per_track_and_count(self):
+        """1/5/8 énigmes et 1/5/10/20 devinettes : chaque palier se décroche à son seuil exact, piste par piste."""
+        for kind, tiers in achievements.FIRST_TRY_TIERS.items():
+            self.assertEqual(tiers, {"enigme": (1, 5, 8), "devinette": (1, 5, 10, 20)}[kind])
+            for count in tiers:
+                with self.subTest(kind=kind, count=count):
+                    Puzzle.objects.all().delete()
+                    self.solve_many(kind, count - 1)
+                    self.assertNotIn(f"premier_coup_{kind}_{count}", self.keys())
+                    self.solve(self.puzzle(kind, count))
+                    self.assertIn(f"premier_coup_{kind}_{count}", self.keys())
 
-    def test_accro_aux_indices(self):
-        for _ in range(achievements.HINT_LOVER_COUNT - 1):
-            HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=self.puzzle(), number=1, text="h"))
-        self.assertNotIn("accro", self.keys())
-        HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=self.puzzle(), number=1, text="h"))
-        self.assertIn("accro", self.keys())
+    def test_premier_coup_ignores_the_other_track_and_mistakes(self):
+        self.solve_many("devinette", 10)
+        self.assertFalse({k for k in self.keys() if k.startswith("premier_coup_enigme")})
+        Attempt.objects.all().delete()
+        self.solve_many("enigme", 1, errors=1)  # une erreur avant la bonne réponse : pas du premier coup
+        self.assertNotIn("premier_coup_enigme_1", self.keys())
+
+    def test_sans_indice_has_a_tier_per_track_and_count(self):
+        for kind, tiers in achievements.NO_HINT_TIERS.items():
+            self.assertEqual(tiers, {"enigme": (1, 3, 5, 8), "devinette": (1, 5, 10, 20)}[kind])
+            for count in tiers:
+                with self.subTest(kind=kind, count=count):
+                    Puzzle.objects.all().delete()
+                    self.solve_many(kind, count - 1)
+                    self.assertNotIn(f"sans_indice_{kind}_{count}", self.keys())
+                    self.solve(self.puzzle(kind, count))
+                    self.assertIn(f"sans_indice_{kind}_{count}", self.keys())
+
+    def test_a_hint_breaks_sans_indice_but_not_premier_coup(self):
+        puzzles = self.solve_many("enigme", 3)
+        HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=puzzles[0], number=1, text="h"))
+        keys = self.keys()
+        self.assertNotIn("sans_indice_enigme_3", keys)  # 2 énigmes sans indice seulement
+        self.assertIn("sans_indice_enigme_1", keys)
+        self.assertNotIn("premier_coup_enigme_5", keys)
+        self.assertIn("premier_coup_enigme_1", keys)
+
+    def test_accro_aux_indices_has_two_tiers_across_both_tracks(self):
+        def take_hint(kind, day):
+            HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=self.puzzle(kind, day), number=1, text="h"))
+        for day in range(1, 5):
+            take_hint("devinette", day)
+        self.assertFalse(self.keys() & {"accro_5", "accro_10"})
+        take_hint("enigme", 1)  # le 5e puzzle, d'une autre piste
+        self.assertEqual(self.keys() & {"accro_5", "accro_10"}, {"accro_5"})
+        for day in range(5, 10):
+            take_hint("devinette", day)
+        self.assertEqual(self.keys() & {"accro_5", "accro_10"}, {"accro_5", "accro_10"})
+
+    def test_two_hints_on_one_puzzle_count_once(self):
+        p = self.puzzle()
+        for number in range(1, 7):
+            HintReveal.objects.create(user=self.user, hint=Hint.objects.create(puzzle=p, number=number, text="h"))
+        self.assertNotIn("accro_5", self.keys())
+
+    def test_serrurier_needs_all_eight_enigmes(self):
+        days = list(village.ENIGME_DAYS)
+        self.assertEqual(len(days), 8)
+        for day in days[:-1]:
+            self.solve(self.puzzle("enigme", day))
+        self.assertNotIn("serrurier", self.keys())
+        for day in range(1, 25):  # 24 devinettes ne comptent pas pour les énigmes
+            self.solve(self.puzzle("devinette", day))
+        self.assertNotIn("serrurier", self.keys())
+        self.solve(self.puzzle("enigme", days[-1]))
+        self.assertIn("serrurier", self.keys())
+
+    def board(self, day, views):
+        LeaderboardDay.objects.create(user=self.user, day=day, views=views)
+
+    def test_fana_du_classement_needs_more_than_three_views_in_one_day(self):
+        self.board(date(2026, 12, 1), 3)
+        self.board(date(2026, 12, 2), 3)  # 6 au total mais jamais plus de 3 le même jour
+        self.assertNotIn("fana_du_jour", self.keys())
+        self.board(date(2026, 12, 3), 4)
+        self.assertIn("fana_du_jour", self.keys())
+
+    def test_abonne_au_classement_needs_more_than_a_hundred_views(self):
+        for day in range(1, 26):
+            self.board(date(2026, 12, day), 4)  # exactement 100 visites au total
+        self.assertNotIn("abonne", self.keys())
+        LeaderboardDay.objects.filter(day=date(2026, 12, 1)).update(views=5)
+        self.assertIn("abonne", self.keys())
 
     def test_leve_tot_and_noctambule_use_paris_time(self):
         early = self.puzzle("enigme", 1)
@@ -1132,6 +1202,12 @@ class AchievementTests(TestCase):
         self.assertNotIn("noctambule", self.keys())
         self.solve(self.puzzle("devinette", 5), when=datetime(2026, 12, 5, 2, 0, tzinfo=scoring.TZ))
         self.assertIn("noctambule", self.keys())
+
+    def test_noctambule_covers_midnight_to_five(self):
+        self.solve(self.puzzle("devinette", 1), when=datetime(2026, 12, 1, 5, 0, tzinfo=scoring.TZ))
+        self.assertNotIn("noctambule", self.keys())  # 5 h pile : trop tard
+        self.solve(self.puzzle("devinette", 2), when=datetime(2026, 12, 2, 0, 0, tzinfo=scoring.TZ))
+        self.assertIn("noctambule", self.keys())  # minuit pile : c'est bon
 
     def test_leve_tot_needs_an_enigme_in_the_morning(self):
         self.solve(self.puzzle("enigme", 1), when=datetime(2026, 12, 1, 9, 0, tzinfo=scoring.TZ))
@@ -1159,6 +1235,12 @@ class AchievementTests(TestCase):
         self.assertNotIn("allumeur", self.keys())
         self.solve(self.puzzle("devinette", days[-1]))
         self.assertIn("allumeur", self.keys())
+
+    def test_badges_keep_only_the_highest_tier_of_a_series(self):
+        keys = {"premier_coup_devinette_1", "premier_coup_devinette_5", "premier_coup_devinette_10",
+                "premier_coup_enigme_1", "sans_indice_devinette_1", "sans_indice_devinette_5", "try_harder"}
+        self.assertEqual([h.key for h in achievements.badges(keys)],
+                         ["try_harder", "premier_coup_enigme_1", "premier_coup_devinette_10", "sans_indice_devinette_5"])
 
     def test_public_list_leaves_out_staff(self):
         tester = User.objects.create_user("testeur", password="pw", is_staff=True)
@@ -1198,8 +1280,14 @@ class AchievementMessageTests(TestCase):
 
     def test_no_announcement_when_nothing_is_unlocked(self):
         with at(1):
-            r = self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "oui"}, follow=True)
+            r = self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "non"}, follow=True)
         self.assertNotContains(r, "Haut-fait débloqué")
+
+    def test_first_solve_announces_the_first_try_and_no_hint_tiers(self):
+        with at(1):
+            r = self.client.post(reverse("avent2026:answer", args=[self.puzzle.id]), {"answer": "oui"}, follow=True)
+        self.assertContains(r, "Haut-fait débloqué : Du premier coup : 1 devinette")
+        self.assertContains(r, "Haut-fait débloqué : Sans indice : 1 devinette")
 
 
 class FamilyLeaderboardTests(TestCase):
@@ -1300,7 +1388,22 @@ class LeaderboardPageTests(TestCase):
             Submission.objects.create(user=self.users["alice"], puzzle=p, answer=f"non{i}", correct=False)
         r = self.client.get(reverse("avent2026:leaderboard"))
         self.assertContains(r, 'aria-label="Try-Harder"')
-        self.assertEqual([h.key for h in r.context["board"][0]["badges"]], ["try_harder"])
+        self.assertEqual([h.key for h in r.context["board"][0]["badges"]],
+                         ["try_harder", "premier_coup_devinette_1", "sans_indice_devinette_1"])
+
+    def test_each_visit_of_the_board_is_counted_per_day_and_user(self):
+        url = reverse("avent2026:leaderboard")
+        with mock.patch.object(scoring, "now", return_value=datetime(2026, 12, 5, 23, 30, tzinfo=scoring.TZ)):
+            for _ in range(4):
+                self.client.get(url)
+        with mock.patch.object(scoring, "now", return_value=datetime(2026, 12, 6, 0, 10, tzinfo=scoring.TZ)):
+            self.client.get(url + "?vue=enigmes")  # l'onglet compte aussi : c'est une visite de la page
+        counts = dict(LeaderboardDay.objects.filter(user=self.users["alice"]).values_list("day", "views"))
+        self.assertEqual(counts, {date(2026, 12, 5): 4, date(2026, 12, 6): 1})
+        self.assertNotIn("fana_du_jour", achievements.keys_for(self.users["bob"]))
+        self.assertIn("fana_du_jour", achievements.keys_for(self.users["alice"]))
+        r = self.client.get(url)  # la visite qui débloque s'affiche dans la liste dès la page suivante
+        self.assertEqual(next(h for h in r.context["hauts_faits"] if h["key"] == "fana_du_jour")["mine"], True)
 
     def test_hauts_faits_section_lists_everything_and_who_got_it(self):
         self.give("alice", 50)
