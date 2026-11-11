@@ -33,12 +33,13 @@ cellule-etape-00.webp  …  cellule-etape-08.webp
 ```
 
 **Contraintes techniques**
-- Même cadrage pour les 9 images (c'est la même scène qui évolue) : **1600 × 1080 px** (le code affiche en 1600:1080).
-- Format **webp**, qualité 70 à 80, **moins de 200 Ko par image** (cible : ~80 Ko). 9 images ≈ 700 Ko au total.
-  Export avec Pillow : `Image.open(png).save(webp, "WEBP", quality=80, method=6)`.
+- Même cadrage pour les 9 images (c'est la même scène qui évolue), au **format 3:2** : 1600 × 1080 px de préférence, mais une taille proche (ex. 1264 × 848) convient (le cadre rogne légèrement).
+- Format **webp**, qualité 80 (export avec Pillow : `Image.open(png).save(webp, "WEBP", quality=80, method=6)`).
+  **Le poids n'est pas une contrainte** (hébergement sur SSD) : 1 à 2 Mo par image conviennent. Il pèse seulement sur le
+  temps de chargement de la page (la nouvelle image et l'ancienne sont chargées pour le fondu), inutile donc de dépasser
+  ~2 Mo.
 - **Aucun texte** dans l'image (les libellés sont dans la page).
 - Ne pas versionner les PNG d'origine (ils sont ignorés par `.gitignore`).
-- Vérifier le poids avant de committer : `du -sh static/avent2026/img`.
 - Tant qu'une image manque, le jeu reste jouable sur un fond sombre dessiné en CSS (un message « image manquante »
   s'affiche pour le staff).
 
@@ -105,7 +106,6 @@ de zéro.
 
 ## 6. Après avoir déposé les images
 
-- Vérifier le poids : `du -sh static/avent2026/img`.
 - Vérifier que les 9 fichiers existent (`cellule-etape-00` à `cellule-etape-08`) et regarder la page `/avent2026/` avec le
   compte staff (qui voit tous les jours).
 - `python manage.py collectstatic` au déploiement, puis Reload (voir `CLAUDE.md`).
