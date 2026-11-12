@@ -58,7 +58,13 @@
     </header>
 
     <div class="statement">
-      {% if puzzle.image %}
+      {% if puzzle.is_video %}
+      <figure class="statement__video">
+        <video controls playsinline preload="metadata" src="{{ puzzle.image.url }}">
+          Votre navigateur ne sait pas lire cette vidéo. <a href="{{ puzzle.image.url }}">Ouvrir le fichier</a>.
+        </video>
+      </figure>
+      {% elif puzzle.image %}
       <a class="statement__figure" href="{{ puzzle.image.url }}" target="_blank" rel="noopener" aria-label="Agrandir l'image, elle s'ouvre dans un nouvel onglet">
         <img src="{{ puzzle.image.url }}" alt="" loading="lazy">
         <span class="statement__zoom" aria-hidden="true">

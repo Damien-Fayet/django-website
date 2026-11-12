@@ -196,6 +196,9 @@ a.day.is-done:hover { background: #e6b653; }
 }
 .statement__figure:hover .statement__zoom { background: var(--laiton); color: var(--nuit); }
 .statement__figure:focus-visible, .statement__link:focus-visible { outline: 3px solid var(--laiton); outline-offset: 2px; }
+/* Vidéo de l'énoncé : lecteur du navigateur, jamais lancée toute seule */
+.statement__video { margin: 0 0 1.25rem; }
+.statement__video video { display: block; width: 100%; max-height: 80vh; background: #000; border-radius: var(--r-ctrl); }
 
 /* ---- Énigmes et devinettes : un seul design -------------------------------- */
 /* En-tête compact (type, titre), énoncé sur une feuille barrée de rouge, réponse et indices sur panneau sombre.

@@ -1,8 +1,31 @@
+import os
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from . import village
+
+# Médias d'un énoncé : extensions acceptées (les navigateurs lisent mp4 et webm ; un .mov d'iPhone est à convertir)
+# et poids maximal. Les vidéos servies par Django (Pi 3) : 200 Mo au plus, et la limite de Cloudflare (100 Mo par
+# envoi sur l'offre gratuite) s'applique à l'envoi par l'admin du site public.
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
+VIDEO_EXTENSIONS = (".mp4", ".webm")
+IMAGE_MAX_BYTES = 2 * 1024 * 1024
+VIDEO_MAX_BYTES = 200 * 1024 * 1024
+
+
+def validate_media(f):
+    """Refuse un média d'une autre sorte que image/vidéo, ou trop lourd (vérifié à l'envoi seulement)."""
+    ext = os.path.splitext(f.name)[1].lower()
+    allowed = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
+    if ext not in allowed:
+        raise ValidationError(f"Format non accepté ({ext or 'sans extension'}). Formats : {', '.join(allowed)}.")
+    if getattr(f, "_committed", False):  # FieldFile déjà enregistré : rien à revérifier (et pas de lecture disque)
+        return
+    limit, label = (VIDEO_MAX_BYTES, "200 Mo") if ext in VIDEO_EXTENSIONS else (IMAGE_MAX_BYTES, "2 Mo")
+    if f.size > limit:
+        raise ValidationError(f"Fichier trop lourd ({f.size / 1024 / 1024:.1f} Mo) : {label} au plus.")
 
 
 class Puzzle(models.Model):
@@ -16,10 +39,13 @@ class Puzzle(models.Model):
     day = models.PositiveSmallIntegerField(
         "Jour", help_text="Jour du mois, de 1 à 24. Énigmes : 1, 2, 5, 9, 12, 16, 19 ou 23 (un verrou chacune).")
     title = models.CharField("Titre", max_length=120)
-    text = models.TextField("Énoncé", help_text="HTML autorisé (contenu saisi par l'admin uniquement).")
+    text = models.TextField(
+        "Énoncé", blank=True,
+        help_text="Facultatif si un média est joint. HTML autorisé (contenu saisi par l'admin uniquement).")
     image = models.FileField(
-        "Image", upload_to="avent2026/", blank=True,
-        help_text="Optionnel. Garder < 200 Ko (espace disque limité).",
+        "Image ou vidéo", upload_to="avent2026/", blank=True, validators=[validate_media],
+        help_text="Facultatif. Image (jpg, png, webp, gif ; 2 Mo au plus, idéalement < 200 Ko) ou vidéo "
+                  "(mp4 ou webm ; 200 Mo au plus, mais l'espace disque est limité : la compresser).",
     )
     answers = models.TextField(
         "Réponses acceptées",
@@ -48,11 +74,18 @@ class Puzzle(models.Model):
     def __str__(self):
         return f"J{self.day} {self.get_kind_display()} — {self.title}"
 
+    @property
+    def is_video(self):
+        """Vrai si le média joint est une vidéo (sinon, c'est une image ou rien)."""
+        return bool(self.image) and os.path.splitext(self.image.name)[1].lower() in VIDEO_EXTENSIONS
+
     def clean(self):
-        """Les énigmes ne se publient que les jours de la cellule (mardi 1er, mercredis et samedis)."""
+        """Les énigmes ne se publient que les jours de la cellule ; un puzzle a un énoncé, un média, ou les deux."""
         if self.kind == self.ENIGME and self.day not in village.ENIGME_DAYS:
             days = ", ".join(str(d) for d in village.ENIGME_DAYS)
             raise ValidationError({"day": f"Les énigmes sortent les jours suivants : {days}."})
+        if not self.text.strip() and not self.image:
+            raise ValidationError({"text": "Ajoutez un énoncé ou une image/vidéo : la page serait vide."})
 
 
 class Hint(models.Model):
