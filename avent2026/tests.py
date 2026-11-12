@@ -777,6 +777,116 @@ class MediaServingTests(TestCase):
             f.unlink()
             folder.rmdir()
 
+    @override_settings(DEBUG=False)
+    def test_range_requests_get_partial_content(self):
+        """Safari / iOS ne lisent une vidéo que si le serveur répond 206 aux requêtes Range."""
+        from pathlib import Path
+        from django.conf import settings
+        folder = Path(settings.MEDIA_ROOT) / "avent2026_test"
+        folder.mkdir(parents=True, exist_ok=True)
+        f = folder / "v.mp4"
+        f.write_bytes(b"0123456789")
+        try:
+            r = self.client.get("/media/avent2026_test/v.mp4")
+            self.assertEqual((r.status_code, r["Accept-Ranges"], r["Content-Type"]), (200, "bytes", "video/mp4"))
+            r.close()  # sous Windows, un fichier resté ouvert ne peut pas être supprimé ensuite
+            cases = [("bytes=0-3", b"0123", "bytes 0-3/10"), ("bytes=4-", b"456789", "bytes 4-9/10"),
+                     ("bytes=-3", b"789", "bytes 7-9/10"), ("bytes=8-99", b"89", "bytes 8-9/10")]
+            for header, body, content_range in cases:
+                with self.subTest(header):
+                    r = self.client.get("/media/avent2026_test/v.mp4", HTTP_RANGE=header)
+                    self.assertEqual(r.status_code, 206)
+                    self.assertEqual(b"".join(r.streaming_content), body)
+                    self.assertEqual((r["Content-Range"], r["Content-Length"]), (content_range, str(len(body))))
+                    self.assertEqual(r["Content-Type"], "video/mp4")
+            r = self.client.get("/media/avent2026_test/v.mp4", HTTP_RANGE="bytes=50-")
+            self.assertEqual((r.status_code, r["Content-Range"]), (416, "bytes */10"))
+            # Un en-tête illisible est ignoré : fichier entier.
+            r = self.client.get("/media/avent2026_test/v.mp4", HTTP_RANGE="octets=1-2")
+            self.assertEqual(r.status_code, 200)
+            r.close()
+            self.assertEqual(self.client.get("/media/avent2026_test/nope.mp4", HTTP_RANGE="bytes=0-1").status_code, 404)
+            self.assertEqual(self.client.get("/media/../manage.py", HTTP_RANGE="bytes=0-1").status_code, 404)
+        finally:
+            f.unlink()
+            folder.rmdir()
+
+
+class PuzzleMediaTests(TestCase):
+    """Énoncé facultatif, image ou vidéo téléversée depuis l'admin."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.client.force_login(self.user)
+
+    def make(self, media=None, text="", day=3):
+        p = Puzzle(kind="devinette", day=day, title="D", text=text, answers="x")
+        if media is not None:
+            p.image.name = media  # pas besoin d'un vrai fichier pour tester l'affichage
+        return p
+
+    def page(self, puzzle):
+        puzzle.save()
+        with at(24):
+            return self.client.get(reverse("avent2026:puzzle", args=[puzzle.id]))
+
+    def test_text_alone_still_valid(self):
+        self.make(text="Quel est ce mot ?").full_clean()
+
+    def test_media_alone_is_valid(self):
+        self.make(media="avent2026/a.webp").full_clean()
+        self.make(media="avent2026/a.mp4").full_clean()
+
+    def test_neither_text_nor_media_is_refused(self):
+        from django.core.exceptions import ValidationError
+        for text in ("", "  \n"):
+            with self.assertRaises(ValidationError) as ctx:
+                self.make(text=text).full_clean()
+            self.assertIn("text", ctx.exception.message_dict)
+
+    def test_video_is_played_with_controls_and_never_autoplays(self):
+        p = self.make(media="avent2026/clip.MP4")
+        self.assertTrue(p.is_video)
+        r = self.page(p)
+        self.assertContains(r, "<video controls playsinline")
+        self.assertContains(r, 'src="/media/avent2026/clip.MP4"')
+        self.assertNotContains(r, "autoplay")
+        self.assertNotContains(r, "statement__figure")
+
+    def test_image_still_uses_the_zoomable_figure(self):
+        p = self.make(media="avent2026/a.webp", text="Qui suis-je ?")
+        self.assertFalse(p.is_video)
+        r = self.page(p)
+        self.assertContains(r, "statement__figure")
+        self.assertContains(r, "Qui suis-je ?")
+        self.assertNotContains(r, "<video")
+
+    def test_text_only_page_has_no_media(self):
+        r = self.page(self.make(text="Juste du texte"))
+        self.assertContains(r, "Juste du texte")
+        self.assertNotContains(r, "<video")
+        self.assertNotContains(r, "statement__figure")
+
+    def test_upload_validation(self):
+        from django.core.exceptions import ValidationError
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, validate_media
+        validate_media(SimpleUploadedFile("a.mp4", b"x"))
+        validate_media(SimpleUploadedFile("a.JPG", b"x"))
+        for name in ("a.mov", "a.exe", "noext"):
+            with self.assertRaises(ValidationError):
+                validate_media(SimpleUploadedFile(name, b"x"))
+        big_image = SimpleUploadedFile("a.png", b"x")
+        big_image.size = IMAGE_MAX_BYTES + 1
+        with self.assertRaises(ValidationError):
+            validate_media(big_image)
+        video = SimpleUploadedFile("a.webm", b"x")
+        video.size = IMAGE_MAX_BYTES + 1  # une vidéo de cette taille est acceptée…
+        validate_media(video)
+        video.size = VIDEO_MAX_BYTES + 1  # …mais pas au-delà de 200 Mo
+        with self.assertRaises(ValidationError):
+            validate_media(video)
+
 
 class NavigationTests(TestCase):
     """Parcours du joueur : à jouer maintenant, voisins d'un puzzle, retour au bloc réponse, page verrouillée."""
