@@ -1076,21 +1076,32 @@ class AchievementTests(TestCase):
 
     def test_try_harder_is_per_puzzle(self):
         for _ in range(3):
-            self.send(self.puzzle(), "x", times=2)  # 6 essais au total, mais jamais plus de 2 sur le même puzzle
+            self.send(self.puzzle(), "x", times=2)  # 6 essais au total, mais jamais plus de 2 sur la même énigme ou devinette
         self.assertNotIn("try_harder", self.keys())
 
-    def test_disque_raye_is_the_same_wrong_answer_three_times(self):
-        p = self.puzzle()
-        for given in ("Faux", "faux !", "FAUX"):  # même réponse une fois normalisée
-            self.send(p, given)
+    def test_disque_raye_is_ten_wrong_answers_in_total(self):
+        """10 mauvaises réponses au total, quelles qu'elles soient et où qu'elles soient envoyées."""
+        self.assertEqual(achievements.DISQUE_RAYE_ERRORS, 10)
+        for i in range(9):
+            self.send(self.puzzle("enigme" if i % 2 else "devinette", i // 2 + 1), f"faux{i}")
+        self.assertNotIn("disque_raye", self.keys())
+        self.send(self.puzzle("devinette", 20), "encore faux")
         self.assertIn("disque_raye", self.keys())
 
-    def test_disque_raye_ignores_different_answers_and_correct_ones(self):
+    def test_disque_raye_ignores_correct_and_blank_answers(self):
         p = self.puzzle()
-        for given in ("a", "b", "c"):
-            self.send(p, given)
-        self.send(p, "ok", correct=True, times=3)
+        self.send(p, "ok", correct=True, times=10)
+        self.send(p, "  ", times=10)  # une réponse vide n'est pas une erreur
         self.assertNotIn("disque_raye", self.keys())
+
+    def test_disque_raye_counts_the_same_wrong_answer_every_time(self):
+        self.send(self.puzzle(), "faux", times=10)
+        self.assertIn("disque_raye", self.keys())
+
+    def test_descriptions_never_say_puzzle(self):
+        """« Puzzle » est ambigu pour les joueurs : on dit énigme ou devinette."""
+        for h in achievements.HAUTS_FAITS:
+            self.assertNotIn("puzzle", (h.name + " " + h.description).lower(), h.key)
 
     def test_brise_chaine_and_podium_come_from_the_rank_on_enigmes(self):
         self.solve(self.puzzle("enigme", 1), rank=3)
