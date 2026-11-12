@@ -15,17 +15,17 @@ from . import scoring, village
 from .models import Attempt, HintReveal, LeaderboardDay, Submission
 
 # Seuils, ici pour être faciles à retoucher (et à tester).
-TRY_HARDER_TRIES = 5            # « plus de 5 essais » : au moins 6 réponses envoyées sur un même puzzle
-DISQUE_RAYE_REPEATS = 3         # la même mauvaise réponse envoyée 3 fois sur un même puzzle
-# Paliers « du premier coup » et « sans indice » : nombre de puzzles de la piste, un haut-fait par palier.
+TRY_HARDER_TRIES = 5            # « plus de 5 essais » : au moins 6 réponses envoyées sur une même énigme ou devinette
+DISQUE_RAYE_ERRORS = 10         # mauvaises réponses envoyées au total (toutes énigmes et devinettes confondues)
+# Paliers « du premier coup » et « sans indice » : nombre d'énigmes ou de devinettes de la piste, un haut-fait par palier.
 FIRST_TRY_TIERS = {"enigme": (1, 5, 8), "devinette": (1, 5, 10, 20)}
 NO_HINT_TIERS = {"enigme": (1, 3, 5, 8), "devinette": (1, 5, 10, 20)}
-HINT_LOVER_TIERS = (5, 10)      # puzzles (énigmes ou devinettes) où l'on a pris au moins un indice
+HINT_LOVER_TIERS = (5, 10)      # énigmes ou devinettes où l'on a pris au moins un indice
 BOARD_DAILY_VIEWS = 3           # « plus de 3 fois par jour » : au moins 4 visites du classement le même jour
 BOARD_TOTAL_VIEWS = 100         # « plus de 100 fois au total » : au moins 101 visites
 EARLY_BIRD_HOURS = (6, 8)       # une énigme résolue entre 6 h et 8 h (heure de Paris)
-NIGHT_OWL_BEFORE = 5            # un puzzle résolu avant 5 h du matin
-STREAK_DAYS = 7                 # jours de suite avec au moins un puzzle résolu
+NIGHT_OWL_BEFORE = 5            # une énigme ou devinette résolue avant 5 h du matin
+STREAK_DAYS = 7                 # jours de suite avec au moins une énigme ou devinette résolue
 
 
 class Dossier:
@@ -35,7 +35,7 @@ class Dossier:
         self.solved = []                     # [{puzzle_id, kind, day, errors, rank, at}] (at : heure de Paris)
         self.hinted = set()                  # puzzles où un indice a été révélé
         self.tries = Counter()               # puzzle_id -> nombre de réponses envoyées
-        self.wrong = defaultdict(Counter)    # puzzle_id -> {mauvaise réponse normalisée: fois envoyée}
+        self.wrong_total = 0                 # mauvaises réponses envoyées, toutes énigmes et devinettes confondues
         self.board_views = {}                # jour (heure de Paris) -> visites du classement ce jour-là
 
 
@@ -59,7 +59,7 @@ def _dossiers(user_ids=None, include_staff=True):
         d = dossiers[user_id]
         d.tries[puzzle_id] += 1
         if not correct and scoring.normalize(answer):
-            d.wrong[puzzle_id][scoring.normalize(answer)] += 1
+            d.wrong_total += 1
     for user_id, day, views in narrow(LeaderboardDay.objects.all()).values_list("user_id", "day", "views"):
         dossiers[user_id].board_views[day] = views
     return dossiers
@@ -72,7 +72,7 @@ def _try_harder(d):
 
 
 def _disque_raye(d):
-    return any(n >= DISQUE_RAYE_REPEATS for wrong in d.wrong.values() for n in wrong.values())
+    return d.wrong_total >= DISQUE_RAYE_ERRORS
 
 
 def _brise_chaine(d):
@@ -85,12 +85,12 @@ def _podium(d):
 
 
 def _premier_coup(kind, count):
-    """Au moins `count` puzzles de la piste résolus dès la première réponse (aucune erreur avant la bonne)."""
+    """Au moins `count` énigmes (ou devinettes) résolues dès la première réponse (aucune erreur avant la bonne)."""
     return lambda d: sum(1 for s in d.solved if s["kind"] == kind and s["errors"] == 0) >= count
 
 
 def _sans_indice(kind, count):
-    """Au moins `count` puzzles de la piste résolus sans le moindre indice."""
+    """Au moins `count` énigmes (ou devinettes) résolues sans le moindre indice."""
     return lambda d: sum(1 for s in d.solved if s["kind"] == kind and s["puzzle_id"] not in d.hinted) >= count
 
 
@@ -177,15 +177,15 @@ def _sans_indice_faits():
 
 def _accro_faits():
     for count in HINT_LOVER_TIERS:
-        yield HautFait(f"accro_{count}", f"Accro aux indices : {count} puzzles",
-                       f"Des indices pris sur {count} puzzles, énigmes ou devinettes. Il n'y a pas de honte.",
+        yield HautFait(f"accro_{count}", f"Accro aux indices : {count} énigmes ou devinettes",
+                       f"Des indices pris sur {count} énigmes ou devinettes différentes. Il n'y a pas de honte.",
                        "ampoule", _accro(count), family="accro")
 
 
 HAUTS_FAITS = [
     HautFait("try_harder", "Try-Harder", "Plus de 5 essais sur une même énigme ou devinette. L'obstination paie.",
              "flamme", _try_harder),
-    HautFait("disque_raye", "Disque rayé", "La même mauvaise réponse envoyée 3 fois sur un même puzzle. Ça ira mieux la quatrième.",
+    HautFait("disque_raye", "Disque rayé", f"{DISQUE_RAYE_ERRORS} mauvaises réponses envoyées au total. Ça ira mieux la prochaine.",
              "disque", _disque_raye),
     HautFait("brise_chaine", "Brise-chaîne", "Premier de tous à briser un verrou de la cellule.", "eclair", _brise_chaine),
     HautFait("podium", "Médaillé", "Sur le podium d'un verrou : parmi les trois premiers à le briser.", "medaille", _podium),
@@ -193,10 +193,10 @@ HAUTS_FAITS = [
     *_sans_indice_faits(),
     *_accro_faits(),
     HautFait("leve_tot", "Lève-tôt", "Une énigme résolue entre 6 h et 8 h du matin, heure de Paris.", "soleil", _leve_tot),
-    HautFait("noctambule", "Noctambule", "Un puzzle résolu entre minuit et 5 h du matin, heure de Paris.", "lune", _noctambule),
+    HautFait("noctambule", "Noctambule", "Une énigme ou une devinette résolue entre minuit et 5 h du matin, heure de Paris.", "lune", _noctambule),
     HautFait("double", "Doublé du jour",
              "L'énigme et la devinette d'un même jour toutes les deux résolues.", "double", _double),
-    HautFait("assidu", "Assidu", f"Au moins un puzzle résolu {STREAK_DAYS} jours de suite.", "calendrier", _assidu),
+    HautFait("assidu", "Assidu", f"Au moins une énigme ou une devinette résolue {STREAK_DAYS} jours de suite.", "calendrier", _assidu),
     HautFait("serrurier", "Serrurier", "Les 8 énigmes résolues : tous les verrous de la cellule sont brisés.", "cadenas", _serrurier),
     HautFait("allumeur", "Grand allumeur", "Les 24 devinettes résolues : tout le village est éclairé.", "lanterne", _allumeur),
     HautFait("fana_du_jour", "Fana du classement",
