@@ -3,7 +3,11 @@
 {% block title %}Avent 2026, accueil{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Avent 2026, accueil</h1>
-{% if prologue %}<aside class="note"><h2>Prologue</h2><p>{{ prologue }}</p></aside>{% endif %}
+{# Prologue repliable : ouvert à la première visite de la session, puis selon le choix du joueur (script en bas). #}
+<details class="note note--repli" id="prologue"{% if prologue_open %} open{% endif %}>
+  <summary title="Afficher ou masquer le prologue"><h2>Prologue</h2></summary>
+  <p>{{ prologue }}</p>
+</details>
 {% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
 <section class="status nuit avec-guirlande" aria-label="Ta progression">
@@ -115,4 +119,19 @@
   {% if has_empty %}<li><span class="swatch swatch--empty"></span>Rien de publié</li>{% endif %}
 </ul>
 <p class="stage-note">Les devinettes se débloquent chaque jour à minuit, les énigmes à 6 h, heure de Paris. Une devinette rallume un bâtiment du village, une énigme brise un verrou de la cellule du Père Noël : joue les deux dans l'ordre que tu veux, chacun à son rythme.</p>
+<script>
+  // Le joueur qui plie ou déplie le prologue retrouve son choix aux visites suivantes.
+  (function () {
+    var prologue = document.getElementById("prologue");
+    if (!prologue) return;
+    var cle = "avent2026_prologue";
+    try {
+      var choix = window.localStorage.getItem(cle);
+      if (choix) prologue.open = choix === "ouvert";
+    } catch (e) {}
+    prologue.addEventListener("toggle", function () {
+      try { window.localStorage.setItem(cle, prologue.open ? "ouvert" : "ferme"); } catch (e) {}
+    });
+  })();
+</script>
 {% endblock %}

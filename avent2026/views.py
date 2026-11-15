@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.utils import client_ip, family_user_ids, is_family
 
-from . import achievements, competition, scoring, suivi, village
+from . import achievements, competition, humour, scoring, suivi, village
 from .models import Attempt, Hint, HintReveal, LeaderboardDay, Puzzle, Submission
 
 
@@ -71,6 +71,8 @@ def home(request):
     to_play, next_unlock = _to_play(cartes)
     scores = _user_scores(request.user)
     finale = _finished(request.user)
+    # Le prologue est toujours là, repliable ; il n'est ouvert que la première fois de la session (le navigateur
+    # retient ensuite le choix du joueur, voir home.html).
     show_prologue = not request.session.get("avent2026_prologue_seen")
     if show_prologue:  # n'écrire la session qu'une fois : sinon un UPDATE par visite
         request.session["avent2026_prologue_seen"] = True
@@ -79,7 +81,7 @@ def home(request):
         "to_play_more": max(0, len(to_play) - TO_PLAY_SHOWN), "next_unlock": next_unlock,
         "has_empty": any(step["state"] == "empty" for c in cartes for step in c["steps"]),
         "village": village.progression(scores["lit"]), "finale": finale,
-        "prologue": village.PROLOGUE if show_prologue else "",
+        "prologue": village.PROLOGUE, "prologue_open": show_prologue,
         "epilogue": village.EPILOGUE if finale else "",
     })
 
@@ -287,11 +289,12 @@ def answer(request, puzzle_id):
                     attempt.rank = competition.rank_of(attempt)
                     attempt.points = scoring.compute_points(puzzle, revealed, attempt.rank)
                     attempt.save(update_fields=["rank", "points"])
-                messages.success(request, f"Bravo ! +{attempt.points} points.")
+                messages.success(request, f"{humour.reussite(request.user.username)} +{attempt.points} points.")
             else:
                 attempt.errors += 1
                 attempt.save(update_fields=["errors"])
-                messages.error(request, "Ce n'est pas ça, essaie encore.")
+                # Le message est la phrase drôle ; « Ce n'est pas ça, essaie encore. » est posé par _messages.html.
+                messages.error(request, humour.echec(request.user.username))
     for fait in achievements.new_for(request.user, before):
         messages.success(request, f"Haut-fait débloqué : {fait.name}. {fait.description}")
     return _back_to_answer(puzzle)

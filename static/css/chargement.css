@@ -1,0 +1,75 @@
+/* ==========================================================================
+   Signe de chargement : le site réagit tout de suite à un clic ou à un envoi.
+   Posé par static/js/chargement.js (classe `charge` sur <html>, `is-loading` sur le bouton envoyé).
+   - barre fine en haut de l'écran, immédiate ;
+   - roue dans le bouton validé ;
+   - petite pastille « Chargement… » si la réponse tarde (le Pi peut être lent).
+   Mouvements réservés à prefers-reduced-motion: no-preference.
+   ========================================================================== */
+
+html.charge::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 2147483000;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, var(--sapin, #1d5b49) 35%, var(--sapin, #1d5b49) 65%, transparent) 0 0 / 40vw 100% no-repeat,
+    rgba(29, 91, 73, .22);
+}
+html.charge { cursor: progress; }
+html.charge a, html.charge button { cursor: progress; }
+
+/* Bouton validé : une roue après le libellé, sans changer sa largeur au pixel près ni le désactiver
+   (un bouton désactivé n'enverrait plus son nom/valeur au serveur). */
+.is-loading { cursor: progress; opacity: .9; }
+.is-loading::after {
+  content: "";
+  flex: none;
+  display: inline-block;
+  width: 1em; height: 1em;
+  margin-left: .55em;
+  vertical-align: -.15em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+/* Pastille qui apparaît si le chargement dure. */
+.chargement {
+  position: fixed;
+  left: 50%; bottom: 1.25rem;
+  z-index: 2147483000;
+  display: flex; align-items: center; gap: .6rem;
+  max-width: calc(100vw - 2rem);
+  padding: .55rem 1rem;
+  border-radius: 999px;
+  background: var(--nuit, #0e1a28);
+  color: #fff;
+  font: 500 .9rem/1.3 var(--font-ui, system-ui, sans-serif);
+  box-shadow: 0 6px 20px rgba(14, 26, 40, .3);
+  opacity: 0; visibility: hidden;
+  transform: translate(-50%, .5rem);
+  transition: opacity .2s, transform .2s, visibility 0s .2s;
+}
+.chargement.visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
+.chargement__roue {
+  flex: none;
+  width: 1.1rem; height: 1.1rem;
+  border: 2px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.charge::before { animation: chargement-barre 1.15s ease-in-out infinite; }
+  .is-loading::after, .chargement__roue { animation: chargement-tour .8s linear infinite; }
+}
+@keyframes chargement-barre { from { background-position: -40vw 0, 0 0; } to { background-position: 100vw 0, 0 0; } }
+@keyframes chargement-tour { to { transform: rotate(360deg); } }
+
+/* Sans mouvement : barre pleine et roues figées, le texte de la pastille suffit. */
+@media (prefers-reduced-motion: reduce) {
+  html.charge::before { background: var(--sapin, #1d5b49); }
+}

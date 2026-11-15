@@ -56,3 +56,17 @@ class FamilyAdminTests(TestCase):
         r = self.client.post(url, data)
         self.assertEqual(r.status_code, 302)
         self.assertTrue(is_family(self.alice))
+
+
+class LoadingIndicatorTests(TestCase):
+    """Le signe de chargement (barre, roue, pastille) est chargé par toutes les pages qui incluent _head.html."""
+
+    def test_public_pages_load_the_indicator(self):
+        for name in ("login", "signup"):
+            html = self.client.get(reverse(name)).content.decode()
+            self.assertIn("js/chargement.js", html, name)
+            self.assertIn("css/chargement.css", html, name)
+
+    def test_auth_forms_have_their_own_message(self):
+        self.assertContains(self.client.get(reverse("login")), 'data-chargement="Connexion en cours')
+        self.assertContains(self.client.get(reverse("signup")), 'data-chargement="Création du compte')
