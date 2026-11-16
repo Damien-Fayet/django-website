@@ -1,3 +1,12 @@
 {% if messages %}
-<ul class="messages">{% for m in messages %}<li class="notice notice--{{ m.tags }}" role="{% if m.level_tag == 'error' %}alert{% else %}status{% endif %}">{{ m }}</li>{% endfor %}</ul>
+<ul class="messages">{% for m in messages %}{% if m.level_tag == 'error' %}
+  {# Mauvaise réponse : la phrase drôle est le message. Avec JavaScript (popup.js), elle s'ouvre dans la fenêtre et la bande rouge se cache. #}
+  <li class="notice notice--error" role="alert"><strong>Ce n'est pas ça, essaie encore.</strong> <span class="notice__humour">{{ m }}</span>
+    <dialog class="oups" aria-labelledby="oups-titre" data-oups>
+      <h2 id="oups-titre"><svg class="ic" aria-hidden="true"><use href="#ic-cadenas"/></svg>Raté !</h2>
+      <p class="oups__texte">{{ m }}</p>
+      <form method="dialog"><button class="btn" type="submit" autofocus>Réessayer</button></form>
+    </dialog>
+  </li>
+{% else %}<li class="notice notice--{{ m.tags }}" role="status">{{ m }}</li>{% endif %}{% endfor %}</ul>
 {% endif %}

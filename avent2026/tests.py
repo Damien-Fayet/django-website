@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from accounts.models import Profile
 
-from . import achievements, competition, scoring, village
+from . import achievements, competition, humour, scoring, village
 from .models import Attempt, Hint, HintReveal, LeaderboardDay, Puzzle, Submission
 
 
@@ -424,10 +424,15 @@ class StoryTests(TestCase):
             self.assertContains(self.client.get(url), "SECRET-FRAGMENT")
             self.assertContains(self.client.get(reverse("avent2026:journal")), "SECRET-FRAGMENT")
 
-    def test_prologue_shown_once(self):
+    def test_prologue_is_open_once_then_folded_but_still_there(self):
         with at(1):
-            self.assertTrue(self.client.get(reverse("avent2026:home")).context["prologue"])
-            self.assertFalse(self.client.get(reverse("avent2026:home")).context["prologue"])
+            first = self.client.get(reverse("avent2026:home"))
+            self.assertTrue(first.context["prologue_open"])
+            self.assertContains(first, 'id="prologue" open')
+            second = self.client.get(reverse("avent2026:home"))
+            self.assertFalse(second.context["prologue_open"])
+            self.assertNotContains(second, 'id="prologue" open')
+            self.assertContains(second, "Une tempête de neige")  # replié, mais toujours relisible
 
     def test_epilogue_needs_the_last_puzzle_of_both_tracks(self):
         """Dernière énigme (jour 23, verrou 8) et dernière devinette (jour 24)."""
@@ -1542,3 +1547,46 @@ class LeaderboardPageTests(TestCase):
         r = self.client.get(reverse("avent2026:leaderboard"))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Personne encore")
+
+
+class HumourTests(TestCase):
+    """Phrases drôles : fenêtre « Raté ! » sur une mauvaise réponse, compliment sur une bonne."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.client.force_login(self.user)
+        self.d1 = Puzzle.objects.create(kind="devinette", day=1, title="Premiere", text="?", answers="a")
+
+    def test_every_phrase_fits_in_a_message(self):
+        for phrase in humour.ECHECS + humour.REUSSITES:
+            self.assertTrue(phrase.strip(), phrase)
+            self.assertLess(len(phrase), 200, phrase)
+        self.assertNotIn("alice{", humour.echec("alice"))
+        self.assertNotIn("{nom}", "".join(humour.echec("alice") for _ in range(200)))
+
+    def test_phrases_use_the_player_name(self):
+        with mock.patch("avent2026.humour.random.choice", return_value="{nom}, respire."):
+            self.assertEqual(humour.echec("alice"), "alice, respire.")
+            self.assertEqual(humour.reussite("alice"), "alice, respire.")
+
+    def test_wrong_answer_opens_a_popup_with_the_joke(self):
+        with at(1), mock.patch("avent2026.humour.random.choice", return_value="Une phrase témoin."):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "zzz"})
+            html = self.client.get(reverse("avent2026:puzzle", args=[self.d1.id])).content.decode()
+        self.assertIn("<dialog", html)
+        self.assertIn("data-oups", html)
+        self.assertIn('<p class="oups__texte">Une phrase témoin.</p>', html)
+        self.assertEqual(html.count("essaie encore"), 1)  # la bande rouge reste le repli sans JavaScript
+        self.assertIn("avent2026/js/popup.js", html)
+
+    def test_right_answer_gets_a_joke_and_the_points(self):
+        with at(1), mock.patch("avent2026.humour.random.choice", return_value="Fantastique."):
+            self.client.post(reverse("avent2026:answer", args=[self.d1.id]), {"answer": "a"})
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d1.id]))
+        self.assertContains(r, "Fantastique. +50 points.")
+        self.assertNotContains(r, "<dialog")
+
+    def test_no_popup_without_a_message(self):
+        with at(1):
+            r = self.client.get(reverse("avent2026:puzzle", args=[self.d1.id]))
+        self.assertNotContains(r, "<dialog")
