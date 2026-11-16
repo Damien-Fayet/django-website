@@ -1,0 +1,129 @@
+{% extends "avent2026/base.html" %}
+{% block title %}Statistiques{% endblock %}
+{% block content %}
+<section class="rang-hero nuit avec-guirlande" aria-labelledby="titre-stats">
+  <div class="ciel" aria-hidden="true"></div>
+  <div class="rang-hero__texte">
+    <h1 id="titre-stats">Statistiques</h1>
+    <p>{% if vue == "moi" %}Ta partie, comparée à la moyenne des autres joueurs.
+      {% elif vue == "puzzles" %}Comment chaque puzzle sorti a été résolu, et où tu en es.
+      {% else %}Les chiffres de l'ensemble des joueurs : participation, activité, moments de jeu.{% endif %}</p>
+    <p class="rang-hero__haut-faits">Aucun nom ici, seulement des totaux et des moyennes. Les comptes staff sont exclus.</p>
+  </div>
+</section>
+
+<nav class="onglets" aria-label="Statistiques">
+  {% for key, label in vues %}<a href="?vue={{ key }}"{% if key == vue %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+
+{% if vue == "moi" %}
+  {% if empty %}<p class="rang-note">Tu n'as encore ouvert aucun puzzle : tes chiffres apparaîtront ici dès ta première réponse.</p>{% endif %}
+  <ul class="stats-grille">
+    {% for c in cards %}
+    <li class="stat"><span class="stat__label">{{ c.label }}</span><b class="stat__valeur">{{ c.value }}</b>{% if c.sub %}<span class="stat__sub">{{ c.sub }}</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  <p class="stats-note">Le temps de résolution court du premier affichage du puzzle jusqu'à ta bonne réponse, pauses comprises : la médiane en donne une image plus juste que la moyenne.</p>
+
+  {% for k in kinds %}
+  <section class="stats-bloc" aria-labelledby="k-{{ forloop.counter }}">
+    <h2 id="k-{{ forloop.counter }}">{{ k.name }}</h2>
+    <dl class="stats-faits">
+      {% for label, value in k.facts %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}
+    </dl>
+  </section>
+  {% endfor %}
+
+{% elif vue == "puzzles" %}
+  {% for t in tables %}
+  <section class="stats-bloc" aria-labelledby="t-{{ t.kind }}">
+    <h2 id="t-{{ t.kind }}">{{ t.name }}</h2>
+    {% if t.records %}
+    <ul class="stats-records">
+      {% for r in t.records %}<li><span>{{ r.label }}</span><b>{{ r.title }}</b><small>{{ r.value }}</small></li>{% endfor %}
+    </ul>
+    {% endif %}
+    <div class="table-wrap">
+    <table class="data stats-table">
+      <caption class="sr-only">Statistiques de chaque puzzle : {{ t.label|lower }}</caption>
+      <thead><tr>
+        <th scope="col">Puzzle</th><th scope="col">Ouvert par</th><th scope="col">Résolu par</th>
+        <th scope="col">Temps médian</th><th scope="col">Temps moyen</th>
+        <th scope="col">Erreurs (moy.)</th><th scope="col">Indices (moy.)</th>
+        <th scope="col">Du premier coup</th><th scope="col">Sans indice</th><th scope="col">Toi</th>
+      </tr></thead>
+      <tbody>
+      {% for r in t.rows %}
+        <tr{% if r.you.state == "done" %} class="stats-table__fait"{% endif %}>
+          <th scope="row">{% if r.step %}<span class="muted">{{ r.step }}.</span> {% endif %}<a href="{% url 'avent2026:puzzle' r.puzzle.id %}">{{ r.puzzle.title }}</a></th>
+          <td class="num">{{ r.opened }}</td>
+          <td class="num">{{ r.solvers }} <span class="muted">({{ r.success }})</span></td>
+          <td class="num">{{ r.median_text }}</td>
+          <td class="num">{{ r.mean_text }}</td>
+          <td class="num">{{ r.errors_text }}</td>
+          <td class="num">{{ r.hints_text }}</td>
+          <td class="num">{{ r.first_try }}</td>
+          <td class="num">{{ r.no_hint }}</td>
+          <td>
+            {% if r.you.state == "done" %}<span class="tag tag--ok">Résolu</span> <span class="num">{{ r.you.time }}, {{ r.you.errors }} erreur{{ r.you.errors|pluralize }}, {{ r.you.hints }} indice{{ r.you.hints|pluralize }}</span>
+            {% elif r.you.state == "open" %}<span class="tag">En cours</span> <span class="num">{{ r.you.errors }} erreur{{ r.you.errors|pluralize }}, {{ r.you.hints }} indice{{ r.you.hints|pluralize }}</span>
+            {% else %}<span class="muted">Pas ouvert</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="10" class="muted">Aucun puzzle de cette piste n'est encore sorti.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% endfor %}
+  <p class="stats-note">« Résolu par » est suivi du taux de réussite parmi ceux qui ont ouvert le puzzle. Erreurs et indices sont des moyennes parmi ceux qui l'ont résolu. Les records demandent au moins 3 résolutions.</p>
+
+{% else %}
+  <ul class="stats-grille">
+    {% for c in site.cards %}
+    <li class="stat"><span class="stat__label">{{ c.label }}</span><b class="stat__valeur">{{ c.value }}</b>{% if c.sub %}<span class="stat__sub">{{ c.sub }}</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+
+  <section class="stats-bloc" aria-labelledby="g-pistes">
+    <h2 id="g-pistes">Énigmes et devinettes</h2>
+    <div class="table-wrap">
+    <table class="data stats-table">
+      <caption class="sr-only">Comparaison des énigmes et des devinettes</caption>
+      <thead><tr>
+        <th scope="col">Piste</th><th scope="col">Résolutions</th><th scope="col">Réussite</th><th scope="col">Temps médian</th>
+        <th scope="col">Erreurs (moy.)</th><th scope="col">Indices (moy.)</th><th scope="col">Du premier coup</th><th scope="col">Sans indice</th>
+      </tr></thead>
+      <tbody>
+      {% for k in site.kind_rows %}
+        <tr><th scope="row">{{ k.name }}</th><td class="num">{{ k.solved }}</td><td class="num">{{ k.success }}</td><td class="num">{{ k.median }}</td>
+          <td class="num">{{ k.errors }}</td><td class="num">{{ k.hints }}</td><td class="num">{{ k.first_try }}</td><td class="num">{{ k.no_hint }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="stats-bloc" aria-labelledby="g-jours">
+    <h2 id="g-jours">Résolutions par jour</h2>
+    {% if site.has_resolutions %}
+    <p class="muted">{% if site.busiest_day %}Journée la plus active : {{ site.busiest_day }}. {% endif %}Heures de Paris.</p>
+    <ol class="histo">
+      {% for b in site.by_day %}<li class="histo__barre" title="{{ b.label }} : {{ b.count }}"><span class="histo__haut"><i style="height: {{ b.pct }}%"></i></span><span class="histo__label">{{ b.label }}</span><span class="sr-only">{{ b.count }} résolution{{ b.count|pluralize }}</span></li>{% endfor %}
+    </ol>
+    {% else %}<p class="muted">Aucune résolution pour l'instant.</p>{% endif %}
+  </section>
+
+  <section class="stats-bloc" aria-labelledby="g-heures">
+    <h2 id="g-heures">À quelle heure on résout</h2>
+    {% if site.has_resolutions %}
+    <p class="muted">{% if site.busiest_hour is not None %}Heure la plus active : {{ site.busiest_hour }} h. {% endif %}Heures de Paris, tous jours confondus.</p>
+    <ol class="histo histo--heures">
+      {% for b in site.by_hour %}<li class="histo__barre" title="{{ b.label }} : {{ b.count }}"><span class="histo__haut"><i style="height: {{ b.pct }}%"></i></span><span class="histo__label">{% if forloop.counter0|divisibleby:3 %}{{ forloop.counter0 }}{% endif %}</span><span class="sr-only">{{ b.label }} : {{ b.count }} résolution{{ b.count|pluralize }}</span></li>{% endfor %}
+    </ol>
+    {% else %}<p class="muted">Aucune résolution pour l'instant.</p>{% endif %}
+  </section>
+{% endif %}
+{% endblock %}

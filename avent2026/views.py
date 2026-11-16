@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.utils import client_ip, family_user_ids, is_family
 
-from . import achievements, competition, humour, scoring, suivi, village
+from . import achievements, competition, humour, scoring, stats, suivi, village
 from .models import Attempt, Hint, HintReveal, LeaderboardDay, Puzzle, Submission
 
 
@@ -172,7 +172,7 @@ def _puzzle_context(request, puzzle):
         h.display_cost = scoring.hint_cost(h)
     revealed = [h for h in hints if h.revealed]
     next_hint = next((h for h in hints if not h.revealed), None)
-    tries = attempt.errors if attempt else 0  # mauvaises réponses : affichées, sans effet sur les points
+    tries = attempt.errors if attempt else 0  # mauvaises réponses : chacune retire ERROR_PENALTY points
     solved = bool(attempt and attempt.solved)
     # Course (énigmes) : bonus obtenus une fois résolue, sinon bonus en jeu si on résolvait maintenant.
     competitive = puzzle.kind in scoring.BONUS_KINDS
@@ -185,7 +185,8 @@ def _puzzle_context(request, puzzle):
         "puzzle": puzzle, "attempt": attempt, "solved": solved,
         "revealed_hints": revealed, "next_hint": next_hint, "hint_count": len(hints),
         "tries": tries, "max_points": scoring.puzzle_base_points(puzzle),
-        "current_points": scoring.compute_points(puzzle, revealed, rank),
+        "current_points": scoring.compute_points(puzzle, revealed, rank, tries),
+        "error_penalty": scoring.ERROR_PENALTY,
         "competitive": competitive,
         "bonuses": scoring.bonuses(puzzle, rank, revealed) if competitive else [],
         "podium": competition.podium(puzzle) if competitive else [],
@@ -283,11 +284,11 @@ def answer(request, puzzle_id):
                 # Écrire la résolution avant de compter les précédentes : l'écriture prend le verrou de SQLite, donc
                 # deux résolutions simultanées ne reçoivent pas la même place.
                 attempt.solved_at = timezone.now()
-                attempt.points = scoring.compute_points(puzzle, revealed)
+                attempt.points = scoring.compute_points(puzzle, revealed, errors=attempt.errors)
                 attempt.save()
                 if puzzle.kind in scoring.BONUS_KINDS:
                     attempt.rank = competition.rank_of(attempt)
-                    attempt.points = scoring.compute_points(puzzle, revealed, attempt.rank)
+                    attempt.points = scoring.compute_points(puzzle, revealed, attempt.rank, attempt.errors)
                     attempt.save(update_fields=["rank", "points"])
                 messages.success(request, f"{humour.reussite(request.user.username)} +{attempt.points} points.")
             else:
@@ -424,6 +425,29 @@ def leaderboard(request):
         "hauts_faits_mine": sum(1 for h in hauts_faits if h["mine"]), "hauts_faits_total": len(hauts_faits),
         "verrous": competition.verrous(), "titles": competition.titles(),
     })
+
+
+STATS_VUES = [("moi", "Mes statistiques"), ("puzzles", "Puzzle par puzzle"), ("general", "Tous les joueurs")]
+
+
+@login_required
+def statistics(request):
+    """Statistiques : les tiennes, celles de chaque puzzle déjà sorti, et celles de l'ensemble des joueurs. Aucun nom,
+    seulement des totaux et des moyennes ; le staff est exclu des chiffres communs."""
+    vue = request.GET.get("vue")
+    if vue not in dict(STATS_VUES):
+        vue = "moi"
+    puzzles = stats.all_puzzles()
+    visible = sorted((p for p in puzzles.values() if scoring.is_unlocked(p, request.user)), key=lambda p: (p.day, p.kind))
+    community = stats.community_attempts(puzzles)
+    ctx = {"vue": vue, "vues": STATS_VUES}
+    if vue == "moi":
+        ctx.update(stats.personal(request.user, visible, community, puzzles))
+    elif vue == "puzzles":
+        ctx["tables"] = stats.puzzle_tables(visible, community, stats.user_attempts(request.user, puzzles), puzzles)
+    else:
+        ctx["site"] = stats.site(community, puzzles)
+    return render(request, "avent2026/stats.html", ctx)
 
 
 @login_required
