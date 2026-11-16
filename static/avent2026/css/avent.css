@@ -566,3 +566,43 @@ table.data tr.flag { background: var(--baie-teinte); }
 .note--repli[open] > summary { margin-bottom: .35rem; }
 .note--repli:not([open]) > summary::after { content: "afficher"; font-size: .8125rem; color: var(--brume); }
 @media (prefers-reduced-motion: no-preference) { .note--repli > summary::before { transition: transform .15s; } }
+
+/* ==========================================================================
+   Statistiques : cartes de chiffres, détail par piste, tableaux, histogrammes.
+   L'en-tête et les onglets réutilisent ceux du classement (.rang-hero, .onglets).
+   ========================================================================== */
+.stats-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .75rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.stat { display: flex; flex-direction: column; gap: .2rem; padding: .9rem 1.1rem; border: 1px solid var(--filet); border-radius: var(--r-panel); background: var(--papier); }
+.stat__label { font-size: .8125rem; color: var(--brume); }
+.stat__valeur { font-size: 1.75rem; font-weight: 400; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat__sub { font-size: .8125rem; color: var(--brume); }
+.stats-note { margin: 0 0 1.5rem; font-size: .8125rem; color: var(--brume); }
+
+.stats-bloc { margin-top: 2.25rem; }
+.stats-bloc h2 { margin-bottom: .6rem; font-size: 1.25rem; }
+.stats-faits { display: grid; gap: 0 2rem; margin: 0; padding: 0; }
+@media (min-width: 48rem) { .stats-faits { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stats-faits > div { display: flex; justify-content: space-between; gap: 1rem; padding: .5rem 0; border-top: 1px solid var(--filet); }
+.stats-faits dt { color: var(--brume); }
+.stats-faits dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+.stats-records { display: grid; gap: .6rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+@media (min-width: 40rem) { .stats-records { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 64rem) { .stats-records { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.stats-records li { display: flex; flex-direction: column; padding: .7rem 1rem; border: 1px solid var(--filet); border-left: 4px solid #e0a92c; border-radius: var(--r-ctrl); background: var(--papier); }
+.stats-records span, .stats-records small { font-size: .8125rem; color: var(--brume); }
+.stats-records b { font-weight: 600; overflow-wrap: anywhere; }
+table.stats-table td { white-space: nowrap; }
+table.stats-table th[scope="row"] { min-width: 10rem; }
+table.stats-table .tag--ok + .num { margin-left: .25rem; }
+tr.stats-table__fait { background: var(--sapin-teinte); }
+
+/* Histogrammes : barres en CSS, hauteurs en pourcentage entier posées par le gabarit. */
+.histo { display: flex; align-items: flex-end; gap: 3px; height: 11rem; margin: .75rem 0 0; padding: 0; list-style: none; }
+.histo__barre { display: flex; flex: 1 1 0; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; }
+.histo__haut { display: flex; align-items: flex-end; flex: 1; width: 100%; }
+.histo__haut i { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; background: var(--sapin); }
+.histo__label { height: 1.25rem; margin-top: .25rem; font-size: .6875rem; line-height: 1.25rem; color: var(--brume); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.histo:not(.histo--heures) { overflow-x: auto; }
+.histo:not(.histo--heures) .histo__barre { min-width: 2.25rem; }
+.histo--heures .histo__label { overflow: visible; }

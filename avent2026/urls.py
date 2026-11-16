@@ -13,6 +13,7 @@ urlpatterns = [
     path("puzzle/<int:puzzle_id>/indice/", views.reveal_hint, name="hint"),
     path("journal/", views.journal, name="journal"),
     path("classement/", views.leaderboard, name="leaderboard"),
+    path("statistiques/", views.statistics, name="stats"),
     path("carte/<str:kind>/vue/", views.carte_seen, name="carte_seen"),
     path("suivi/", views.tracking, name="tracking"),
 ]

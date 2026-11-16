@@ -14,9 +14,10 @@ BASE_POINTS = {
     "enigme": 100,
     "devinette": 50,
 }
-# Se tromper ne coûte rien : on peut essayer autant qu'on veut (le nombre d'essais sert aux hauts-faits, voir
-# achievements.py). Seuls les indices coûtent quelques points, volontairement peu : les points départagent surtout
-# ceux qui ont résolu le plus de puzzles.
+# Chaque mauvaise réponse retire ERROR_PENALTY points à la résolution (on peut toujours réessayer à volonté). Les
+# indices coûtent aussi quelques points, volontairement peu : les points départagent surtout ceux qui ont résolu le
+# plus de puzzles. Le nombre d'essais sert également aux hauts-faits, voir achievements.py.
+ERROR_PENALTY = 5
 DEFAULT_HINT_COST = 3
 MIN_POINTS = 10  # une bonne réponse rapporte toujours au moins ça
 
@@ -58,7 +59,8 @@ def hint_cost(hint):
 
 def bonuses(puzzle, rank, hints):
     """Bonus obtenus, sous la forme [(libellé, points)] : podium (`rank` = place parmi les joueurs, None si hors
-    classement) et sans indice. Vide pour les pistes sans compétition. Les erreurs n'y changent rien."""
+    classement) et sans indice. Vide pour les pistes sans compétition. Les erreurs n'y changent rien (elles ont leur
+    propre pénalité, voir compute_points)."""
     if puzzle.kind not in BONUS_KINDS:
         return []
     result = []
@@ -69,9 +71,10 @@ def bonuses(puzzle, rank, hints):
     return result
 
 
-def compute_points(puzzle, hints, rank=None):
-    """Points d'une résolution : base moins le coût des indices pris (jamais moins de MIN_POINTS), plus les bonus."""
-    cost = sum(hint_cost(h) for h in hints)
+def compute_points(puzzle, hints, rank=None, errors=0):
+    """Points d'une résolution : base moins le coût des indices pris et ERROR_PENALTY par mauvaise réponse (jamais
+    moins de MIN_POINTS), plus les bonus."""
+    cost = sum(hint_cost(h) for h in hints) + ERROR_PENALTY * errors
     bonus = sum(points for _label, points in bonuses(puzzle, rank, hints))
     return max(MIN_POINTS, puzzle_base_points(puzzle) - cost) + bonus
 

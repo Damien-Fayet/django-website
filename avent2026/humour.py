@@ -1,7 +1,8 @@
 """Petites phrases drôles pour les réponses : une citation ou une moquerie gentille quand on se trompe,
 un compliment à l'humour des lutins quand on réussit.
 
-Le ton reste bienveillant : se tromper ne coûte rien dans ce jeu et on rit avec le joueur, pas à ses dépens.
+Le ton reste bienveillant : se tromper ne coûte que quelques points (scoring.ERROR_PENALTY) et on rit avec le
+joueur, pas à ses dépens.
 `{nom}` est remplacé par le nom du joueur. Les citations dont l'attribution est douteuse le disent.
 """
 import random
@@ -19,7 +20,7 @@ ECHECS = (
     "« Je ne perds jamais : soit je gagne, soit j'apprends. » Nelson Mandela, attribué",
     # Moqueries gentilles
     "Cette réponse a été examinée avec le plus grand sérieux, puis jetée dans la neige.",
-    "Aucune pénalité, mais une légère déception collective chez les lutins.",
+    "Cinq points de moins, et une légère déception collective chez les lutins.",
     "Même les rennes ont secoué la tête, et ils ont pourtant très peu d'opinions.",
     "Le Père Noël, dans sa cellule, vient de pousser un long soupir de vapeur.",
     "Erreur 404 : bonne réponse introuvable. Elle doit être quelque part dans le village.",
@@ -28,7 +29,7 @@ ECHECS = (
     "{nom}, respire. Relis l'énoncé. Puis relis-le encore, plus lentement.",
     "On ne te juge pas. Les lutins, un petit peu, mais ils sont payés en chocolat.",
     "Même la chaîne du Père Noël a levé un maillon d'un air dubitatif.",
-    "Bonne nouvelle : se tromper ne coûte rien. Mauvaise nouvelle : ça se voit quand même.",
+    "Bonne nouvelle : tu peux réessayer autant que tu veux. Mauvaise nouvelle : chaque erreur coûte 5 points.",
     "Le hasard aurait peut-être fait mieux. Mais le hasard n'a pas d'amour-propre, lui.",
     "Ce n'est pas la bonne réponse, mais c'est une réponse. Les grandes découvertes commencent ainsi. Les petites aussi.",
     "Un lampion de plus qui reste éteint. Il fait semblant de dormir.",
