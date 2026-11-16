@@ -3,9 +3,17 @@
   {# Mauvaise réponse : la phrase drôle est le message. Avec JavaScript (popup.js), elle s'ouvre dans la fenêtre et la bande rouge se cache. #}
   <li class="notice notice--error" role="alert"><strong>Ce n'est pas ça, essaie encore.</strong> <span class="notice__humour">{{ m }}</span>
     <dialog class="oups" aria-labelledby="oups-titre" data-oups>
-      <h2 id="oups-titre"><svg class="ic" aria-hidden="true"><use href="#ic-cadenas"/></svg>Raté !</h2>
-      <p class="oups__texte">{{ m }}</p>
-      <form method="dialog"><button class="btn" type="submit" autofocus>Réessayer</button></form>
+      {# Carte de nuit décorée : ciel étoilé et guirlande (ciel.css), flocons, boule qui se balance, congère et houx dessinés à la main. #}
+      <div class="oups__carte nuit avec-guirlande">
+        <div class="ciel" aria-hidden="true"></div>
+        <div class="oups__flocons" aria-hidden="true"></div>
+        <svg class="oups__boule" aria-hidden="true" viewBox="0 0 36 58"><path d="M18 0v14" stroke="#f3cb74" stroke-width="1.2" fill="none"/><rect x="13" y="12" width="10" height="6" rx="1.5" fill="#f3cb74"/><circle cx="18" cy="40" r="17" fill="#d8404f"/><path d="M1.5 38q16.5 9 33 0" stroke="#f3cb74" stroke-width="2" fill="none"/><ellipse cx="11" cy="31" rx="3.6" ry="6" transform="rotate(25 11 31)" fill="#fff" opacity=".38"/></svg>
+        <h2 id="oups-titre"><svg class="ic" aria-hidden="true"><use href="#ic-cadenas"/></svg>Raté !</h2>
+        <p class="oups__texte">{{ m }}</p>
+        <form method="dialog"><button class="btn" type="submit" autofocus>Réessayer</button></form>
+        <svg class="oups__neige" aria-hidden="true" viewBox="0 0 400 36" preserveAspectRatio="none"><path d="M0 14Q25 2 55 12T115 10T180 14T250 8T320 13T400 7V36H0Z" fill="#f7fbff"/></svg>
+        <svg class="oups__houx" aria-hidden="true" viewBox="0 0 60 36"><path d="M30 30C20 30 8 24 3 14c11-2 24 2 27 16z" fill="#3f9b6d"/><path d="M30 30c10 0 22-6 27-16-11-2-24 2-27 16z" fill="#2f7f57"/><path d="M30 30L9 17M30 30l21-13" stroke="#1f5c3e" stroke-width="1" fill="none" stroke-linecap="round"/><circle cx="26" cy="27" r="4.3" fill="#d8404f"/><circle cx="34" cy="28" r="4.3" fill="#c23342"/><circle cx="30" cy="22" r="4.3" fill="#d8404f"/><circle cx="25" cy="25.8" r="1.1" fill="#fff" opacity=".6"/></svg>
+      </div>
     </dialog>
   </li>
 {% else %}<li class="notice notice--{{ m.tags }}" role="status">{{ m }}</li>{% endif %}{% endfor %}</ul>

@@ -510,20 +510,48 @@ table.data tr.flag { background: var(--baie-teinte); }
 
 /* ---- Mauvaise réponse : fenêtre « Raté ! » avec une phrase drôle (popup.js) -------------------------------- */
 .notice.a-popup { display: none; }  /* la fenêtre remplace la bande rouge */
-.oups {
-  width: min(26rem, calc(100vw - 2rem)); margin: auto; padding: 1.5rem 1.5rem 1.25rem;
-  border: 1px solid var(--filet); border-top: 4px solid var(--baie); border-radius: var(--r-panel);
-  background: var(--papier); color: var(--encre); box-shadow: 0 18px 48px rgba(14, 26, 40, .35);
+
+/* La fenêtre elle-même ne porte aucun décor (elle est centrée par le navigateur, on n'y touche pas) : tout est dans
+   la carte de nuit qu'elle contient, avec les briques de fête de ciel.css (ciel étoilé, guirlande). */
+.oups { width: min(26rem, calc(100vw - 2rem)); margin: auto; padding: 0; border: 0; background: transparent; color: #fff; overflow: visible; }
+.oups::backdrop { background: rgba(10, 20, 45, .66); }
+.oups__carte {
+  padding: 2.1rem 1.5rem 3.1rem; border: 1px solid var(--ciel-bord); border-radius: var(--r-panel);
+  box-shadow: 0 18px 48px rgba(6, 12, 30, .55);
 }
-.oups::backdrop { background: rgba(14, 26, 40, .6); }
-.oups h2 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .75rem; font-size: 1.25rem; color: var(--baie); }
-.oups__texte { margin: 0 0 1.25rem; font: 400 1.0625rem/1.65 var(--font-texte); }
+.oups__carte > h2, .oups__carte > p, .oups__carte > form { position: relative; z-index: 2; }
+.oups h2 { display: flex; align-items: center; gap: .5rem; margin: 0 2.5rem .75rem 0; font-size: 1.375rem; color: var(--or-clair); }
+.oups h2 .ic { color: var(--or-vif); }
+.oups__texte { margin: 0 0 1.25rem; font: 400 1.0625rem/1.65 var(--font-texte); color: #fff; }
 .oups form { margin: 0; text-align: right; }
+.oups .btn { border-color: var(--or-vif); background: var(--or-vif); color: var(--nuit); font-weight: 600; }
+.oups .btn:hover { border-color: var(--or-clair); background: var(--or-clair); color: var(--nuit); }
+.oups .btn:focus-visible { outline-color: #fff; }
+
+/* Boule de Noël accrochée à la guirlande */
+.oups__boule { position: absolute; top: 14px; right: 1.4rem; z-index: 2; width: 1.9rem; height: auto; transform-origin: 50% 0; }
+/* Congère en bas de la carte, avec un brin de houx posé dessus */
+.oups__neige { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; width: 100%; height: 2.2rem; pointer-events: none; }
+.oups__houx { position: absolute; left: 1rem; bottom: .55rem; z-index: 3; width: 3.2rem; height: auto; pointer-events: none; }
+/* Flocons : trois semis de points blancs sur la carte (immobiles par défaut, ils tombent si les animations sont permises) */
+.oups__flocons {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .85;
+  background:
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent), radial-gradient(1.5px 1.5px at 90px 80px, #fff, transparent),
+    radial-gradient(2px 2px at 150px 20px, #fff, transparent), radial-gradient(1.5px 1.5px at 60px 130px, #fff, transparent),
+    radial-gradient(2.5px 2.5px at 180px 110px, #fff, transparent), radial-gradient(1.5px 1.5px at 120px 160px, #fff, transparent);
+  background-size: 200px 180px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .oups[open] { animation: oups-entree .28s cubic-bezier(.2, .8, .3, 1.2); }
+  .oups[open] { animation: oups-entree .32s cubic-bezier(.2, .8, .3, 1.2); }
   .oups[open]::backdrop { animation: oups-fond .2s ease-out; }
   @keyframes oups-entree { from { opacity: 0; transform: translateY(14px) scale(.94) rotate(-1.5deg); } to { opacity: 1; transform: none; } }
   @keyframes oups-fond { from { opacity: 0; } to { opacity: 1; } }
+  .oups__boule { animation: oups-balance 3.2s ease-in-out infinite alternate; }
+  @keyframes oups-balance { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  .oups__flocons { animation: oups-neige 7s linear infinite; }
+  @keyframes oups-neige { from { background-position: 0 0; } to { background-position: -20px 180px; } }
 }
 
 /* Prologue repliable : le titre sert de bouton, un chevron indique l'état. */
