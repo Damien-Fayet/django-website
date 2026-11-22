@@ -87,6 +87,7 @@
 /* Une image par nombre de puzzles résolus ; les étapes (jours ou verrous) sont listées sous l'image, dans le même cadre sombre. */
 .carte { overflow: hidden; border-radius: var(--r-panel); background: var(--nuit); }
 .carte__frame { position: relative; aspect-ratio: 1600 / 1080; background: var(--nuit); }
+.carte__frame--enigme { aspect-ratio: 1024 / 572; }
 .carte__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* Nouveau bâtiment allumé depuis la dernière visite : la nouvelle image se fond par-dessus l'ancienne, une seule fois */
 .carte__img--reveal { animation: carte-reveal 1.6s ease-out .3s both; }

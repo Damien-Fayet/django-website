@@ -69,7 +69,7 @@
         {% if c.carte.image %}<img class="carte__img{% if c.carte.previous %} carte__img--reveal{% endif %}" src="{% static c.carte.image %}"
              {% if c.carte.previous %}data-seen-url="{% url 'avent2026:carte_seen' c.kind %}" data-step="{{ c.carte.step }}"
              {% endif %}alt="{{ c.alt }} : {{ c.counter }} sur {{ c.total }}."
-             width="1600" height="1080">{% endif %}
+             {% if c.kind == "enigme" %}width="1024" height="572"{% else %}width="1600" height="1080"{% endif %}>{% endif %}
       </div>
       <ol class="days{% if c.dated %} days--dated{% endif %}" aria-label="Les {{ c.total }} étapes, {{ c.name|lower }}">
         {% for l in c.steps %}

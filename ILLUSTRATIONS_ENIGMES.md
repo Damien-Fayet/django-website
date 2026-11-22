@@ -33,7 +33,8 @@ cellule-etape-00.webp  …  cellule-etape-08.webp
 ```
 
 **Contraintes techniques**
-- Même cadrage pour les 9 images (c'est la même scène qui évolue) : **1600 × 1080 px** (le code affiche en 1600:1080).
+- Même cadrage pour les 9 images (c'est la même scène qui évolue) : **1024 × 572 px** (16:9 ; le code affiche cette piste en 1024:572, le village des devinettes reste en 1600:1080).
+- Jeu d'images actuel (novembre 2026) : cellule en béton, une lampe, porte blindée ; le Père Noël est assis, enchaîné à des cadenas numérotés 1 à 8 qui disparaissent un à un (l'étape 8 le montre debout, libre). La direction artistique « thriller / laser » plus bas date du premier jeu d'images.
 - Format **webp**, qualité 70 à 80, **moins de 200 Ko par image** (cible : ~80 Ko). 9 images ≈ 700 Ko au total.
   Export avec Pillow : `Image.open(png).save(webp, "WEBP", quality=80, method=6)`.
 - **Aucun texte** dans l'image (les libellés sont dans la page).
