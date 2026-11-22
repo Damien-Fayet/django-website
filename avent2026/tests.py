@@ -443,7 +443,7 @@ class StoryTests(TestCase):
             second = self.client.get(reverse("avent2026:home"))
             self.assertFalse(second.context["prologue_open"])
             self.assertNotContains(second, 'id="prologue" open')
-            self.assertContains(second, "Une tempête de neige")  # replié, mais toujours relisible
+            self.assertContains(second, "La nuit où le village")  # replié, mais toujours relisible
 
     def test_epilogue_needs_the_last_puzzle_of_both_tracks(self):
         """Dernière énigme (jour 23, verrou 8) et dernière devinette (jour 24)."""

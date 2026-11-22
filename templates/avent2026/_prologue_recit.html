@@ -1,0 +1,6 @@
+{# Récit du prologue (accueil et Journal) : paragraphes, puis le message anonyme sur son bout de papier. #}
+{% for paragraphe in prologue.recit %}<p>{{ paragraphe }}</p>{% endfor %}
+<blockquote class="prologue__message">
+  <p>« {{ prologue.message }} »</p>
+  <footer>{{ prologue.signature }}</footer>
+</blockquote>

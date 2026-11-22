@@ -568,18 +568,54 @@ table.data tr.flag { background: var(--baie-teinte); }
   @keyframes oups-neige { from { background-position: 0 0; } to { background-position: -20px 180px; } }
 }
 
-/* Prologue repliable : le titre sert de bouton, un chevron indique l'état. */
-.note--repli > summary { display: flex; align-items: center; gap: .5rem; list-style: none; cursor: pointer; border-radius: 4px; }
-.note--repli > summary::-webkit-details-marker { display: none; }
-.note--repli > summary::before {
-  content: ""; flex: none; width: .45rem; height: .45rem; margin-left: .15rem;
-  border-right: 2px solid var(--sapin); border-bottom: 2px solid var(--sapin); transform: rotate(-45deg);
+/* Prologue : un « dossier » sur papier crème, repliable (le titre sert de bouton). Le message anonyme a son bout de
+   papier, partagé avec le Journal (.prologue__message). Apparition douce des paragraphes seulement avec no-preference. */
+.prologue {
+  position: relative; max-width: 46rem; margin: 0 0 2rem; border: 1px solid #e7dcc3; border-top: 4px solid var(--baie);
+  border-radius: 0 0 var(--r-panel) var(--r-panel); background: #fffcf4;
 }
-.note--repli[open] > summary::before { transform: rotate(45deg); }
-.note--repli > summary h2 { margin: 0; }
-.note--repli[open] > summary { margin-bottom: .35rem; }
-.note--repli:not([open]) > summary::after { content: "afficher"; font-size: .8125rem; color: var(--brume); }
-@media (prefers-reduced-motion: no-preference) { .note--repli > summary::before { transition: transform .15s; } }
+.prologue > summary { display: block; padding: 1.1rem 1.4rem; list-style: none; cursor: pointer; border-radius: 0 0 var(--r-panel) var(--r-panel); }
+.prologue > summary::-webkit-details-marker { display: none; }
+.prologue > summary:focus-visible { outline: 3px solid var(--sapin); outline-offset: 2px; }
+.prologue__kicker { display: block; margin-bottom: .2rem; font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--baie); }
+.prologue > summary h2 { margin: 0; font: 600 clamp(1.4rem, 1.1rem + 1.4vw, 1.85rem)/1.15 var(--font-texte); letter-spacing: -.01em; color: var(--encre); }
+.prologue > summary::after { content: "Lire le dossier"; display: inline-block; margin-top: .6rem; font-size: .875rem; font-weight: 500; color: var(--sapin); text-decoration: underline; text-underline-offset: .2em; }
+.prologue[open] > summary::after { content: "Replier le dossier"; color: var(--brume); }
+.prologue__tampon {
+  position: absolute; top: 1.2rem; right: 1.3rem; padding: .15rem .55rem; border: 2px solid var(--baie); border-radius: 3px;
+  font-size: .75rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--baie); opacity: .8; transform: rotate(5deg);
+}
+@media (max-width: 34rem) { .prologue__tampon { display: none; } }
+.prologue__corps { padding: 0 1.4rem 1.5rem; }
+.prologue__corps > p, .prologue__message p { max-width: 38rem; margin: 0 0 1rem; font: 400 1.0625rem/1.75 var(--font-texte); }
+.prologue__corps > p:first-child::first-letter { float: left; margin: .12em .1em 0 0; font-size: 3.2em; line-height: .8; font-weight: 600; color: var(--baie); }
+.prologue__message {
+  position: relative; max-width: 36rem; margin: 1.4rem 0 1.5rem; padding: 1.1rem 1.3rem 1rem; border: 1px solid #e3d8bd;
+  background: #fff; box-shadow: 0 2px 6px rgba(80, 60, 20, .14); transform: rotate(-.5deg);
+}
+.prologue__message::before {
+  content: ""; position: absolute; top: -.6rem; left: 50%; width: 4.5rem; height: 1.2rem; margin-left: -2.25rem;
+  background: rgba(217, 164, 65, .38); transform: rotate(2deg);
+}
+.prologue__message p { margin: 0; font-style: italic; }
+.prologue__message footer { margin-top: .6rem; text-align: right; font: 500 .9375rem var(--font-texte); color: var(--brume); }
+.prologue__message footer::before { content: "— "; }
+.prologue__missions { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; margin: 0 0 1.25rem; padding: 0; list-style: none; }
+.prologue__missions li { display: flex; align-items: center; gap: .8rem; padding: .75rem .9rem; border: 1px solid var(--filet); border-radius: var(--r-ctrl); background: #fff; }
+.prologue__missions .ic { flex: none; width: 2rem; height: 2rem; color: var(--sapin); }
+.prologue__missions b { display: block; font-weight: 600; line-height: 1.3; }
+.prologue__missions span { display: block; font-size: .875rem; line-height: 1.4; color: var(--brume); }
+.prologue__corps > .prologue__fin { margin: 0; font-style: italic; color: var(--brume); }
+.entry__body .prologue__message { margin: 1.25rem 0; }
+.entry__body .prologue__message p { font-size: 1.0625rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .prologue[open] .prologue__corps > * { animation: prologue-in .6s ease-out both; }
+  .prologue[open] .prologue__corps > :nth-child(2) { animation-delay: .12s; }
+  .prologue[open] .prologue__corps > :nth-child(3) { animation-delay: .24s; }
+  .prologue[open] .prologue__corps > :nth-child(4) { animation-delay: .38s; }
+  .prologue[open] .prologue__corps > :nth-child(5) { animation-delay: .5s; }
+  @keyframes prologue-in { from { opacity: 0; transform: translateY(8px); } }
+}
 
 /* ==========================================================================
    Statistiques : cartes de chiffres, détail par piste, tableaux, histogrammes.
