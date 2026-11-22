@@ -47,13 +47,30 @@ TOTAL = sum(len(carte.days) for carte in CARTES.values())  # 32 : étapes à fra
 # Dernier jour de chaque piste : l'épilogue s'affiche quand les puzzles publiés de ces jours sont tous résolus.
 FINAL_DAYS = {kind: carte.days[-1] for kind, carte in CARTES.items()}
 
-PROLOGUE = (
-    "Une tempête de neige a coupé le courant la veille du 1er décembre. Le village est plongé dans le noir et son "
-    "grand sapin n'a même plus son étoile. Mais cette tempête n'avait rien de naturel : elle couvrait un enlèvement. "
-    "Le Père Noël est retenu dans une cellule sécurisée, enchaîné par huit verrous. Vous avez deux missions : "
-    "rallumer le village, une devinette à la fois, et libérer le Père Noël avant le soir du 24, une énigme à la fois. "
-    "Chacun avance à son rythme, mais le nom des premiers à briser chaque verrou sera connu de tous."
-)
+# Prologue : un dossier (titre, récit, message anonyme glissé sous la porte, mot de la fin). Le coupable reste inconnu :
+# les fragments d'histoire (`Puzzle.story`) saisis dans l'admin ne doivent pas être contredits.
+PROLOGUE = {
+    "titre": "La nuit où le village s'est éteint",
+    "recit": (
+        "Il était 23 h 58, la veille du 1er décembre. Les dernières fenêtres du village brillaient encore quand le "
+        "vent s'est levé d'un coup, sans un nuage. La neige est tombée en rideau et, à minuit pile, tout s'est "
+        "éteint : les lampadaires, les guirlandes, et même l'étoile du grand sapin.",
+        "On a parlé d'une tempête. Pourtant, pas une branche cassée, pas une tuile envolée, et un silence trop "
+        "parfait pour une nuit de bourrasques. Au matin, la maison du Père Noël était vide. Des traces de pas dans "
+        "la neige, qui s'arrêtent net au milieu de la place, comme si quelqu'un avait effacé la suite.",
+        "C'est alors qu'un message sans signature a été glissé sous la porte de chacun d'entre vous :",
+    ),
+    "message": (
+        "Cette tempête n'était qu'un écran de fumée. Il est retenu dans une cellule, enchaîné par huit verrous. "
+        "Rallumez le village, une lumière à la fois, pour qu'il sache que vous êtes là. Brisez les verrous un à un, "
+        "avant le soir du 24. Après, il sera trop tard."
+    ),
+    "signature": "Un ami. Peut-être.",
+    "fin": (
+        "Chacun avance à son rythme, mais le nom des premiers à briser chaque verrou sera connu de tous. "
+        "Et peut-être de quelqu'un d'autre."
+    ),
+}
 
 EPILOGUE = (
     "La dernière lumière s'allume sur la place, l'étoile du grand sapin se remet à briller et, dans un dernier "

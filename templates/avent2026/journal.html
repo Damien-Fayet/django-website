@@ -12,7 +12,7 @@
 <ol class="logbook">
   <li class="entry">
     <span class="entry__day entry__day--word">Prologue</span>
-    <div class="entry__body"><p>{{ prologue }}</p></div>
+    <div><h2>{{ prologue.titre }}</h2><div class="entry__body">{% include "avent2026/_prologue_recit.html" %}<p>{{ prologue.fin }}</p></div></div>
   </li>
   {% for p in entries %}
   <li class="entry">

@@ -4,9 +4,20 @@
 {% block content %}
 <h1 class="visually-hidden">Avent 2026, accueil</h1>
 {# Prologue repliable : ouvert à la première visite de la session, puis selon le choix du joueur (script en bas). #}
-<details class="note note--repli" id="prologue"{% if prologue_open %} open{% endif %}>
-  <summary title="Afficher ou masquer le prologue"><h2>Prologue</h2></summary>
-  <p>{{ prologue }}</p>
+<details class="prologue" id="prologue"{% if prologue_open %} open{% endif %}>
+  <summary title="Afficher ou masquer le prologue">
+    <span class="prologue__kicker">Prologue · nuit du 30 novembre</span>
+    <h2>{{ prologue.titre }}</h2>
+    <span class="prologue__tampon" aria-hidden="true">Confidentiel</span>
+  </summary>
+  <div class="prologue__corps">
+    {% include "avent2026/_prologue_recit.html" %}
+    <ul class="prologue__missions">
+      <li><svg class="ic" aria-hidden="true"><use href="#ic-lanterne"/></svg><div><b>Rallumer le village</b><span>une devinette par jour, du 1er au 24</span></div></li>
+      <li><svg class="ic" aria-hidden="true"><use href="#ic-cadenas"/></svg><div><b>Libérer le Père Noël</b><span>huit énigmes, huit verrous</span></div></li>
+    </ul>
+    <p class="prologue__fin">{{ prologue.fin }}</p>
+  </div>
 </details>
 {% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
