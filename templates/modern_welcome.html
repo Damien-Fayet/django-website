@@ -60,12 +60,12 @@
             <div class="countdown__body">
                 <p class="countdown__title" id="countdown-title">Les lumières se rallument dans</p>
                 <div class="countdown__grid" role="timer">
-                    <div class="countdown__cell"><span class="countdown__num" id="days-welcome">00</span><span class="countdown__unit">jours</span></div>
-                    <div class="countdown__cell"><span class="countdown__num" id="hours-welcome">00</span><span class="countdown__unit">heures</span></div>
-                    <div class="countdown__cell"><span class="countdown__num" id="minutes-welcome">00</span><span class="countdown__unit">minutes</span></div>
-                    <div class="countdown__cell"><span class="countdown__num" id="seconds-welcome">00</span><span class="countdown__unit">secondes</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" data-unit="days">00</span><span class="countdown__unit">jours</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" data-unit="hours">00</span><span class="countdown__unit">heures</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" data-unit="minutes">00</span><span class="countdown__unit">minutes</span></div>
+                    <div class="countdown__cell"><span class="countdown__num" data-unit="seconds">00</span><span class="countdown__unit">secondes</span></div>
                 </div>
-                <p class="countdown__quip" id="countdown-quip"></p>
+                <p class="countdown__quip"></p>
                 <p class="countdown__date">Le <strong>1er décembre 2026</strong> à minuit, heure de Paris. Première énigme à 6 h.</p>
             </div>
             <div class="countdown__open" hidden>
@@ -121,6 +121,7 @@
     </footer>
 
     <script src="{% static 'js/etincelles.js' %}" defer></script>
+    <script src="{% static 'js/decompte.js' %}" defer></script>
     <script src="{% static 'js/accueil.js' %}" defer></script>
 </body>
 </html>

@@ -21,6 +21,29 @@
 </details>
 {% if epilogue %}<aside class="note"><h2>Épilogue</h2><p>{{ epilogue }}</p></aside>{% endif %}
 
+{% if countdown %}
+{# Avant l'ouverture, le compte à rebours prend la place du panneau des scores (tout est à zéro). decompte.js le fait tourner, puis affiche « C'est ouvert ! ». #}
+<section class="countdown countdown--jeu nuit avec-guirlande" data-open-at="{{ countdown.at }}" aria-labelledby="countdown-title">
+  <div class="ciel" aria-hidden="true"></div>
+  <div class="countdown__body">
+    <p class="countdown__title" id="countdown-title">Les lumières se rallument dans</p>
+    <div class="countdown__grid" role="timer">
+      <div class="countdown__cell"><span class="countdown__num" data-unit="days">{{ countdown.days|stringformat:"02d" }}</span><span class="countdown__unit">jours</span></div>
+      <div class="countdown__cell"><span class="countdown__num" data-unit="hours">{{ countdown.hours|stringformat:"02d" }}</span><span class="countdown__unit">heures</span></div>
+      <div class="countdown__cell"><span class="countdown__num" data-unit="minutes">{{ countdown.minutes|stringformat:"02d" }}</span><span class="countdown__unit">minutes</span></div>
+      <div class="countdown__cell"><span class="countdown__num" data-unit="seconds">{{ countdown.seconds|stringformat:"02d" }}</span><span class="countdown__unit">secondes</span></div>
+    </div>
+    <p class="countdown__quip"></p>
+    <p class="countdown__date">Le <strong>1er décembre 2026</strong> à minuit, heure de Paris. Première énigme à 6 h.</p>
+  </div>
+  <div class="countdown__open" hidden>
+    <h2 class="countdown__open-title">C'est ouvert !</h2>
+    <p>Le village attend ses allumeurs et le Père Noël attend qu'on brise ses chaînes.</p>
+    <a class="btn btn--laiton" href="{% url 'avent2026:home' %}">Rallumer le village</a>
+  </div>
+</section>
+<script src="{% static 'js/decompte.js' %}" defer></script>
+{% else %}
 <section class="status nuit avec-guirlande" aria-label="Ta progression">
   <div class="ciel" aria-hidden="true"></div>
   <dl class="status__scores">
@@ -37,6 +60,7 @@
     <p class="status__pct">{{ village.pct }} %</p>
   </div>
 </section>
+{% endif %}
 
 <section class="toplay" aria-labelledby="a-jouer">
   <h2 id="a-jouer">À jouer maintenant</h2>
@@ -47,7 +71,7 @@
     {% endfor %}
   </ul>
   {% if to_play_more %}<p class="muted toplay__more">et {{ to_play_more }} autre{{ to_play_more|pluralize }} sur la carte, plus bas.</p>{% endif %}
-  {% else %}
+  {% elif not countdown %}
   <p class="muted">Tout ce qui est sorti est résolu{% if not next_unlock %}.{% else %}, bravo.{% endif %}</p>
   {% endif %}
   {% if next_unlock %}

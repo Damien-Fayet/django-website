@@ -35,6 +35,9 @@
 .note h2 { margin: 0 0 .35rem; font-size: .9375rem; font-weight: 600; color: var(--sapin); letter-spacing: 0; }
 .note p, .note div { margin: 0; font: 400 1.0625rem/1.7 var(--font-texte); }
 
+/* Avant l'ouverture : le compte à rebours (briques de ciel.css) remplace le bandeau de progression */
+.countdown--jeu { margin: 0 0 1.5rem; padding-top: clamp(2rem, 4vw, 2.5rem); }
+
 /* ---- Bandeau de progression --------------------------------------------- */
 .status {
   display: grid; margin: 0 0 1.5rem; border: 1px solid var(--filet); border-radius: var(--r-panel); background: var(--papier);

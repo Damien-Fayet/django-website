@@ -96,6 +96,10 @@ def now():
     return timezone.now().astimezone(TZ)
 
 
+# Ouverture du calendrier : le 1er décembre à minuit, heure de Paris (la première devinette sort alors).
+OPEN_AT = datetime(YEAR, 12, 1, 0, 0, tzinfo=TZ)
+
+
 def _sees_everything(user):
     """Les admins (staff ou superutilisateurs) et AVENT2026_UNLOCK_ALL voient tout, sans limite de date."""
     return getattr(settings, "AVENT2026_UNLOCK_ALL", False) or (

@@ -1153,6 +1153,34 @@ class FesteTests(TestCase):
         self.assertContains(r, 'id="ic-cadenas"')  # le sprite est dans la page
         self.assertContains(r, 'src="/static/avent2026/js/fete.js"')
 
+    def test_home_shows_the_countdown_instead_of_the_scores_before_the_opening(self):
+        """Avant le 1er décembre à minuit : compte à rebours (chiffres déjà calculés) à la place du panneau des scores."""
+        with on(11, 29, 12):  # 1 jour 12 h avant l'ouverture
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertContains(r, 'data-open-at="2026-12-01T00:00:00+01:00"')
+        self.assertContains(r, 'data-unit="days">01<')
+        self.assertContains(r, 'data-unit="hours">12<')
+        self.assertContains(r, 'src="/static/js/decompte.js"')
+        self.assertNotContains(r, 'class="status nuit avec-guirlande"')
+        self.assertContains(r, "À jouer maintenant")  # le reste de la page est inchangé
+        for path in ("js/decompte.js", "css/ciel.css"):
+            from django.contrib.staticfiles import finders
+            self.assertIsNotNone(finders.find(path), path)
+
+    def test_home_countdown_is_shown_to_staff_too(self):
+        User.objects.filter(pk=self.user.pk).update(is_staff=True)
+        with on(11, 30, 23):
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertContains(r, 'data-unit="hours">01<')
+        self.assertNotContains(r, 'class="status nuit avec-guirlande"')
+
+    def test_home_shows_the_scores_from_the_opening_on(self):
+        with at(1, 0):  # minuit pile
+            r = self.client.get(reverse("avent2026:home"))
+        self.assertContains(r, 'class="status nuit avec-guirlande"')
+        self.assertNotContains(r, "countdown__grid")
+        self.assertNotContains(r, "decompte.js")
+
     def test_puzzle_blocks_have_icons_and_the_ciel(self):
         with at(1):
             r = self.client.get(reverse("avent2026:puzzle", args=[self.e1.id]))
