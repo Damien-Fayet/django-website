@@ -35,6 +35,16 @@ def _locked_response(request, day, puzzle=None):
     return render(request, "avent2026/locked.html", ctx, status=403)
 
 
+def _countdown():
+    """Temps restant avant l'ouverture du calendrier (pour le panneau d'attente de l'accueil), None une fois ouvert.
+    Les chiffres sont calculés ici pour que le panneau s'affiche sans saut ; decompte.js les fait ensuite tourner."""
+    left = int((scoring.OPEN_AT - scoring.now()).total_seconds())
+    if left <= 0:
+        return None
+    return {"at": scoring.OPEN_AT.isoformat(), "days": left // 86400, "hours": left % 86400 // 3600,
+            "minutes": left % 3600 // 60, "seconds": left % 60}
+
+
 @login_required
 def home(request):
     """Accueil : les deux cartes (cellule du Père Noël pour les énigmes, village pour les devinettes) et la progression."""
@@ -81,7 +91,7 @@ def home(request):
         "to_play_more": max(0, len(to_play) - TO_PLAY_SHOWN), "next_unlock": next_unlock,
         "has_empty": any(step["state"] == "empty" for c in cartes for step in c["steps"]),
         "village": village.progression(scores["lit"]), "finale": finale,
-        "prologue": village.PROLOGUE, "prologue_open": show_prologue,
+        "prologue": village.PROLOGUE, "prologue_open": show_prologue, "countdown": _countdown(),
         "epilogue": village.EPILOGUE if finale else "",
     })
 

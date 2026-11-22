@@ -72,6 +72,8 @@
 .ic { display: inline-block; flex: none; width: 1.25rem; height: 1.25rem; vertical-align: -.2em; }
 
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes tic { from { opacity: 0; transform: translateY(-40%) scale(.96); } to { opacity: 1; transform: none; } }
+  .countdown__num.est-change { animation: tic .35s ease-out; }
   @keyframes scintille { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
   .ciel::before { animation: scintille 3.1s ease-in-out infinite; }
   .ciel::after { animation: scintille 4.7s ease-in-out -1.6s infinite; }
@@ -81,3 +83,45 @@
     54% { transform: translateX(-4px); } 72% { transform: translateX(3px); } 90% { transform: translateX(-1px); }
   }
 }
+
+/* ---- Compte à rebours vers l'ouverture (accueil public et accueil du jeu ; script : static/js/decompte.js) ------ */
+.countdown {
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  padding: clamp(2.25rem, 5vw, 3.25rem) 1.25rem clamp(1.5rem, 4vw, 2.25rem); border-radius: 16px; text-align: center;
+  background: var(--ciel-degrade); color: #fff;
+}
+.countdown[hidden], .countdown [hidden] { display: none; }
+
+.countdown__title {
+  display: inline-flex; align-items: center; gap: .6rem; margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--or-clair);
+}
+.countdown__title::before, .countdown__title::after {
+  content: ""; width: .85rem; height: .85rem; background: var(--icone-etoile) center / contain no-repeat;
+}
+
+.countdown__grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; max-width: 34rem; margin: 1.4rem auto 1.1rem;
+}
+.countdown__cell {
+  padding: .9rem .25rem .7rem; border: 1px solid rgba(255, 230, 168, .28); border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
+  box-shadow: 0 6px 18px rgba(4, 8, 24, .35), inset 0 -1px 0 rgba(0, 0, 0, .3);
+}
+.countdown__num {
+  display: block; font-size: clamp(2rem, 1.2rem + 4.2vw, 3.5rem); font-weight: 300; line-height: 1; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 0 22px rgba(255, 208, 103, .55);
+}
+.countdown__unit { display: block; margin-top: .4rem; font-size: .8125rem; color: var(--ciel-doux); }
+.countdown__quip { max-width: 30rem; margin: 0 auto .9rem; font: italic 400 1.0625rem/1.5 var(--font-texte); color: var(--ciel-doux); }
+.countdown__date { margin: 0; font-size: .875rem; color: var(--ciel-doux); }
+.countdown__date strong { font-weight: 600; color: var(--or-clair); }
+
+/* Ouverture : le compte à rebours laisse la place à une invitation */
+.countdown__open-title { margin: 0 0 .5rem; font-size: clamp(1.75rem, 1.2rem + 2.6vw, 2.75rem); font-weight: 600; color: var(--or-clair); text-shadow: 0 0 24px rgba(255, 208, 103, .45); }
+.countdown__open p { margin: 0 0 1.25rem; font: 400 1.125rem/1.55 var(--font-texte); color: var(--ciel-doux); }
+.countdown__open .hero__actions { justify-content: center; margin-top: 0; }
+.btn--laiton { border-color: #f3d58a; background: var(--laiton); color: var(--nuit); }
+.btn--laiton:hover { border-color: #fff; background: #f0c569; color: var(--nuit); }
+.btn--clair { border-color: rgba(255, 255, 255, .6); background: transparent; color: #fff; }
+.btn--clair:hover { border-color: #fff; background: rgba(255, 255, 255, .14); color: #fff; }
+.countdown__quip:empty::before { content: "\00a0"; }
