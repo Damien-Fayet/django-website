@@ -184,35 +184,24 @@ a.day.is-done:hover { background: #e6b653; }
 .puzzle__aside .messages { margin-bottom: 1rem; }
 .puzzle__aside { scroll-margin-top: 1rem; }
 
-/* Média de l'énoncé (image ou vidéo) : encadré d'une guirlande de Noël (SVG dessinés à la main dans img/cadre/,
-   lumières qui clignotent doucement sous prefers-reduced-motion: no-preference). Un clic sur l'image l'ouvre en grand. */
+/* Média de l'énoncé (image ou vidéo) : contour très léger et adouci (coins arrondis, trait fin, ombre douce).
+   Un clic sur l'image l'ouvre en grand. */
 .statement__figure, .statement__video, .statement__link { position: relative; display: block; margin: 0 0 1.25rem; color: inherit; }
-.statement__figure, .statement__video {
-  --cadre: clamp(20px, 5vw, 30px); --coin: calc(var(--cadre) * 1.5);
-  padding: calc(var(--cadre) - 3px);
-  background:
-    url("../img/cadre/coin-hg.svg") left top / var(--coin) var(--coin) no-repeat,
-    url("../img/cadre/coin-hd.svg") right top / var(--coin) var(--coin) no-repeat,
-    url("../img/cadre/coin-bg.svg") left bottom / var(--coin) var(--coin) no-repeat,
-    url("../img/cadre/coin-bd.svg") right bottom / var(--coin) var(--coin) no-repeat,
-    url("../img/cadre/guirlande-h.svg") left top / auto var(--cadre) repeat-x,
-    url("../img/cadre/guirlande-h.svg") left bottom / auto var(--cadre) repeat-x,
-    url("../img/cadre/guirlande-v.svg") left top / var(--cadre) auto repeat-y,
-    url("../img/cadre/guirlande-v.svg") right top / var(--cadre) auto repeat-y;
-}
 .statement__figure { cursor: zoom-in; }
 .statement__link { display: inline-block; max-width: 100%; margin: 0; cursor: zoom-in; }
 .statement__figure img, .statement__link img { display: block; width: 100%; max-width: 100%; height: auto; }
-.statement__figure img { border-radius: 2px; box-shadow: 0 0 0 3px #fffaf0, 0 2px 8px rgba(14, 26, 40, .28); }
+.statement__figure img, .statement__video video {
+  border: 1px solid rgba(20, 32, 43, .1); border-radius: 12px; box-shadow: 0 2px 10px rgba(20, 32, 43, .08);
+}
 .statement__zoom {
-  position: absolute; right: calc(var(--cadre) + .5rem); bottom: calc(var(--cadre) + .5rem); display: inline-flex; align-items: center; gap: .4rem;
+  position: absolute; right: .6rem; bottom: .6rem; display: inline-flex; align-items: center; gap: .4rem;
   padding: .3rem .65rem; border-radius: 99px; background: rgba(14, 26, 40, .88); color: #fff;
   font-size: .8125rem; font-weight: 500; line-height: 1.2;
 }
 .statement__figure:hover .statement__zoom { background: var(--laiton); color: var(--nuit); }
-.statement__figure:focus-visible, .statement__link:focus-visible { outline: 3px solid var(--laiton); outline-offset: 2px; }
+.statement__figure:focus-visible, .statement__link:focus-visible { outline: 3px solid var(--laiton); outline-offset: 2px; border-radius: 12px; }
 /* Vidéo de l'énoncé : lecteur du navigateur, jamais lancée toute seule */
-.statement__video video { display: block; width: 100%; max-height: 80vh; background: #000; border-radius: 2px; box-shadow: 0 0 0 3px #fffaf0, 0 2px 8px rgba(14, 26, 40, .28); }
+.statement__video video { display: block; width: 100%; max-height: 80vh; background: #000; }
 
 /* ---- Énigmes et devinettes : un seul design -------------------------------- */
 /* En-tête compact (type, titre), énoncé sur une feuille barrée de rouge, réponse et indices sur panneau sombre.
