@@ -70,3 +70,20 @@ class LoadingIndicatorTests(TestCase):
     def test_auth_forms_have_their_own_message(self):
         self.assertContains(self.client.get(reverse("login")), 'data-chargement="Connexion en cours')
         self.assertContains(self.client.get(reverse("signup")), 'data-chargement="Création du compte')
+
+
+class MentionsLegalesTests(TestCase):
+    def test_page_is_public_and_names_the_editor(self):
+        response = self.client.get(reverse("mentions_legales"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Damien Fayet")
+        self.assertContains(response, "contact-avent@damienfayet.com")
+
+    def test_public_home_links_to_it(self):
+        response = self.client.get("/")
+        self.assertContains(response, reverse("mentions_legales"))
+
+    def test_no_third_party_font_request(self):
+        response = self.client.get(reverse("mentions_legales"))
+        self.assertNotContains(response, "fonts.googleapis.com")
+        self.assertNotContains(response, "fonts.gstatic.com")

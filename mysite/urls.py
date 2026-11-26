@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include, re_path
 from django.views.generic.base import TemplateView
-from accounts.views import public_home
+from accounts.views import public_home, MentionsLegalesView
 from .media import serve_media
 
 urlpatterns = [
@@ -28,6 +28,7 @@ urlpatterns = [
     path("biblio/", include("biblio.urls")),    # Nouveau chemin pour biblio
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    path("mentions-legales/", MentionsLegalesView.as_view(), name="mentions_legales"),
     path("", public_home, name="home"),  # Page d'accueil publique
 ]
 
