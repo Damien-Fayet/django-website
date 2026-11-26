@@ -1,7 +1,7 @@
 # accounts/views.py
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from django.views.generic import CreateView, TemplateView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout
 from django.shortcuts import render, redirect
@@ -24,3 +24,8 @@ def public_home(request):
     if request.user.is_authenticated:
         return redirect('avent2026:home')
     return render(request, 'modern_welcome.html')
+
+
+class MentionsLegalesView(TemplateView):
+    """Mentions légales et confidentialité : page publique (LCEN art. 6-III, RGPD)."""
+    template_name = "mentions_legales.html"

@@ -1,0 +1,51 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+    {% include "_head.html" %}
+    <title>Mentions légales, Avent 2026</title>
+</head>
+<body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand" href="{% url 'home' %}">Avent <span>2026</span></a>
+        </div>
+    </header>
+
+    <main id="contenu" class="legal">
+        <h1>Mentions légales et confidentialité</h1>
+        <p class="muted">Ce site est un jeu entre proches (calendrier de l'Avent). Voici qui l'édite et ce qu'il fait de vos données.</p>
+
+        <h2>Éditeur et hébergement</h2>
+        <p>Le site est édité à titre non professionnel par <strong>Damien Fayet</strong>, qui est aussi le directeur de la publication.</p>
+        <p>Contact : {% include "_contact.html" %}</p>
+        <p>Il est hébergé par l'éditeur lui-même, sur un serveur personnel (Raspberry Pi) installé à son domicile. Le trafic passe par le service Cloudflare (Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis), qui relaie les connexions vers ce serveur.</p>
+
+        <h2>Données collectées</h2>
+        <ul>
+            <li><strong>Compte</strong> : nom d'utilisateur, mot de passe (conservé uniquement sous forme chiffrée, illisible même pour l'éditeur) et adresse e-mail si vous en donnez une (facultative).</li>
+            <li><strong>Jeu</strong> : réponses envoyées, indices consultés, points, heure de premier affichage de chaque puzzle, visites du classement.</li>
+            <li><strong>Journal technique</strong> : date et adresse IP de chaque connexion et de chaque réponse envoyée.</li>
+        </ul>
+
+        <h2>Pourquoi, et qui y a accès</h2>
+        <p>Ces données servent à faire fonctionner le jeu (progression, points, classement, hauts-faits) et à en garantir l'équité et la sécurité (repérer une triche ou un accès suspect, notamment grâce aux temps de réponse et aux adresses IP). La base légale est l'intérêt légitime de l'éditeur à organiser le jeu.</p>
+        <p>Seul l'éditeur accède à l'ensemble des données. Les autres joueurs voient votre nom d'utilisateur, vos points et vos hauts-faits dans le classement et les statistiques, jamais votre e-mail ni votre adresse IP. Rien n'est vendu ni transmis à des tiers, et le site n'a ni publicité ni outil de mesure d'audience.</p>
+
+        <h2>Durée de conservation</h2>
+        <p>Les comptes et les données de jeu sont conservés tant que le compte existe. Les journaux techniques (adresses IP) sont supprimés au plus tard 12 mois après la fin du jeu. Sur simple demande, votre compte et vos données peuvent être supprimés plus tôt.</p>
+
+        <h2>Vos droits</h2>
+        <p>Vous pouvez demander l'accès à vos données, leur rectification, leur effacement ou vous opposer à leur traitement en écrivant à {% include "_contact.html" %}. En cas de désaccord, vous pouvez saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).</p>
+
+        <h2>Cookies et stockage local</h2>
+        <p>Le site n'utilise que deux cookies indispensables à son fonctionnement : celui de votre session de connexion et celui de protection des formulaires. Ils ne servent pas au suivi publicitaire, d'où l'absence de bandeau de consentement.</p>
+        <p>Votre navigateur retient aussi, sur votre appareil uniquement, quelques préférences d'affichage (neige de l'accueil, prologue ouvert ou fermé).</p>
+        <p>Les polices (IBM Plex, licence SIL OFL) sont servies par le site lui-même : aucune requête n'est envoyée à un service de polices tiers.</p>
+    </main>
+
+    <footer class="site-footer">
+        <p>Calendrier de l'Avent 2026, entre proches. Une question, un souci ? {% include "_contact.html" %}</p>
+    </footer>
+</body>
+</html>

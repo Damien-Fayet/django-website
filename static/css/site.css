@@ -237,3 +237,9 @@ a:hover { color: var(--sapin-fonce); }
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ---- Mentions légales ---------------------------------------------------- */
+.legal { max-width: var(--lecture); }
+.legal h2 { margin-top: 2rem; font-size: 1.125rem; }
+.legal p, .legal li { line-height: 1.65; }
+.legal ul { padding-left: 1.25rem; }
